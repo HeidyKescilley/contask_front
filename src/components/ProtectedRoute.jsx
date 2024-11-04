@@ -16,7 +16,11 @@ const ProtectedRoute = ({ children }) => {
   }, [user, loading, router]);
 
   if (loading) {
-    return <div>Carregando...</div>; // Ou um spinner de carregamento
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg">
+        <p className="text-gray-800 dark:text-dark-text">Carregando...</p>
+      </div>
+    );
   }
 
   return user ? children : null;

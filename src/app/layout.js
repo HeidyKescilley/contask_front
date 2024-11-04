@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 export default function RootLayout({ children }) {
   const [theme, setTheme] = useState("light");
 
-  // Synchronize theme with localStorage
+  // Sincroniza o tema com o localStorage
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme") || "light";
     setTheme(storedTheme);
@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="pt-BR" className={theme === "dark" ? "dark" : ""}>
-      <body className="bg-white dark:bg-primary-dark">
+      <body className="bg-light-bg dark:bg-dark-bg">
         <AuthProvider>
           <ToastContainer />
           {children}

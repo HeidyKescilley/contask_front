@@ -17,7 +17,7 @@ const IndexPage = () => {
     }
   }, [user, router]);
 
-  return null; // Ou um spinner de carregamento
+  return null;
 };
 
 export default IndexPage;

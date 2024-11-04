@@ -47,16 +47,23 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form className="w-full max-w-md" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-bold mb-4 dark:text-white">Registro</h2>
+    <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg">
+      <form
+        className="w-full max-w-md bg-white dark:bg-dark-card p-6 rounded shadow"
+        onSubmit={handleSubmit}
+      >
+        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-dark-text">
+          Registro
+        </h2>
         {/* Campos do formulário */}
         <div className="mb-4">
-          <label className="block mb-1 dark:text-white">Nome</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Nome
+          </label>
           <input
             type="text"
             name="name"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.name}
             onChange={handleChange}
             required
@@ -64,11 +71,13 @@ const RegisterPage = () => {
         </div>
         {/* Email */}
         <div className="mb-4">
-          <label className="block mb-1 dark:text-white">Email</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Email
+          </label>
           <input
             type="email"
             name="email"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.email}
             onChange={handleChange}
             required
@@ -76,13 +85,13 @@ const RegisterPage = () => {
         </div>
         {/* Data de Nascimento */}
         <div className="mb-4">
-          <label className="block mb-1 dark:text-white">
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
             Data de Nascimento
           </label>
           <input
             type="date"
             name="birthday"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.birthday}
             onChange={handleChange}
             required
@@ -90,10 +99,12 @@ const RegisterPage = () => {
         </div>
         {/* Departamento */}
         <div className="mb-4">
-          <label className="block mb-1 dark:text-white">Departamento</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Departamento
+          </label>
           <select
             name="department"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.department}
             onChange={handleChange}
             required
@@ -108,11 +119,13 @@ const RegisterPage = () => {
         </div>
         {/* Senha */}
         <div className="mb-4">
-          <label className="block mb-1 dark:text-white">Senha</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Senha
+          </label>
           <input
             type="password"
             name="password"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.password}
             onChange={handleChange}
             required
@@ -120,17 +133,19 @@ const RegisterPage = () => {
         </div>
         {/* Confirmação de Senha */}
         <div className="mb-4">
-          <label className="block mb-1 dark:text-white">Confirme a Senha</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Confirme a Senha
+          </label>
           <input
             type="password"
             name="confirmpassword"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.confirmpassword}
             onChange={handleChange}
             required
           />
         </div>
-        <button className="w-full bg-green-500 text-white py-2">
+        <button className="w-full bg-green-500 dark:bg-accent-green text-white py-2 rounded">
           Registrar
         </button>
       </form>

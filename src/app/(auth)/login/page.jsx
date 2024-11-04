@@ -25,7 +25,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg">
       <div
         className="w-1/2 bg-cover"
         style={{ backgroundImage: "url(/your-image.png)" }}
@@ -33,15 +33,20 @@ const LoginPage = () => {
         {/* Imagem do lado esquerdo */}
       </div>
       <div className="w-1/2 flex items-center justify-center">
-        <form className="w-full max-w-md" onSubmit={handleSubmit}>
-          <div className="flex justify-center">
-            <Image src="/logo.png" width="150" height="150"></Image>
+        <form
+          className="w-full max-w-md bg-white dark:bg-dark-card p-6 rounded shadow"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex justify-center mb-4">
+            <Image src="/logo.png" width="150" height="150" alt="Logo" />
           </div>
           <div className="mb-4">
-            <label className="block mb-1 dark:text-white">Email</label>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text">
+              Email
+            </label>
             <input
               type="email"
-              className="w-full px-3 py-2 rounded-md bg-primary-color dark:bg-secundary-dark dark:text-white"
+              className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Seu email"
@@ -49,22 +54,24 @@ const LoginPage = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-1 dark:text-white">Senha</label>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text">
+              Senha
+            </label>
             <input
               type="password"
-              className="w-full px-3 py-2 rounded-md bg-primary-color dark:bg-secundary-dark"
+              className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Sua senha"
               required
             />
           </div>
-          <button className="w-full bg-blue-500 text-white py-2 rounded-md">
+          <button className="w-full bg-blue-500 dark:bg-accent-blue text-white py-2 rounded-md">
             Entrar
           </button>
-          <p className="flex my-2 justify-center dark:text-white">
+          <p className="flex my-2 justify-center text-gray-800 dark:text-dark-text-secondary">
             Não tem uma conta?
-            <a href className="pl-2 underline">
+            <a href="/register" className="pl-2 underline">
               Clique aqui
             </a>
           </p>

@@ -71,17 +71,19 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h2 className="text-xl font-bold mb-4">
+      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-dark-text">
         {type === "add" ? "Nova Empresa" : "Editar Empresa"}
       </h2>
       <div className="grid grid-cols-3 gap-4 mb-4">
         {/* Número */}
         <div>
-          <label className="block mb-1">Nº</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Nº
+          </label>
           <input
             type="text"
             name="num"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.num}
             onChange={handleChange}
             required
@@ -90,11 +92,13 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* Razão Social */}
         <div>
-          <label className="block mb-1">Razão Social</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Razão Social
+          </label>
           <input
             type="text"
             name="name"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.name}
             onChange={handleChange}
             required
@@ -102,11 +106,13 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* CNPJ */}
         <div>
-          <label className="block mb-1">CNPJ</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            CNPJ
+          </label>
           <input
             type="text"
             name="cnpj"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.cnpj}
             onChange={handleChange}
             required
@@ -116,22 +122,26 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* Inscrição Estadual */}
         <div>
-          <label className="block mb-1">Inscrição Estadual</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Inscrição Estadual
+          </label>
           <input
             type="text"
             name="ie"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.ie}
             onChange={handleChange}
           />
         </div>
         {/* Email */}
         <div>
-          <label className="block mb-1">E-mail</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            E-mail
+          </label>
           <input
-            type="email"
+            type="text"
             name="email"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.email}
             onChange={handleChange}
             required
@@ -139,21 +149,25 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* Telefone */}
         <div>
-          <label className="block mb-1">Telefone</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Telefone
+          </label>
           <input
             type="tel"
             name="phone"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.phone}
             onChange={handleChange}
           />
         </div>
         {/* Regime */}
         <div>
-          <label className="block mb-1">Regime</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Regime
+          </label>
           <select
             name="rule"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.rule}
             onChange={handleChange}
             required
@@ -167,10 +181,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* Classificação */}
         <div>
-          <label className="block mb-1">Classificação</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Classificação
+          </label>
           <select
             name="classi"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.classi}
             onChange={handleChange}
             required
@@ -184,10 +200,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* UF */}
         <div>
-          <label className="block mb-1">UF</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            UF
+          </label>
           <select
             name="uf"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.uf}
             onChange={handleChange}
             required
@@ -204,11 +222,13 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* Responsável pela Empresa */}
         <div>
-          <label className="block mb-1">Contato na Empresa</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Contato na Empresa
+          </label>
           <input
             type="text"
             name="contact"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.contact}
             onChange={handleChange}
             placeholder="Com quem podemos entrar em contato."
@@ -217,11 +237,13 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
         {/* Início do Contrato */}
         <div>
-          <label className="block mb-1">Início do Contrato</label>
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Início do Contrato
+          </label>
           <input
             type="date"
             name="contractInit"
-            className="w-full border px-3 py-2"
+            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.contractInit}
             onChange={handleChange}
             required
@@ -238,7 +260,9 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
           onChange={handleChange}
           className="mr-2"
         />
-        <label>Empresa aberta pela Contelb?</label>
+        <label className="text-gray-800 dark:text-dark-text">
+          Empresa aberta pela Contelb?
+        </label>
       </div>
 
       {/* Exibir o campo 'Informações Importantes' apenas no modo de criação */}
@@ -246,10 +270,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         <>
           {/* Informações Importantes */}
           <div className="mb-4">
-            <label className="block mb-1">Informações Importantes</label>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text">
+              Informações Importantes
+            </label>
             <textarea
               name="important_info"
-              className="w-full border px-3 py-2"
+              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
               value={formData.important_info}
               onChange={handleChange}
             ></textarea>
@@ -262,10 +288,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         <>
           {/* Responsável Fiscal */}
           <div className="mb-4">
-            <label className="block mb-1">Responsável Fiscal</label>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text">
+              Responsável Fiscal
+            </label>
             <select
               name="respFiscalId"
-              className="w-full border px-3 py-2"
+              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
               value={formData.respFiscalId}
               onChange={handleChange}
             >
@@ -280,10 +308,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
 
           {/* Responsável Contábil */}
           <div className="mb-4">
-            <label className="block mb-1">Responsável Contábil</label>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text">
+              Responsável Contábil
+            </label>
             <select
               name="respContabilId"
-              className="w-full border px-3 py-2"
+              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
               value={formData.respContabilId}
               onChange={handleChange}
             >
@@ -298,10 +328,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
 
           {/* Responsável DP */}
           <div className="mb-4">
-            <label className="block mb-1">Responsável DP</label>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text">
+              Responsável DP
+            </label>
             <select
               name="respDpId"
-              className="w-full border px-3 py-2"
+              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
               value={formData.respDpId}
               onChange={handleChange}
             >
@@ -318,10 +350,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
 
       {/* Observações */}
       <div className="mb-4">
-        <label className="block mb-1">Observações</label>
+        <label className="block mb-1 text-gray-800 dark:text-dark-text">
+          Observações
+        </label>
         <textarea
           name="obs"
-          className="w-full border px-3 py-2"
+          className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
           value={formData.obs}
           onChange={handleChange}
         ></textarea>
@@ -338,7 +372,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </button>
         <button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-500 dark:bg-accent-blue text-white px-4 py-2 rounded"
         >
           Salvar
         </button>

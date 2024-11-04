@@ -8,6 +8,7 @@ import CompanyTable from "./CompanyTable";
 import CompanyFilters from "./CompanyFilters";
 import CompanyModal from "./CompanyModal";
 import HistoryModal from "./HistoryModal";
+import StatusChangeModal from "./StatusChangeModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 
@@ -26,6 +27,8 @@ const CompaniesPage = () => {
   });
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryCompany, setSelectedHistoryCompany] = useState(null);
+  const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
+  const [selectedStatusCompany, setSelectedStatusCompany] = useState(null);
 
   useEffect(() => {
     fetchCompanies();
@@ -113,9 +116,26 @@ const CompaniesPage = () => {
     }
   };
 
-  const handleBlockCompany = (companyId) => {
-    // Implementação da lógica de bloqueio, se necessário
-    toast.info("Empresa bloqueada!");
+  const handleSaveStatusChange = async (statusData) => {
+    try {
+      await api.post(
+        `/company/change-status/${selectedStatusCompany.id}`,
+        statusData
+      );
+      toast.success("Status da empresa atualizado com sucesso!");
+      fetchCompanies(); // Refresh the list of companies
+      setShowStatusChangeModal(false);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Erro ao atualizar o status da empresa."
+      );
+    }
+  };
+
+  const handleBlockCompany = (company) => {
+    setSelectedStatusCompany(company);
+    setShowStatusChangeModal(true);
   };
 
   const handleViewHistory = (company) => {
@@ -130,7 +150,7 @@ const CompaniesPage = () => {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-8 py-8">
         <h1 className="text-2xl font-bold mb-6 dark:text-white">Empresas</h1>
         <div className="mb-4">
           <CompanyFilters
@@ -166,6 +186,13 @@ const CompaniesPage = () => {
           <HistoryModal
             company={selectedHistoryCompany}
             onClose={handleCloseHistoryModal}
+          />
+        )}
+        {showStatusChangeModal && (
+          <StatusChangeModal
+            company={selectedStatusCompany}
+            onClose={() => setShowStatusChangeModal(false)}
+            onSave={handleSaveStatusChange}
           />
         )}
       </div>

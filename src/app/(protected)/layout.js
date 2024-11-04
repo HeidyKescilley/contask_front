@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export default function ProtectedLayout({ children }) {
   const [theme, setTheme] = useState("light");
 
-  // Synchronize theme with localStorage
+  // Sincroniza o tema com o localStorage
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme") || "light";
     setTheme(storedTheme);
@@ -17,7 +17,9 @@ export default function ProtectedLayout({ children }) {
   return (
     <>
       <Navbar />
-      {children}
+      <div className="bg-light-bg dark:bg-dark-bg min-h-screen w-full">
+        {children}
+      </div>
     </>
   );
 }
