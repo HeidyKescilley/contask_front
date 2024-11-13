@@ -1,14 +1,12 @@
-// src/app/(protected)/companies/CompanyFilters.jsx
+// src/components/CompanyFilters.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { CompanyModalContext } from "../context/CompanyModalContext";
 
-const CompanyFilters = ({
-  filters,
-  setFilters,
-  onAddCompany,
-  onClearFilters,
-}) => {
+const CompanyFilters = ({ filters, setFilters, onClearFilters }) => {
+  const { openAddCompanyModal } = useContext(CompanyModalContext);
+
   const searchColumns = [
     { value: "name", label: "Nome" },
     { value: "num", label: "Número" },
@@ -81,15 +79,6 @@ const CompanyFilters = ({
             />
           </div>
         </div>
-        {/* Botão "Nova Empresa" */}
-        <div className="mt-4 md:mt-0">
-          <button
-            onClick={onAddCompany}
-            className="bg-green-500 dark:bg-accent-green text-white px-4 py-2 rounded"
-          >
-            Nova Empresa
-          </button>
-        </div>
       </div>
       {/* Linha de filtros avançados */}
       <div className="flex flex-wrap items-center space-x-4">
@@ -161,7 +150,7 @@ const CompanyFilters = ({
       <div className="flex justify-end mt-4">
         <button
           onClick={onClearFilters}
-          className="bg-gray-500 text-white px-4 py-2 rounded"
+          className="bg-accent-red text-white px-4 py-2 rounded hover:bg-accent-red-light"
         >
           Limpar Filtros
         </button>

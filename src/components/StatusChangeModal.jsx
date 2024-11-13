@@ -1,4 +1,4 @@
-// src/app/(protected)/companies/StatusChangeModal.jsx
+// src/components/StatusChangeModal.jsx
 "use client";
 
 import { useState } from "react";

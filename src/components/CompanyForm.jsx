@@ -1,7 +1,7 @@
-// src/app/(protected)/companies/CompanyForm.jsx
+// src/components/CompanyForm.jsx
 
 import { useState, useEffect } from "react";
-import api from "../../../utils/api";
+import api from "../utils/api";
 
 const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   const data = initialData || {};
@@ -372,7 +372,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </button>
         <button
           type="submit"
-          className="bg-blue-500 dark:bg-accent-blue text-white px-4 py-2 rounded"
+          className="bg-accent-blue text-white px-4 py-2 rounded"
         >
           Salvar
         </button>

@@ -1,4 +1,4 @@
-// src/app/(protected)/companies/CompanyModal.jsx
+// src/components/CompanyModal.jsx
 
 "use client";
 
@@ -12,7 +12,7 @@ const CompanyModal = ({ type, company, onClose, onSave }) => {
           initialData={company}
           onCancel={onClose}
           onSubmit={onSave}
-          type={type} // Passa a prop 'type' aqui
+          type={type}
         />
       </div>
     </div>

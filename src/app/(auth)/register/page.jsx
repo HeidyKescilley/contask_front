@@ -13,6 +13,7 @@ const RegisterPage = () => {
     email: "",
     birthday: "",
     department: "",
+    ramal: "",
     password: "",
     confirmpassword: "",
   });
@@ -63,13 +64,13 @@ const RegisterPage = () => {
           <input
             type="text"
             name="name"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.name}
             onChange={handleChange}
+            placeholder="Nome completo"
             required
           />
         </div>
-        {/* Email */}
         <div className="mb-4">
           <label className="block mb-1 text-gray-800 dark:text-dark-text">
             Email
@@ -77,13 +78,13 @@ const RegisterPage = () => {
           <input
             type="email"
             name="email"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.email}
             onChange={handleChange}
+            placeholder="Seu email"
             required
           />
         </div>
-        {/* Data de Nascimento */}
         <div className="mb-4">
           <label className="block mb-1 text-gray-800 dark:text-dark-text">
             Data de Nascimento
@@ -91,25 +92,24 @@ const RegisterPage = () => {
           <input
             type="date"
             name="birthday"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.birthday}
             onChange={handleChange}
             required
           />
         </div>
-        {/* Departamento */}
         <div className="mb-4">
           <label className="block mb-1 text-gray-800 dark:text-dark-text">
             Departamento
           </label>
           <select
             name="department"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.department}
             onChange={handleChange}
             required
           >
-            <option value="">Selecione</option>
+            <option value="">Selecione um departamento</option>
             {departments.map((dept) => (
               <option key={dept} value={dept}>
                 {dept}
@@ -117,7 +117,20 @@ const RegisterPage = () => {
             ))}
           </select>
         </div>
-        {/* Senha */}
+        {/* Campo Ramal (opcional) */}
+        <div className="mb-4">
+          <label className="block mb-1 text-gray-800 dark:text-dark-text">
+            Ramal (opcional)
+          </label>
+          <input
+            type="text"
+            name="ramal"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            value={formData.ramal}
+            onChange={handleChange}
+            placeholder="Ramal"
+          />
+        </div>
         <div className="mb-4">
           <label className="block mb-1 text-gray-800 dark:text-dark-text">
             Senha
@@ -125,13 +138,13 @@ const RegisterPage = () => {
           <input
             type="password"
             name="password"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.password}
             onChange={handleChange}
+            placeholder="Sua senha"
             required
           />
         </div>
-        {/* Confirmação de Senha */}
         <div className="mb-4">
           <label className="block mb-1 text-gray-800 dark:text-dark-text">
             Confirme a Senha
@@ -139,13 +152,14 @@ const RegisterPage = () => {
           <input
             type="password"
             name="confirmpassword"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
             value={formData.confirmpassword}
             onChange={handleChange}
+            placeholder="Confirme sua senha"
             required
           />
         </div>
-        <button className="w-full bg-green-500 dark:bg-accent-green text-white py-2 rounded">
+        <button className="w-full bg-accent-blue text-white py-2 rounded">
           Registrar
         </button>
       </form>

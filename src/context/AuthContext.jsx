@@ -3,9 +3,11 @@
 
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
+// Ajustando a importação: importamos o nome como 'jwtDecode' em vez de 'jwtDecode'.
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import api from "../utils/api";
 
 export const AuthContext = createContext();
 
@@ -18,14 +20,29 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      const decoded = jwtDecode(token);
-      setUser({
-        id: decoded.id,
-        name: decoded.name,
-      });
+      const decoded = jwtDecode(token); // Utilizando a função como 'jwtDecode'
+      const userId = decoded.id;
+      fetchUserData(userId);
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
+
+  const fetchUserData = async (userId) => {
+    try {
+      const response = await api.get(`/user/${userId}`);
+      if (response.data && response.data.user) {
+        setUser(response.data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados do usuário:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email, password) => {
     try {
@@ -33,13 +50,24 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      const { token, userId, userName } = res.data;
+      const { token } = res.data;
       localStorage.setItem("token", token);
-      setUser({ id: userId, name: userName });
-      toast.success("Login efetuado com sucesso!");
+      const decoded = jwtDecode(token); // Utilizando a função como 'jwtDecode'
+      const userId = decoded.id;
+
+      toast.success(
+        `Bem-vindo, ${decoded.name}! Você foi autenticado com sucesso.`
+      );
+
+      // Buscar dados completos do usuário
+      await fetchUserData(userId);
+
       router.push("/home");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Erro ao fazer login.");
+      toast.error(
+        `Erro ao fazer login: ${error.response?.data?.message || error.message}`
+      );
+      setLoading(false);
     }
   };
 

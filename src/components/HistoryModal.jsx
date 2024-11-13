@@ -1,9 +1,9 @@
-// src/app/(protected)/companies/HistoryModal.jsx
+// src/components/HistoryModal.jsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { FiX } from "react-icons/fi";
-import api from "../../../utils/api";
+import api from "../utils/api";
 
 const HistoryModal = ({ company, onClose }) => {
   const [history, setHistory] = useState([]);

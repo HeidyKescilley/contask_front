@@ -66,7 +66,7 @@ const LoginPage = () => {
               required
             />
           </div>
-          <button className="w-full bg-blue-500 dark:bg-accent-blue text-white py-2 rounded-md">
+          <button className="w-full bg-accent-blue text-white py-2 rounded-md">
             Entrar
           </button>
           <p className="flex my-2 justify-center text-gray-800 dark:text-dark-text-secondary">

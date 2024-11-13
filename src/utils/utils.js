@@ -42,3 +42,15 @@ export const formatCNPJ = (cnpj) => {
     "$1.$2.$3/$4-$5"
   );
 };
+
+// Função para formatar datas
+export const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  // Ajusta o fuso horário se necessário
+  date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+  // Formata a data para dd/mm/yyyy
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Os meses são baseados em zero
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};

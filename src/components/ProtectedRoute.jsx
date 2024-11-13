@@ -4,6 +4,7 @@
 import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Loading from "./Loading";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -16,11 +17,7 @@ const ProtectedRoute = ({ children }) => {
   }, [user, loading, router]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg">
-        <p className="text-gray-800 dark:text-dark-text">Carregando...</p>
-      </div>
-    );
+    return <Loading />;
   }
 
   return user ? children : null;
