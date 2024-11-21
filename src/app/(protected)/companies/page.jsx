@@ -1,14 +1,16 @@
 // src/app/(protected)/companies/page.jsx
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import ProtectedRoute from "../../../components/ProtectedRoute";
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useMemo } from "react";
 import CompanyTable from "../../../components/CompanyTable";
 import CompanyFilters from "../../../components/CompanyFilters";
 import CompanyModal from "../../../components/CompanyModal";
 import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
-import AutomationModal from "../../../components/AutomationModal"; // Importação adicionada
+import AutomationModal from "../../../components/AutomationModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -16,7 +18,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 const CompaniesPage = () => {
   const [companies, setCompanies] = useState([]);
-  const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [filters, setFilters] = useState({
     searchColumn: "name",
     searchTerm: "",
@@ -28,9 +29,9 @@ const CompaniesPage = () => {
   const [selectedHistoryCompany, setSelectedHistoryCompany] = useState(null);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
   const [selectedStatusCompany, setSelectedStatusCompany] = useState(null);
-  const [showAutomationModal, setShowAutomationModal] = useState(false); // Novo estado
+  const [showAutomationModal, setShowAutomationModal] = useState(false);
   const [selectedAutomationCompany, setSelectedAutomationCompany] =
-    useState(null); // Novo estado
+    useState(null);
 
   const {
     showModal,
@@ -48,21 +49,21 @@ const CompaniesPage = () => {
 
   useEffect(() => {
     fetchCompanies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       const res = await api.get("/company/all");
       setCompanies(res.data);
     } catch (error) {
       toast.error("Erro ao buscar empresas.");
     }
-  };
+  }, []);
 
-  const applyFilters = useCallback(() => {
+  const filteredCompanies = useMemo(() => {
     let filtered = [...companies];
 
-    // Filtro de busca
     if (filters.searchTerm) {
       filtered = filtered.filter((company) =>
         company[filters.searchColumn]
@@ -72,7 +73,6 @@ const CompaniesPage = () => {
       );
     }
 
-    // Filtros avançados
     if (filters.regime.length > 0) {
       filtered = filtered.filter((company) =>
         filters.regime.includes(company.rule)
@@ -91,111 +91,107 @@ const CompaniesPage = () => {
       );
     }
 
-    // Ordenar as empresas em ordem alfabética
     filtered.sort((a, b) => a.name.localeCompare(b.name));
 
-    setFilteredCompanies(filtered);
+    return filtered;
   }, [companies, filters]);
 
   useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
-  useEffect(() => {
-    // Verifica se existe o parâmetro 'add' na URL
     if (searchParams.get("add") === "true") {
       openAddCompanyModal();
-      // Remove o parâmetro da URL para evitar reabrir o modal ao navegar de volta
       const params = new URLSearchParams(searchParams);
       params.delete("add");
       router.replace(`/companies?${params.toString()}`);
     }
   }, [searchParams, openAddCompanyModal, router]);
 
-  const handleEditCompany = (company) => {
-    setModalType("edit");
-    setSelectedCompany(company);
-    setShowModal(true);
-  };
+  const handleEditCompany = useCallback(
+    (company) => {
+      setModalType("edit");
+      setSelectedCompany(company);
+      setShowModal(true);
+    },
+    [setModalType, setSelectedCompany, setShowModal]
+  );
 
-  const handleSaveCompany = async (companyData) => {
-    try {
-      if (modalType === "add") {
-        const res = await api.post("/company/add", companyData);
-        const newCompany = res.data.company;
-        toast.success(`Empresa "${companyData.name}" adicionada com sucesso!`);
-
-        // Atualiza a lista de empresas adicionando a nova empresa
-        setCompanies((prevCompanies) => [...prevCompanies, newCompany]);
-      } else if (modalType === "edit") {
-        await api.patch(`/company/edit/${companyData.id}`, companyData);
-        toast.success(`Empresa "${companyData.name}" atualizada com sucesso!`);
-
-        // Atualiza a empresa editada na lista de empresas
-        setCompanies((prevCompanies) =>
-          prevCompanies.map((company) =>
-            company.id === companyData.id ? companyData : company
-          )
+  const handleSaveCompany = useCallback(
+    async (companyData) => {
+      try {
+        if (modalType === "add") {
+          const res = await api.post("/company/add", companyData);
+          const newCompany = res.data.company;
+          toast.success(
+            `Empresa "${companyData.name}" adicionada com sucesso!`
+          );
+          setCompanies((prevCompanies) => [...prevCompanies, newCompany]);
+        } else if (modalType === "edit") {
+          await api.patch(`/company/edit/${companyData.id}`, companyData);
+          toast.success(
+            `Empresa "${companyData.name}" atualizada com sucesso!`
+          );
+          setCompanies((prevCompanies) =>
+            prevCompanies.map((company) =>
+              company.id === companyData.id ? companyData : company
+            )
+          );
+        }
+        closeModal();
+      } catch (error) {
+        toast.error(
+          `Erro ao salvar a empresa: ${
+            error.response?.data?.message || error.message
+          }`
         );
       }
-      closeModal();
-    } catch (error) {
-      toast.error(
-        `Erro ao salvar a empresa: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-    }
-  };
+    },
+    [modalType, closeModal]
+  );
 
-  const handleSaveStatusChange = async (statusData) => {
-    try {
-      await api.post(
-        `/company/change-status/${selectedStatusCompany.id}`,
-        statusData
-      );
-      toast.success("Status da empresa atualizado com sucesso!");
+  const handleSaveStatusChange = useCallback(
+    async (statusData) => {
+      try {
+        await api.post(
+          `/company/change-status/${selectedStatusCompany.id}`,
+          statusData
+        );
+        toast.success("Status da empresa atualizado com sucesso!");
+        setCompanies((prevCompanies) =>
+          prevCompanies.map((company) =>
+            company.id === selectedStatusCompany.id
+              ? { ...company, status: statusData.newStatus }
+              : company
+          )
+        );
+        setShowStatusChangeModal(false);
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message ||
+            "Erro ao atualizar o status da empresa."
+        );
+      }
+    },
+    [selectedStatusCompany]
+  );
 
-      // Atualiza o status da empresa na lista de empresas
-      setCompanies((prevCompanies) =>
-        prevCompanies.map((company) =>
-          company.id === selectedStatusCompany.id
-            ? { ...company, status: statusData.newStatus }
-            : company
-        )
-      );
-
-      setShowStatusChangeModal(false);
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Erro ao atualizar o status da empresa."
-      );
-    }
-  };
-
-  const handleBlockCompany = (company) => {
+  const handleBlockCompany = useCallback((company) => {
     setSelectedStatusCompany(company);
     setShowStatusChangeModal(true);
-  };
+  }, []);
 
-  const handleViewHistory = (company) => {
+  const handleViewHistory = useCallback((company) => {
     setSelectedHistoryCompany(company);
     setShowHistoryModal(true);
-  };
+  }, []);
 
-  const handleCloseHistoryModal = () => {
+  const handleCloseHistoryModal = useCallback(() => {
     setShowHistoryModal(false);
     setSelectedHistoryCompany(null);
-  };
+  }, []);
 
-  // Função para gerenciar automações
-  const handleManageAutomations = async (company) => {
+  const handleManageAutomations = useCallback(async (company) => {
     try {
-      // Buscar os dados completos da empresa, incluindo as automações
       const res = await api.get(`/company/${company.id}`);
       const fullCompanyData = res.data;
-
       setSelectedAutomationCompany(fullCompanyData);
       setShowAutomationModal(true);
     } catch (error) {
@@ -203,7 +199,7 @@ const CompaniesPage = () => {
         error.response?.data?.message || "Erro ao carregar os dados da empresa."
       );
     }
-  };
+  }, []);
 
   return (
     <ProtectedRoute>
@@ -235,7 +231,7 @@ const CompaniesPage = () => {
               onEditCompany={handleEditCompany}
               onBlockCompany={handleBlockCompany}
               onViewHistory={handleViewHistory}
-              onManageAutomations={handleManageAutomations} // Passando a função
+              onManageAutomations={handleManageAutomations}
             />
           </div>
         </div>
