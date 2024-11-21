@@ -3,7 +3,6 @@
 
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
-// Ajustando a importação: importamos o nome como 'jwtDecode' em vez de 'jwtDecode'.
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -20,9 +19,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      const decoded = jwtDecode(token); // Utilizando a função como 'jwtDecode'
-      const userId = decoded.id;
-      fetchUserData(userId);
+      const decoded = jwtDecode(token);
+      fetchUserData(decoded.id);
     } else {
       setLoading(false);
     }
@@ -31,8 +29,8 @@ export const AuthProvider = ({ children }) => {
   const fetchUserData = async (userId) => {
     try {
       const response = await api.get(`/user/${userId}`);
-      if (response.data && response.data.user) {
-        setUser(response.data.user);
+      if (response.data) {
+        setUser(response.data);
       } else {
         setUser(null);
       }
@@ -52,21 +50,19 @@ export const AuthProvider = ({ children }) => {
       });
       const { token } = res.data;
       localStorage.setItem("token", token);
-      const decoded = jwtDecode(token); // Utilizando a função como 'jwtDecode'
-      const userId = decoded.id;
+      const decoded = jwtDecode(token);
 
       toast.success(
         `Bem-vindo, ${decoded.name}! Você foi autenticado com sucesso.`
       );
 
-      // Buscar dados completos do usuário
-      await fetchUserData(userId);
+      await fetchUserData(decoded.id);
 
       router.push("/home");
     } catch (error) {
-      toast.error(
-        `Erro ao fazer login: ${error.response?.data?.message || error.message}`
-      );
+      const errorMessage =
+        error.response?.data?.message || "Erro ao fazer login.";
+      toast.error(errorMessage);
       setLoading(false);
     }
   };

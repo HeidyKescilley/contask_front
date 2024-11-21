@@ -2,7 +2,7 @@
 "use client";
 
 import { useAuth } from "../hooks/useAuth";
-import { useState, useContext } from "react";
+import { useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   FiHome,
@@ -11,21 +11,20 @@ import {
   FiBriefcase,
   FiPlus,
   FiLogOut,
-  FiSend, // Importando o ícone FiBell
+  FiSend,
+  FiUsers,
+  FiSettings,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
+import { SidebarContext } from "../context/SidebarContext";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, toggleSidebar } = useContext(SidebarContext);
   const pathname = usePathname();
   const router = useRouter();
   const { openAddCompanyModal } = useContext(CompanyModalContext);
-
-  const toggleSidebar = () => {
-    setIsExpanded(!isExpanded);
-  };
 
   const handleAddCompanyClick = () => {
     openAddCompanyModal();
@@ -53,7 +52,6 @@ const Sidebar = () => {
       colorClass: "text-white",
       hoverBgClass: "hover:bg-logo-dark-blue",
     },
-    // Novo item de menu "Criar Aviso" adicionado aqui
     {
       name: "Criar Aviso",
       path: "/alert",
@@ -61,7 +59,13 @@ const Sidebar = () => {
       colorClass: "text-white",
       hoverBgClass: "hover:bg-logo-dark-blue",
     },
-    // Item "Nova Empresa" existente
+    {
+      name: "Contatos",
+      path: "/contacts",
+      icon: <FiUsers size={24} />,
+      colorClass: "text-white",
+      hoverBgClass: "hover:bg-logo-dark-blue",
+    },
     {
       name: "Nova Empresa",
       action: () => handleAddCompanyClick(),
@@ -70,6 +74,17 @@ const Sidebar = () => {
       hoverBgClass: "hover:bg-accent-green-light",
     },
   ];
+
+  // Adicionar a opção de gestão de usuários se o usuário for administrador
+  if (user && user.role === "admin") {
+    menuItems.push({
+      name: "Gestão de Usuários",
+      path: "/admin/users",
+      icon: <FiSettings size={24} />,
+      colorClass: "text-white",
+      hoverBgClass: "hover:bg-logo-dark-blue",
+    });
+  }
 
   const handleMenuItemClick = (item) => {
     if (item.path) {
@@ -80,12 +95,12 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="flex">
+    <div>
       {/* Sidebar */}
       <div
         className={`h-screen bg-logo-light-blue dark:bg-dark-card ${
           isExpanded ? "w-64" : "w-20"
-        } transition-all duration-200 ease-in-out flex flex-col shadow-md`}
+        } transition-all duration-200 ease-in-out flex flex-col shadow-md fixed top-0 left-0 z-50`}
       >
         {/* Logo e botão de toggle */}
         <div

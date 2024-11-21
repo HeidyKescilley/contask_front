@@ -1,22 +1,17 @@
 // src/app/(protected)/layout.js
+
 "use client";
 
 import { useEffect, useState, useContext } from "react";
 import Sidebar from "../../components/Sidebar";
 import { CompanyModalContext } from "../../context/CompanyModalContext";
-import CompanyModal from "../../components/CompanyModal"; // Atualize o caminho
+import CompanyModal from "../../components/CompanyModal";
 import api from "../../utils/api";
 import { toast } from "react-toastify";
+import { SidebarContext } from "../../context/SidebarContext";
 
 export default function ProtectedLayout({ children }) {
-  const [theme, setTheme] = useState("light");
-
-  // Sincroniza o tema com o localStorage
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme") || "light";
-    setTheme(storedTheme);
-    document.documentElement.classList.toggle("dark", storedTheme === "dark");
-  }, []);
+  const { isExpanded } = useContext(SidebarContext);
 
   const { showModal, modalType, selectedCompany, closeModal } =
     useContext(CompanyModalContext);
@@ -42,10 +37,19 @@ export default function ProtectedLayout({ children }) {
 
   return (
     <div className="flex">
+      {/* Sidebar */}
       <Sidebar />
-      <div className="flex-1 bg-light-bg dark:bg-dark-bg min-h-screen w-full">
+
+      {/* Conteúdo Principal */}
+      <div
+        className={`flex-1 bg-light-bg dark:bg-dark-bg min-h-screen transition-all duration-200 ease-in-out ${
+          isExpanded ? "ml-64" : "ml-20"
+        }`}
+      >
         {children}
       </div>
+
+      {/* Modais */}
       {showModal && (
         <CompanyModal
           type={modalType}

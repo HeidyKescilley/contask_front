@@ -9,6 +9,7 @@ import CompanyFilters from "../../../components/CompanyFilters";
 import CompanyModal from "../../../components/CompanyModal";
 import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
+import AutomationModal from "../../../components/AutomationModal"; // Importação adicionada
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -29,6 +30,9 @@ const MyCompaniesPage = () => {
   const [selectedHistoryCompany, setSelectedHistoryCompany] = useState(null);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
   const [selectedStatusCompany, setSelectedStatusCompany] = useState(null);
+  const [showAutomationModal, setShowAutomationModal] = useState(false); // Novo estado
+  const [selectedAutomationCompany, setSelectedAutomationCompany] =
+    useState(null); // Novo estado
 
   const {
     showModal,
@@ -154,6 +158,22 @@ const MyCompaniesPage = () => {
     setSelectedHistoryCompany(null);
   };
 
+  // Função para gerenciar automações
+  const handleManageAutomations = async (company) => {
+    try {
+      // Buscar os dados completos da empresa, incluindo as automações
+      const res = await api.get(`/company/${company.id}`);
+      const fullCompanyData = res.data;
+
+      setSelectedAutomationCompany(fullCompanyData);
+      setShowAutomationModal(true);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Erro ao carregar os dados da empresa."
+      );
+    }
+  };
+
   // Contadores
   const totalCompanies = companies.length;
   const activeCompanies = companies.filter(
@@ -216,6 +236,7 @@ const MyCompaniesPage = () => {
               onEditCompany={handleEditCompany}
               onBlockCompany={handleBlockCompany}
               onViewHistory={handleViewHistory}
+              onManageAutomations={handleManageAutomations} // Passando a função
             />
           </div>
         </div>
@@ -240,6 +261,12 @@ const MyCompaniesPage = () => {
             company={selectedStatusCompany}
             onClose={() => setShowStatusChangeModal(false)}
             onSave={handleSaveStatusChange}
+          />
+        )}
+        {showAutomationModal && (
+          <AutomationModal
+            company={selectedAutomationCompany}
+            onClose={() => setShowAutomationModal(false)}
           />
         )}
       </div>

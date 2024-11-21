@@ -97,7 +97,7 @@ const AlertPage = () => {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="admin">
       <div className="w-full px-8 py-8">
         <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-dark-text">
           Criar Alerta

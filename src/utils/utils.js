@@ -1,3 +1,4 @@
+// src/utils/utils.js
 import { toast } from "react-toastify";
 
 // Função para copiar texto para o clipboard sem formatação

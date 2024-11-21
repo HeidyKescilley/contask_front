@@ -1,15 +1,19 @@
 // src/components/CompanyTable.jsx
 "use client";
 
-import { FiEdit, FiLock, FiClock, FiCopy } from "react-icons/fi";
+import { FiEdit, FiLock, FiClock, FiCopy, FiZap } from "react-icons/fi";
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
+import { useAuth } from "../hooks/useAuth"; // Importa o hook para obter o usuário
 
 const CompanyTable = ({
   companies,
   onEditCompany,
   onBlockCompany,
   onViewHistory,
+  onManageAutomations,
 }) => {
+  const { user } = useAuth(); // Obtém o usuário autenticado
+
   return (
     <div className="overflow-x-auto mt-4">
       <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
@@ -28,6 +32,9 @@ const CompanyTable = ({
               Regime
             </th>
             <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+              Padrão
+            </th>
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
               Resp. Fiscal
             </th>
             <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
@@ -43,7 +50,6 @@ const CompanyTable = ({
         </thead>
         <tbody>
           {companies.map((company) => {
-            // Determinar a classe de fundo com base no status
             let rowClassName =
               "border-b border-gray-400 dark:border-dark-border";
 
@@ -71,14 +77,13 @@ const CompanyTable = ({
                 </td>
                 <td className="px-4 py-2">{company.rule}</td>
                 <td className="px-4 py-2">
-                  {company.respFiscal && company.respFiscal.name
-                    ? company.respFiscal.name
-                    : "não atribuído"}
+                  {company.contactMode ? company.contactMode.name : "N/A"}
                 </td>
                 <td className="px-4 py-2">
-                  {company.respDp && company.respDp.name
-                    ? company.respDp.name
-                    : "não atribuído"}
+                  {company.respFiscal?.name || "não atribuído"}
+                </td>
+                <td className="px-4 py-2">
+                  {company.respDp?.name || "não atribuído"}
                 </td>
                 <td className="px-4 py-2">{company.status}</td>
                 <td className="px-4 py-2 flex space-x-2">
@@ -89,19 +94,28 @@ const CompanyTable = ({
                   >
                     <FiEdit />
                   </button>
-                  <button
-                    onClick={() => onBlockCompany(company)}
-                    className="text-red-500"
-                    aria-label="Alterar Status da Empresa"
-                  >
-                    <FiLock />
-                  </button>
+                  {user?.role === "admin" && ( // Verifica a role antes de exibir
+                    <button
+                      onClick={() => onBlockCompany(company)}
+                      className="text-red-500"
+                      aria-label="Alterar Status da Empresa"
+                    >
+                      <FiLock />
+                    </button>
+                  )}
                   <button
                     onClick={() => onViewHistory(company)}
                     className="text-yellow-500"
                     aria-label="Visualizar Histórico"
                   >
                     <FiClock />
+                  </button>
+                  <button
+                    onClick={() => onManageAutomations(company)}
+                    className="text-blue-500"
+                    aria-label="Gerenciar Automações"
+                  >
+                    <FiZap />
                   </button>
                 </td>
               </tr>
