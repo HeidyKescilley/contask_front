@@ -21,6 +21,8 @@ const CompaniesPageContent = () => {
     regime: [],
     situacao: [],
     classificacao: [],
+    semFiscal: false,
+    semDp: false,
   });
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryCompany, setSelectedHistoryCompany] = useState(null);
@@ -61,31 +63,54 @@ const CompaniesPageContent = () => {
   const filteredCompanies = useMemo(() => {
     let filtered = [...companies];
 
+    // Filtro por coluna/responsável
     if (filters.searchTerm) {
-      filtered = filtered.filter((company) =>
-        company[filters.searchColumn]
-          ?.toString()
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter((company) => {
+        const searchTerm = filters.searchTerm.toLowerCase();
+        if (filters.searchColumn === "responsavel") {
+          const fiscalName = company.respFiscal?.name?.toLowerCase() || "";
+          const dpName = company.respDp?.name?.toLowerCase() || "";
+          return fiscalName.includes(searchTerm) || dpName.includes(searchTerm);
+        } else {
+          return company[filters.searchColumn]
+            ?.toString()
+            .toLowerCase()
+            .includes(searchTerm);
+        }
+      });
     }
 
+    // Filtro por regime
     if (filters.regime.length > 0) {
       filtered = filtered.filter((company) =>
         filters.regime.includes(company.rule)
       );
     }
 
+    // Filtro por situação
     if (filters.situacao.length > 0) {
       filtered = filtered.filter((company) =>
         filters.situacao.includes(company.status)
       );
     }
 
+    // Filtro por classificação
     if (filters.classificacao.length > 0) {
       filtered = filtered.filter((company) =>
         filters.classificacao.includes(company.classi)
       );
+    }
+
+    // Filtro sem Responsável Fiscal e/ou DP
+    if (filters.semFiscal && filters.semDp) {
+      // Exibe empresas que não possuem respFiscal OU não possuem respDp
+      filtered = filtered.filter(
+        (company) => !company.respFiscalId || !company.respDpId
+      );
+    } else if (filters.semFiscal) {
+      filtered = filtered.filter((company) => !company.respFiscalId);
+    } else if (filters.semDp) {
+      filtered = filtered.filter((company) => !company.respDpId);
     }
 
     filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -127,8 +152,8 @@ const CompaniesPageContent = () => {
             `Empresa "${companyData.name}" atualizada com sucesso!`
           );
           setCompanies((prevCompanies) =>
-            prevCompanies.map((company) =>
-              company.id === companyData.id ? companyData : company
+            prevCompanies.map((c) =>
+              c.id === companyData.id ? companyData : c
             )
           );
         }
@@ -218,6 +243,8 @@ const CompaniesPageContent = () => {
                   regime: [],
                   situacao: [],
                   classificacao: [],
+                  semFiscal: false,
+                  semDp: false,
                 })
               }
             />

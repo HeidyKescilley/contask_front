@@ -11,8 +11,6 @@ import AutomationModal from "../../../components/AutomationModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
-import { useAuth } from "../../../hooks/useAuth";
-import { useRouter } from "next/navigation";
 
 const MyCompaniesPageContent = () => {
   const [companies, setCompanies] = useState([]);
@@ -22,6 +20,8 @@ const MyCompaniesPageContent = () => {
     regime: [],
     situacao: [],
     classificacao: [],
+    semFiscal: false,
+    semDp: false,
   });
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryCompany, setSelectedHistoryCompany] = useState(null);
@@ -59,12 +59,19 @@ const MyCompaniesPageContent = () => {
     let filtered = [...companies];
 
     if (filters.searchTerm) {
-      filtered = filtered.filter((company) =>
-        company[filters.searchColumn]
-          ?.toString()
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter((company) => {
+        const searchTerm = filters.searchTerm.toLowerCase();
+        if (filters.searchColumn === "responsavel") {
+          const fiscalName = company.respFiscal?.name?.toLowerCase() || "";
+          const dpName = company.respDp?.name?.toLowerCase() || "";
+          return fiscalName.includes(searchTerm) || dpName.includes(searchTerm);
+        } else {
+          return company[filters.searchColumn]
+            ?.toString()
+            .toLowerCase()
+            .includes(searchTerm);
+        }
+      });
     }
 
     if (filters.regime.length > 0) {
@@ -83,6 +90,18 @@ const MyCompaniesPageContent = () => {
       filtered = filtered.filter((company) =>
         filters.classificacao.includes(company.classi)
       );
+    }
+
+    // Filtro sem Responsável Fiscal e/ou DP
+    if (filters.semFiscal && filters.semDp) {
+      // empresas sem fiscal OU sem dp
+      filtered = filtered.filter(
+        (company) => !company.respFiscalId || !company.respDpId
+      );
+    } else if (filters.semFiscal) {
+      filtered = filtered.filter((company) => !company.respFiscalId);
+    } else if (filters.semDp) {
+      filtered = filtered.filter((company) => !company.respDpId);
     }
 
     filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -216,6 +235,8 @@ const MyCompaniesPageContent = () => {
                   regime: [],
                   situacao: [],
                   classificacao: [],
+                  semFiscal: false,
+                  semDp: false,
                 })
               }
             />
