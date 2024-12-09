@@ -46,11 +46,6 @@ const CompaniesPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    fetchCompanies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await api.get("/company/all");
@@ -60,10 +55,14 @@ const CompaniesPageContent = () => {
     }
   }, []);
 
+  useEffect(() => {
+    fetchCompanies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const filteredCompanies = useMemo(() => {
     let filtered = [...companies];
 
-    // Filtro por coluna/responsável
     if (filters.searchTerm) {
       filtered = filtered.filter((company) => {
         const searchTerm = filters.searchTerm.toLowerCase();
@@ -80,30 +79,25 @@ const CompaniesPageContent = () => {
       });
     }
 
-    // Filtro por regime
     if (filters.regime.length > 0) {
       filtered = filtered.filter((company) =>
         filters.regime.includes(company.rule)
       );
     }
 
-    // Filtro por situação
     if (filters.situacao.length > 0) {
       filtered = filtered.filter((company) =>
         filters.situacao.includes(company.status)
       );
     }
 
-    // Filtro por classificação
     if (filters.classificacao.length > 0) {
       filtered = filtered.filter((company) =>
         filters.classificacao.includes(company.classi)
       );
     }
 
-    // Filtro sem Responsável Fiscal e/ou DP
     if (filters.semFiscal && filters.semDp) {
-      // Exibe empresas que não possuem respFiscal OU não possuem respDp
       filtered = filtered.filter(
         (company) => !company.respFiscalId || !company.respDpId
       );
@@ -139,24 +133,30 @@ const CompaniesPageContent = () => {
   const handleSaveCompany = useCallback(
     async (companyData) => {
       try {
+        let newCompany;
         if (modalType === "add") {
           const res = await api.post("/company/add", companyData);
-          const newCompany = res.data.company;
+          newCompany = res.data.company;
           toast.success(
             `Empresa "${companyData.name}" adicionada com sucesso!`
           );
-          setCompanies((prevCompanies) => [...prevCompanies, newCompany]);
+          // Atualiza o state local OTIMISTICAMENTE
+          setCompanies((prev) => [...prev, newCompany]);
         } else if (modalType === "edit") {
           await api.patch(`/company/edit/${companyData.id}`, companyData);
           toast.success(
             `Empresa "${companyData.name}" atualizada com sucesso!`
           );
-          setCompanies((prevCompanies) =>
-            prevCompanies.map((c) =>
-              c.id === companyData.id ? companyData : c
+          // Atualiza o state local OTIMISTICAMENTE
+          setCompanies((prev) =>
+            prev.map((c) =>
+              c.id === companyData.id ? { ...c, ...companyData } : c
             )
           );
         }
+
+        // Você pode opcionalmente re-fetchar no background
+        fetchCompanies(); // Não precisa usar await aqui
         closeModal();
       } catch (error) {
         toast.error(
@@ -166,7 +166,7 @@ const CompaniesPageContent = () => {
         );
       }
     },
-    [modalType, closeModal]
+    [modalType, closeModal, fetchCompanies]
   );
 
   const handleSaveStatusChange = useCallback(
@@ -177,13 +177,18 @@ const CompaniesPageContent = () => {
           statusData
         );
         toast.success("Status da empresa atualizado com sucesso!");
-        setCompanies((prevCompanies) =>
-          prevCompanies.map((company) =>
-            company.id === selectedStatusCompany.id
-              ? { ...company, status: statusData.newStatus }
-              : company
+
+        // Atualização otimista: atualiza a empresa no estado local
+        setCompanies((prev) =>
+          prev.map((c) =>
+            c.id === selectedStatusCompany.id
+              ? { ...c, status: statusData.newStatus }
+              : c
           )
         );
+
+        // Chama fetchCompanies no background
+        fetchCompanies();
         setShowStatusChangeModal(false);
       } catch (error) {
         toast.error(
@@ -192,7 +197,7 @@ const CompaniesPageContent = () => {
         );
       }
     },
-    [selectedStatusCompany]
+    [selectedStatusCompany, fetchCompanies]
   );
 
   const handleBlockCompany = useCallback((company) => {

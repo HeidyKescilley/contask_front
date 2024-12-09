@@ -41,11 +41,6 @@ const MyCompaniesPageContent = () => {
     setSelectedCompany,
   } = useContext(CompanyModalContext);
 
-  useEffect(() => {
-    fetchCompanies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await api.get("/company/my-companies");
@@ -54,6 +49,10 @@ const MyCompaniesPageContent = () => {
       toast.error("Erro ao buscar suas empresas.");
     }
   }, []);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   const filteredCompanies = useMemo(() => {
     let filtered = [...companies];
@@ -92,9 +91,7 @@ const MyCompaniesPageContent = () => {
       );
     }
 
-    // Filtro sem Responsável Fiscal e/ou DP
     if (filters.semFiscal && filters.semDp) {
-      // empresas sem fiscal OU sem dp
       filtered = filtered.filter(
         (company) => !company.respFiscalId || !company.respDpId
       );
@@ -123,7 +120,10 @@ const MyCompaniesPageContent = () => {
       try {
         await api.patch(`/company/edit/${companyData.id}`, companyData);
         toast.success(`Empresa "${companyData.name}" atualizada com sucesso!`);
-        fetchCompanies();
+
+        // Recarrega a lista para ter certeza de que os dados estão atualizados
+        await fetchCompanies();
+
         closeModal();
       } catch (error) {
         toast.error(
@@ -144,7 +144,10 @@ const MyCompaniesPageContent = () => {
           statusData
         );
         toast.success("Status da empresa atualizado com sucesso!");
-        fetchCompanies();
+
+        // Recarrega a lista
+        await fetchCompanies();
+
         setShowStatusChangeModal(false);
       } catch (error) {
         toast.error(
