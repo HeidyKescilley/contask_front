@@ -1,7 +1,6 @@
 // src/components/Sidebar.jsx
 "use client";
 
-import { useAuth } from "../hooks/useAuth";
 import { useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -14,13 +13,17 @@ import {
   FiSend,
   FiUsers,
   FiSettings,
+  FiMail,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
 import { SidebarContext } from "../context/SidebarContext";
+import { useAuth } from "../hooks/useAuth"; // Importa o hook useAuth para acessar user e logout
+import api from "../utils/api";
+import { toast } from "react-toastify";
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // Usa o hook useAuth para obter usuário e logout
   const { isExpanded, toggleSidebar } = useContext(SidebarContext);
   const pathname = usePathname();
   const router = useRouter();
@@ -28,6 +31,19 @@ const Sidebar = () => {
 
   const handleAddCompanyClick = () => {
     openAddCompanyModal();
+  };
+
+  // Função para enviar manualmente o email de empresas suspensas
+  const handleSendSuspendedCompanies = async () => {
+    const confirmSend = confirm("Deseja realmente enviar manualmente a lista de empresas suspensas?");
+    if (confirmSend) {
+      try {
+        const res = await api.post("/admin/send-suspended-companies");
+        toast.success(res.data.message);
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Erro ao enviar email.");
+      }
+    }
   };
 
   const menuItems = [
@@ -75,15 +91,24 @@ const Sidebar = () => {
     },
   ];
 
-  // Adicionar a opção de gestão de usuários se o usuário for administrador
+  // Se o usuário for administrador, adicionamos itens extras
   if (user && user.role === "admin") {
-    menuItems.push({
-      name: "Gestão de Usuários",
-      path: "/admin/users",
-      icon: <FiSettings size={24} />,
-      colorClass: "text-white",
-      hoverBgClass: "hover:bg-logo-dark-blue",
-    });
+    menuItems.push(
+      {
+        name: "Gestão de Usuários",
+        path: "/admin/users",
+        icon: <FiSettings size={24} />,
+        colorClass: "text-white",
+        hoverBgClass: "hover:bg-logo-dark-blue",
+      },
+      {
+        name: "Enviar Suspensas",
+        action: handleSendSuspendedCompanies,
+        icon: <FiMail size={24} />,
+        colorClass: "text-white",
+        hoverBgClass: "hover:bg-logo-dark-blue",
+      }
+    );
   }
 
   const handleMenuItemClick = (item) => {
@@ -123,9 +148,7 @@ const Sidebar = () => {
               <div
                 key={item.name}
                 className={`w-full ${
-                  pathname === item.path
-                    ? "bg-logo-dark-blue"
-                    : "bg-transparent"
+                  pathname === item.path ? "bg-logo-dark-blue" : "bg-transparent"
                 }`}
               >
                 <button
@@ -136,9 +159,7 @@ const Sidebar = () => {
                 >
                   <div className={`${item.colorClass}`}>{item.icon}</div>
                   {isExpanded && (
-                    <span className={`ml-2 ${item.colorClass}`}>
-                      {item.name}
-                    </span>
+                    <span className={`ml-2 ${item.colorClass}`}>{item.name}</span>
                   )}
                 </button>
               </div>

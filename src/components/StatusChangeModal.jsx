@@ -1,4 +1,4 @@
-// src/components/StatusChangeModal.jsx
+// D:\ContHub\contask_front\src\components\StatusChangeModal.jsx
 "use client";
 
 import { useState } from "react";
@@ -8,9 +8,22 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
   const [newStatus, setNewStatus] = useState("");
   const [statusDate, setStatusDate] = useState("");
   const [serviceEndDate, setServiceEndDate] = useState("");
+  const [debitValue, setDebitValue] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const statuses = ["ATIVA", "SUSPENSA", "BAIXADA", "DISTRATO"]; // Lista de status
+
+  // Função para formatar o valor para o padrão brasileiro: milhar com ponto e decimal com vírgula
+  const formatToBrazilianCurrency = (value) => {
+    if (!value) return value;
+    // Remove os pontos já existentes e substitui a vírgula pelo ponto para converter para número
+    const numeric = parseFloat(value.replace(/\./g, "").replace(",", "."));
+    if (isNaN(numeric)) return value;
+    return numeric.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,12 +33,18 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
       );
       return;
     }
+    if (newStatus === "SUSPENSA" && !debitValue) {
+      alert("Por favor, informe o Valor do Débito.");
+      return;
+    }
     setShowConfirmation(true);
   };
 
   const confirmStatusChange = () => {
     if (newStatus === "DISTRATO") {
-      onSave({ newStatus, contractEndDate: statusDate, serviceEndDate });
+      onSave({ newStatus, statusDate, serviceEndDate });
+    } else if (newStatus === "SUSPENSA") {
+      onSave({ newStatus, statusDate, debitValue });
     } else {
       onSave({ newStatus, statusDate });
     }
@@ -89,6 +108,24 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
               />
             </div>
           )}
+          {newStatus === "SUSPENSA" && (
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-800 dark:text-dark-text">
+                Valor do Débito
+              </label>
+              <input
+                type="text"
+                value={debitValue}
+                onChange={(e) => setDebitValue(e.target.value)}
+                onBlur={(e) =>
+                  setDebitValue(formatToBrazilianCurrency(e.target.value))
+                }
+                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+                placeholder="Informe o valor do débito"
+                required
+              />
+            </div>
+          )}
           <div className="flex justify-end space-x-2">
             <button
               type="button"
@@ -113,10 +150,17 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
               {newStatus === "DISTRATO" && (
                 <>
                   {" "}
-                  O contrato será encerrado em <strong>{statusDate}</strong> e os serviços serão prestados até <strong>{serviceEndDate}</strong>.
+                  O contrato será encerrado em <strong>{statusDate}</strong> e os
+                  serviços serão prestados até <strong>{serviceEndDate}</strong>.
                 </>
               )}
-              A empresa e todos os usuários do Contask receberão uma notificação por email.
+              {newStatus === "SUSPENSA" && (
+                <>
+                  {" "}
+                  O débito informado é de <strong>{debitValue}</strong>.
+                </>
+              )}
+              A empresa e os usuários do Contask receberão uma notificação por email.
             </p>
             <div className="flex justify-end space-x-2 mt-4">
               <button
