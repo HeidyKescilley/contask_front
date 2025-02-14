@@ -7,17 +7,28 @@ import { FiX } from "react-icons/fi";
 const StatusChangeModal = ({ company, onClose, onSave }) => {
   const [newStatus, setNewStatus] = useState("");
   const [statusDate, setStatusDate] = useState("");
+  const [serviceEndDate, setServiceEndDate] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const statuses = ["ATIVA", "SUSPENSA", "BAIXADA", "DISTRATO"]; // Lista de status
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (newStatus === "DISTRATO" && (!statusDate || !serviceEndDate)) {
+      alert(
+        "Por favor, informe o Encerramento do Contrato e a data final da prestação de serviços."
+      );
+      return;
+    }
     setShowConfirmation(true);
   };
 
   const confirmStatusChange = () => {
-    onSave({ newStatus, statusDate });
+    if (newStatus === "DISTRATO") {
+      onSave({ newStatus, contractEndDate: statusDate, serviceEndDate });
+    } else {
+      onSave({ newStatus, statusDate });
+    }
     setShowConfirmation(false);
   };
 
@@ -54,7 +65,7 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
           </div>
           <div className="mb-4">
             <label className="block mb-1 text-gray-800 dark:text-dark-text">
-              Data do Status
+              {newStatus === "DISTRATO" ? "Encerramento do Contrato" : "Data do Status"}
             </label>
             <input
               type="date"
@@ -64,6 +75,20 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
               required
             />
           </div>
+          {newStatus === "DISTRATO" && (
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-800 dark:text-dark-text">
+                Prestar serviços até dia
+              </label>
+              <input
+                type="date"
+                value={serviceEndDate}
+                onChange={(e) => setServiceEndDate(e.target.value)}
+                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+                required
+              />
+            </div>
+          )}
           <div className="flex justify-end space-x-2">
             <button
               type="button"
@@ -85,8 +110,13 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
             <p className="text-gray-800 dark:text-dark-text">
               Tem certeza que deseja alterar o status da empresa{" "}
               <strong>{company.name}</strong> para <strong>{newStatus}</strong>?
-              A empresa e todos os usuários do Contask receberão uma notificação
-              por email.
+              {newStatus === "DISTRATO" && (
+                <>
+                  {" "}
+                  O contrato será encerrado em <strong>{statusDate}</strong> e os serviços serão prestados até <strong>{serviceEndDate}</strong>.
+                </>
+              )}
+              A empresa e todos os usuários do Contask receberão uma notificação por email.
             </p>
             <div className="flex justify-end space-x-2 mt-4">
               <button

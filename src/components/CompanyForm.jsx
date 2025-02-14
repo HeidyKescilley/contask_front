@@ -1,4 +1,5 @@
-// src/components/CompanyForm.jsx
+// D:\ContHub\contask_front\src\components\CompanyForm.jsx
+"use client";
 
 import { useState, useEffect } from "react";
 import api from "../utils/api";
@@ -190,19 +191,22 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             />
           </div>
 
-          {/* Email */}
+          {/* E-mail */}
           <div>
             <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
               E-mail <span className="text-red-500">*</span>
             </label>
             <input
-              type="email"
+              type="text"
               name="email"
               className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
               value={formData.email}
               onChange={handleChange}
               required
             />
+            <small className="text-gray-600 dark:text-gray-400">
+              Caso haja mais de um e-mail, separe-os por vírgula.
+            </small>
           </div>
 
           {/* Telefone */}
@@ -281,7 +285,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Contato na Empresa (não obrigatório no modo edit) */}
+          {/* Contato na Empresa */}
           <div>
             <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
               Contato na Empresa
@@ -296,7 +300,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             />
           </div>
 
-          {/* Início do Contrato (não obrigatório no modo edit) */}
+          {/* Início do Contrato */}
           <div>
             <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
               Início do Contrato
@@ -311,7 +315,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             />
           </div>
 
-          {/* Forma de Envio (não obrigatório no modo edit) */}
+          {/* Forma de Envio (somente no modo edit) */}
           {type === "edit" && (
             <div>
               <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
@@ -334,7 +338,6 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
           )}
         </div>
 
-        {/* "Empresa aberta pela Contelb?" aparece apenas no modo add */}
         {type === "add" && (
           <div className="flex items-center mb-4">
             <input
@@ -350,7 +353,6 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
           </div>
         )}
 
-        {/* Informações Importantes - apenas no modo add */}
         {type === "add" && (
           <div className="mb-4">
             <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
@@ -365,7 +367,6 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
           </div>
         )}
 
-        {/* Se for edição, exibir responsáveis */}
         {type === "edit" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* Responsável Fiscal */}
@@ -430,7 +431,6 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
           </div>
         )}
 
-        {/* Observações */}
         <div className="mb-4">
           <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
             Observações
@@ -461,7 +461,6 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         </div>
       </form>
 
-      {/* Modal para adicionar nova forma de envio */}
       {showAddContactModeModal && (
         <AddContactModeModal
           onClose={() => setShowAddContactModeModal(false)}
