@@ -1,7 +1,7 @@
 // src/components/CompanyTable.jsx
 "use client";
 
-import { FiEdit, FiLock, FiClock, FiCopy, FiZap } from "react-icons/fi";
+import { FiEdit, FiLock, FiClock, FiCopy, FiZap, FiArchive } from "react-icons/fi";
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
 import { useAuth } from "../hooks/useAuth"; // Importa o hook para obter o usuário
 
@@ -11,6 +11,7 @@ const CompanyTable = ({
   onBlockCompany,
   onViewHistory,
   onManageAutomations,
+  onManualArchiveCompany,
 }) => {
   const { user } = useAuth(); // Obtém o usuário autenticado
 
@@ -117,6 +118,16 @@ const CompanyTable = ({
                   >
                     <FiZap />
                   </button>
+                  {onManualArchiveCompany && (
+                    <button
+                      onClick={() => onManualArchiveCompany(company)}
+                      className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                      aria-label="Arquivar Empresa Manualmente"
+                      title="Arquivar Empresa Manualmente"
+                    >
+                      <FiArchive />
+                    </button>
+                  )}
                 </td>
               </tr>
             );

@@ -228,6 +228,27 @@ const CompaniesPageContent = () => {
     }
   }, []);
 
+  const handleManualArchiveCompany = useCallback(async (companyToArchive) => {
+    if (window.confirm(`Tem certeza que deseja arquivar a empresa "${companyToArchive.name}"? Ela não aparecerá mais nas listagens comuns.`)) {
+      try {
+        await api.patch(`/admin/company/${companyToArchive.id}/archive`);
+        toast.success(`Empresa "${companyToArchive.name}" arquivada com sucesso.`);
+        // Atualizar a lista de empresas removendo a arquivada (ou refetch)
+        setCompanies((prevCompanies) =>
+          prevCompanies.filter((company) => company.id !== companyToArchive.id)
+        );
+        // Ou, se preferir refetch para garantir consistência com o backend:
+        // fetchCompanies();
+      } catch (error) {
+        toast.error(
+          `Erro ao arquivar a empresa: ${
+            error.response?.data?.message || error.message
+          }`
+        );
+      }
+    }
+  }, [/* fetchCompanies */]); // Adicionar fetchCompanies se for usar refetch
+
   return (
     <div className="w-full px-8 py-8">
       <div className="bg-white dark:bg-dark-card rounded shadow-md">
@@ -260,6 +281,7 @@ const CompaniesPageContent = () => {
             onBlockCompany={handleBlockCompany}
             onViewHistory={handleViewHistory}
             onManageAutomations={handleManageAutomations}
+            onManualArchiveCompany={handleManualArchiveCompany}
           />
         </div>
       </div>
