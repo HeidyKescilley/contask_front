@@ -49,9 +49,15 @@ const CompaniesPageContent = () => {
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await api.get("/company/all");
-      setCompanies(res.data);
+      // Adiciona um filtro para remover empresas arquivadas
+      // Supondo que uma empresa arquivada terá um campo 'isArchived' como true ou um status 'ARCHIVED'.
+      // Se a lógica de arquivamento no backend for diferente, este filtro precisará ser ajustado.
+      const nonArchivedCompanies = res.data.filter(
+        (company) => company.status !== "ARCHIVED" && !company.isArchived //
+      );
+      setCompanies(nonArchivedCompanies); //
     } catch (error) {
-      toast.error("Erro ao buscar empresas.");
+      toast.error("Erro ao buscar empresas."); //
     }
   }, []);
 
@@ -228,26 +234,39 @@ const CompaniesPageContent = () => {
     }
   }, []);
 
-  const handleManualArchiveCompany = useCallback(async (companyToArchive) => {
-    if (window.confirm(`Tem certeza que deseja arquivar a empresa "${companyToArchive.name}"? Ela não aparecerá mais nas listagens comuns.`)) {
-      try {
-        await api.patch(`/admin/company/${companyToArchive.id}/archive`);
-        toast.success(`Empresa "${companyToArchive.name}" arquivada com sucesso.`);
-        // Atualizar a lista de empresas removendo a arquivada (ou refetch)
-        setCompanies((prevCompanies) =>
-          prevCompanies.filter((company) => company.id !== companyToArchive.id)
-        );
-        // Ou, se preferir refetch para garantir consistência com o backend:
-        // fetchCompanies();
-      } catch (error) {
-        toast.error(
-          `Erro ao arquivar a empresa: ${
-            error.response?.data?.message || error.message
-          }`
-        );
+  const handleManualArchiveCompany = useCallback(
+    async (companyToArchive) => {
+      if (
+        window.confirm(
+          `Tem certeza que deseja arquivar a empresa "${companyToArchive.name}"? Ela não aparecerá mais nas listagens comuns.`
+        )
+      ) {
+        try {
+          await api.patch(`/admin/company/${companyToArchive.id}/archive`);
+          toast.success(
+            `Empresa "${companyToArchive.name}" arquivada com sucesso.`
+          );
+          // Atualizar a lista de empresas removendo a arquivada (ou refetch)
+          setCompanies((prevCompanies) =>
+            prevCompanies.filter(
+              (company) => company.id !== companyToArchive.id
+            )
+          );
+          // Ou, se preferir refetch para garantir consistência com o backend:
+          // fetchCompanies();
+        } catch (error) {
+          toast.error(
+            `Erro ao arquivar a empresa: ${
+              error.response?.data?.message || error.message
+            }`
+          );
+        }
       }
-    }
-  }, [/* fetchCompanies */]); // Adicionar fetchCompanies se for usar refetch
+    },
+    [
+      /* fetchCompanies */
+    ]
+  ); // Adicionar fetchCompanies se for usar refetch
 
   return (
     <div className="w-full px-8 py-8">
