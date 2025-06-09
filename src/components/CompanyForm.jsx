@@ -17,7 +17,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     phone: data.phone || "",
     rule: data.rule || "Simples",
     classi: data.classi || "Outros",
-    uf: data.uf || "DF",
+    uf: data.uf || "", // Definir como string vazia para o valor inicial
     contact: data.contact || "",
     contractInit: data.contractInit || "",
     openedByUs: data.openedByUs || false,
@@ -31,7 +31,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
 
   const rules = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
-  const ufs = ["DF", "SP", "RJ", "MG", "RS", "BA", "PR"];
+  // Removendo a lista estática de UFs daqui
 
   // Estados para armazenar os usuários por departamento
   const [fiscalUsers, setFiscalUsers] = useState([]);
@@ -41,11 +41,15 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   // Estado para armazenar as formas de envio
   const [contactModes, setContactModes] = useState([]);
 
+  // NOVO ESTADO: Para armazenar as UFs da API
+  const [ufsFromApi, setUfsFromApi] = useState([]);
+
   // Estado para controlar o modal de adicionar nova forma
   const [showAddContactModeModal, setShowAddContactModeModal] = useState(false);
 
   useEffect(() => {
     fetchContactModes();
+    fetchUFs(); // Chamar a nova função para buscar as UFs
     if (type === "edit") {
       // Busca usuários para cada departamento apenas se for edição
       fetchUsersByDepartment("Fiscal", setFiscalUsers);
@@ -60,6 +64,23 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       setContactModes(res.data);
     } catch (error) {
       console.error("Erro ao buscar formas de envio:", error);
+    }
+  };
+
+  // NOVA FUNÇÃO: Para buscar as UFs da Brasil API
+  const fetchUFs = async () => {
+    try {
+      const response = await fetch("https://brasilapi.com.br/api/ibge/uf/v1");
+      if (!response.ok) {
+        throw new Error("Erro ao buscar UFs da Brasil API.");
+      }
+      const data = await response.json();
+      setUfsFromApi(data.map((uf) => uf.sigla)); // Extrair apenas a sigla e armazenar
+    } catch (error) {
+      console.error("Erro ao buscar UFs:", error);
+      // Opcional: Adicionar um toast de erro ou fallback para uma lista padrão
+      // Se a API falhar, você pode querer ter uma lista de fallback
+      // setUfsFromApi(["DF", "SP", "RJ", "MG", "RS", "BA", "PR"]); // Exemplo de fallback
     }
   };
 
@@ -263,7 +284,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             </select>
           </div>
 
-          {/* UF */}
+          {/* UF - AGORA DINÂMICO */}
           <div>
             <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
               UF <span className="text-red-500">*</span>
@@ -275,7 +296,8 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
               onChange={handleChange}
               required
             >
-              {ufs.map((uf) => (
+              <option value="">Selecione a UF</option> {/* Opção padrão */}
+              {ufsFromApi.map((uf) => (
                 <option key={uf} value={uf}>
                   {uf}
                 </option>
