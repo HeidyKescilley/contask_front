@@ -28,9 +28,12 @@ const CompanyTable = ({
         <thead>
           <tr>
             <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
-              Número
+              Nº
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-64">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
+              Filial
+            </th>
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-96">
               Razão Social
             </th>
             <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-44">
@@ -79,11 +82,16 @@ const CompanyTable = ({
             return (
               <tr key={company.id} className={rowClassName}>
                 <td className="px-4 py-2 text-left">{company.num}</td>
+                <td className="px-4 py-2 text-left">
+                  {company.branchNumber || "N/A"}
+                </td>
                 <td
                   className="px-4 py-2 text-left whitespace-nowrap overflow-hidden text-ellipsis"
                   title={company.name}
                 >
-                  {company.name}
+                  {company.name.length > 50
+                    ? company.name.substring(0, 50) + "..."
+                    : company.name}
                 </td>
                 <td className="px-4 py-2 text-left flex items-center">
                   <span className="flex-grow whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
@@ -103,10 +111,10 @@ const CompanyTable = ({
                   {company.contactMode ? company.contactMode.name : "N/A"}
                 </td>
                 <td className="px-4 py-2 text-left">
-                  {company.respFiscal?.name || "não atribuído"}
+                  {company.respFiscal?.name?.split(" ")[0] || "N/A"}
                 </td>
                 <td className="px-4 py-2 text-left">
-                  {company.respDp?.name || "não atribuído"}
+                  {company.respDp?.name?.split(" ")[0] || "N/A"}
                 </td>
                 <td className="px-4 py-2 text-left">{company.uf || "N/A"}</td>
                 <td className="px-4 py-2 text-left">

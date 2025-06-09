@@ -568,8 +568,8 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                   className="px-4 py-2 text-left whitespace-nowrap overflow-hidden text-ellipsis"
                   title={company.name}
                 >
-                  {company.name.length > 15
-                    ? company.name.substring(0, 15) + "..."
+                  {company.name.length > 50
+                    ? company.name.substring(0, 50) + "..."
                     : company.name}
                 </td>
                 <td className="px-4 py-2 text-left">{company.rule}</td>

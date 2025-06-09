@@ -210,13 +210,13 @@ const HomePage = () => {
                         {company.name}
                       </td>
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.respFiscal?.name || "não atribuído"}
+                        {company.respFiscal?.name?.split(" ")[0] || "N/A"}
                       </td>
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.respDp?.name || "não atribuído"}
+                        {company.respDp?.name?.split(" ")[0] || "N/A"}
                       </td>
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.respContabil?.name || "não atribuído"}
+                        {company.respContabil?.name?.split(" ")[0] || "N/A"}
                       </td>
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.contractInit
