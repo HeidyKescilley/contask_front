@@ -64,24 +64,31 @@ const AdminUsersPage = () => {
   };
 
   // Funções para o modal de alterar senha
-  const openChangePasswordModal = (user) => { // Nova função
+  const openChangePasswordModal = (user) => {
+    // Nova função
     setSelectedUserForPassword(user);
     setShowChangePasswordModal(true);
   };
 
-  const closeChangePasswordModal = () => { // Nova função
+  const closeChangePasswordModal = () => {
+    // Nova função
     setShowChangePasswordModal(false);
     setSelectedUserForPassword(null);
   };
 
-  const handleSaveNewPassword = async (userId, newPassword) => { // Nova função
+  const handleSaveNewPassword = async (userId, newPassword) => {
+    // Nova função
     try {
       await api.patch(`/admin/user/${userId}/change-password`, { newPassword });
-      toast.success("Senha do usuário atualizada com sucesso e email de notificação enviado.");
+      toast.success(
+        "Senha do usuário atualizada com sucesso e email de notificação enviado."
+      );
       closeChangePasswordModal();
       // Não é necessário refetchUsers() aqui pois a lista de usuários não muda, apenas a senha.
     } catch (error) {
-      toast.error(error.response?.data?.message || "Erro ao atualizar a senha do usuário.");
+      toast.error(
+        error.response?.data?.message || "Erro ao atualizar a senha do usuário."
+      );
     }
   };
 
@@ -111,10 +118,19 @@ const AdminUsersPage = () => {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-dark-border">
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <td className="px-4 py-2 whitespace-nowrap">{user.name}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">{user.department}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">{user.role}</td>
+                <tr
+                  key={user.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  <td className="px-4 py-2 whitespace-nowrap text-left">
+                    {user.name}
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-left">
+                    {user.department}
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-left">
+                    {user.role}
+                  </td>
                   <td className="px-4 py-2 whitespace-nowrap flex space-x-3">
                     <button
                       onClick={() => handleChangeRole(user)}
@@ -122,7 +138,7 @@ const AdminUsersPage = () => {
                       aria-label="Alterar Nível do Usuário"
                       title="Alterar Nível"
                     >
-                      <FiEdit size={18}/>
+                      <FiEdit size={18} />
                     </button>
                     <button // Botão para alterar senha
                       onClick={() => openChangePasswordModal(user)}
@@ -130,7 +146,7 @@ const AdminUsersPage = () => {
                       aria-label="Alterar Senha do Usuário"
                       title="Alterar Senha"
                     >
-                      <FiKey size={18}/>
+                      <FiKey size={18} />
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user.id, user.name)}
@@ -138,7 +154,7 @@ const AdminUsersPage = () => {
                       aria-label="Deletar Usuário"
                       title="Deletar Usuário"
                     >
-                      <FiTrash2 size={18}/>
+                      <FiTrash2 size={18} />
                     </button>
                   </td>
                 </tr>
@@ -155,13 +171,14 @@ const AdminUsersPage = () => {
           />
         )}
         {/* Modal para alterar a senha do usuário */}
-        {showChangePasswordModal && selectedUserForPassword && ( // Renderiza novo modal
-          <ChangePasswordByAdminModal
-            user={selectedUserForPassword}
-            onClose={closeChangePasswordModal}
-            onSave={handleSaveNewPassword}
-          />
-        )}
+        {showChangePasswordModal &&
+          selectedUserForPassword && ( // Renderiza novo modal
+            <ChangePasswordByAdminModal
+              user={selectedUserForPassword}
+              onClose={closeChangePasswordModal}
+              onSave={handleSaveNewPassword}
+            />
+          )}
       </div>
     </ProtectedRoute>
   );

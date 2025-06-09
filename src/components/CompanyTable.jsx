@@ -1,7 +1,14 @@
 // src/components/CompanyTable.jsx
 "use client";
 
-import { FiEdit, FiLock, FiClock, FiCopy, FiZap, FiArchive } from "react-icons/fi";
+import {
+  FiEdit,
+  FiLock,
+  FiClock,
+  FiCopy,
+  FiZap,
+  FiArchive,
+} from "react-icons/fi";
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
 import { useAuth } from "../hooks/useAuth"; // Importa o hook para obter o usuário
 
@@ -20,31 +27,49 @@ const CompanyTable = ({
       <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
         <thead>
           <tr>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Número
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Razão Social
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               CNPJ
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Regime
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Padrão
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Resp. Fiscal
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Resp. DP
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Status
             </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {" "}
+              {/* Adicionado text-left */}
               Ações
             </th>
           </tr>
@@ -65,9 +90,13 @@ const CompanyTable = ({
 
             return (
               <tr key={company.id} className={rowClassName}>
-                <td className="px-4 py-2">{company.num}</td>
-                <td className="px-4 py-2">{company.name}</td>
-                <td className="px-4 py-2 flex items-center">
+                <td className="px-4 py-2 text-left">{company.num}</td>{" "}
+                {/* Adicionado text-left */}
+                <td className="px-4 py-2 text-left">{company.name}</td>{" "}
+                {/* Adicionado text-left */}
+                <td className="px-4 py-2 flex items-center text-left">
+                  {" "}
+                  {/* Adicionado text-left */}
                   {formatCNPJ(company.cnpj)}
                   <button
                     onClick={() => copyToClipboard(formatCNPJ(company.cnpj))}
@@ -76,17 +105,25 @@ const CompanyTable = ({
                     <FiCopy />
                   </button>
                 </td>
-                <td className="px-4 py-2">{company.rule}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 text-left">{company.rule}</td>{" "}
+                {/* Adicionado text-left */}
+                <td className="px-4 py-2 text-left">
+                  {" "}
+                  {/* Adicionado text-left */}
                   {company.contactMode ? company.contactMode.name : "N/A"}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 text-left">
+                  {" "}
+                  {/* Adicionado text-left */}
                   {company.respFiscal?.name || "não atribuído"}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 text-left">
+                  {" "}
+                  {/* Adicionado text-left */}
                   {company.respDp?.name || "não atribuído"}
                 </td>
-                <td className="px-4 py-2">{company.status}</td>
+                <td className="px-4 py-2 text-left">{company.status}</td>{" "}
+                {/* Adicionado text-left */}
                 <td className="px-4 py-2 flex space-x-2">
                   <button
                     onClick={() => onEditCompany(company)}

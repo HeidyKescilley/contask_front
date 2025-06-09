@@ -14,16 +14,17 @@ import {
   FiUsers,
   FiSettings,
   FiMail,
+  FiBarChart2, // Importar novo ícone para dashboard
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
 import { SidebarContext } from "../context/SidebarContext";
-import { useAuth } from "../hooks/useAuth"; // Importa o hook useAuth para acessar user e logout
+import { useAuth } from "../hooks/useAuth";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
 const Sidebar = () => {
-  const { user, logout } = useAuth(); // Usa o hook useAuth para obter usuário e logout
+  const { user, logout } = useAuth();
   const { isExpanded, toggleSidebar } = useContext(SidebarContext);
   const pathname = usePathname();
   const router = useRouter();
@@ -33,9 +34,10 @@ const Sidebar = () => {
     openAddCompanyModal();
   };
 
-  // Função para enviar manualmente o email de empresas suspensas
   const handleSendSuspendedCompanies = async () => {
-    const confirmSend = confirm("Deseja realmente enviar manualmente a lista de empresas suspensas?");
+    const confirmSend = confirm(
+      "Deseja realmente enviar manualmente a lista de empresas suspensas?"
+    );
     if (confirmSend) {
       try {
         const res = await api.post("/admin/send-suspended-companies");
@@ -82,6 +84,15 @@ const Sidebar = () => {
       colorClass: "text-white",
       hoverBgClass: "hover:bg-logo-dark-blue",
     },
+    // NOVO ITEM DE MENU
+    {
+      name: "Dashboard Fiscal",
+      path: "/fiscal-dashboard",
+      icon: <FiBarChart2 size={24} />, // Ícone de gráfico
+      colorClass: "text-white",
+      hoverBgClass: "hover:bg-logo-dark-blue",
+      roles: ["fiscal", "admin"], // Apenas para Fiscal (departamento) e Admin (role)
+    },
     {
       name: "Nova Empresa",
       action: () => handleAddCompanyClick(),
@@ -112,6 +123,24 @@ const Sidebar = () => {
   }
 
   const handleMenuItemClick = (item) => {
+    // Verifica a permissão antes de navegar
+    if (item.roles && user) {
+      let hasPermission = false;
+      if (item.roles.includes(user.role)) {
+        // Verifica se a role do usuário está na lista
+        hasPermission = true;
+      }
+      if (item.roles.includes("fiscal") && user.department === "Fiscal") {
+        // Verifica se é fiscal
+        hasPermission = true;
+      }
+
+      if (!hasPermission) {
+        toast.error("Você não tem permissão para acessar esta página.");
+        return;
+      }
+    }
+
     if (item.path) {
       router.push(item.path);
     } else if (item.action) {
@@ -144,26 +173,42 @@ const Sidebar = () => {
         {/* Itens do menu */}
         <div className="flex-1 flex flex-col justify-between">
           <div className="mt-4 flex flex-col items-center">
-            {menuItems.map((item) => (
-              <div
-                key={item.name}
-                className={`w-full ${
-                  pathname === item.path ? "bg-logo-dark-blue" : "bg-transparent"
-                }`}
-              >
-                <button
-                  onClick={() => handleMenuItemClick(item)}
-                  className={`w-full flex items-center px-4 py-2 focus:outline-none ${
-                    isExpanded ? "justify-start" : "justify-center"
-                  } ${item.hoverBgClass}`}
+            {menuItems.map((item) => {
+              // Filtrar itens de menu por role/departamento se necessário
+              const shouldShowItem =
+                !item.roles ||
+                (user &&
+                  (item.roles.includes(user.role) ||
+                    (user.department === "Fiscal" &&
+                      item.roles.includes("fiscal"))));
+
+              if (!shouldShowItem) return null;
+
+              return (
+                <div
+                  key={item.name}
+                  className={`w-full ${
+                    pathname === item.path
+                      ? "bg-logo-dark-blue"
+                      : "bg-transparent"
+                  }`}
                 >
-                  <div className={`${item.colorClass}`}>{item.icon}</div>
-                  {isExpanded && (
-                    <span className={`ml-2 ${item.colorClass}`}>{item.name}</span>
-                  )}
-                </button>
-              </div>
-            ))}
+                  <button
+                    onClick={() => handleMenuItemClick(item)}
+                    className={`w-full flex items-center px-4 py-2 focus:outline-none ${
+                      isExpanded ? "justify-start" : "justify-center"
+                    } ${item.hoverBgClass}`}
+                  >
+                    <div className={`${item.colorClass}`}>{item.icon}</div>
+                    {isExpanded && (
+                      <span className={`ml-2 ${item.colorClass}`}>
+                        {item.name}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
           {/* Perfil e Logout */}
           <div className="mb-4 flex flex-col items-center">

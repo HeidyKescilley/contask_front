@@ -121,13 +121,13 @@ const HomePage = () => {
                 <tbody>
                   {recentStatusChanges.map((company) => (
                     <tr key={company.id}>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.name}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.status}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {formatDate(company.statusUpdatedAt)}
                       </td>
                     </tr>
@@ -159,10 +159,10 @@ const HomePage = () => {
                 <tbody>
                   {recentActiveCompanies.map((company) => (
                     <tr key={company.id}>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.name}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {formatDate(company.statusUpdatedAt)}
                       </td>
                     </tr>
@@ -206,19 +206,19 @@ const HomePage = () => {
                 <tbody>
                   {recentCompanies.map((company) => (
                     <tr key={company.id}>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.name}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.respFiscal?.name || "não atribuído"}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.respDp?.name || "não atribuído"}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.respContabil?.name || "não atribuído"}
                       </td>
-                      <td className="text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.contractInit
                           ? formatDate(company.contractInit)
                           : "N/A"}

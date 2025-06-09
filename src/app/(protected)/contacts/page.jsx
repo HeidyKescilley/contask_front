@@ -39,16 +39,16 @@ const ContactsPage = () => {
             <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
               <thead>
                 <tr>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
                     Nome
                   </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
                     Setor
                   </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
                     E-mail
                   </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border">
+                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
                     Ramal
                   </th>
                 </tr>
@@ -59,10 +59,12 @@ const ContactsPage = () => {
                     key={user.id}
                     className="border-b border-gray-400 dark:border-dark-border"
                   >
-                    <td className="px-4 py-2">{user.name}</td>
-                    <td className="px-4 py-2">{user.department}</td>
-                    <td className="px-4 py-2">{user.email}</td>
-                    <td className="px-4 py-2">{user.ramal || "N/A"}</td>
+                    <td className="px-4 py-2 text-left">{user.name}</td>
+                    <td className="px-4 py-2 text-left">{user.department}</td>
+                    <td className="px-4 py-2 text-left">{user.email}</td>
+                    <td className="px-4 py-2 text-left">
+                      {user.ramal || "N/A"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
