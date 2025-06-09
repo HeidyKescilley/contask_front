@@ -5,8 +5,10 @@
 import { useState, useEffect } from "react";
 import api from "../utils/api";
 import AddContactModeModal from "./AddContactModeModal";
+import { useAuth } from "../hooks/useAuth";
 
 const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
+  const { user } = useAuth();
   const data = initialData || {};
   const [formData, setFormData] = useState({
     id: data.id || "",
@@ -146,7 +148,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
               value={formData.num}
               onChange={handleChange}
               required
-              disabled={type === "edit"}
+              disabled={type === "edit" && user?.role !== "admin"}
             />
           </div>
 
