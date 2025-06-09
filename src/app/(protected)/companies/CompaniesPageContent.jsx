@@ -49,15 +49,12 @@ const CompaniesPageContent = () => {
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await api.get("/company/all");
-      // Adiciona um filtro para remover empresas arquivadas
-      // Supondo que uma empresa arquivada terá um campo 'isArchived' como true ou um status 'ARCHIVED'.
-      // Se a lógica de arquivamento no backend for diferente, este filtro precisará ser ajustado.
       const nonArchivedCompanies = res.data.filter(
-        (company) => company.status !== "ARCHIVED" && !company.isArchived //
+        (company) => company.status !== "ARCHIVED" && !company.isArchived
       );
-      setCompanies(nonArchivedCompanies); //
+      setCompanies(nonArchivedCompanies);
     } catch (error) {
-      toast.error("Erro ao buscar empresas."); //
+      toast.error("Erro ao buscar empresas.");
     }
   }, []);
 
@@ -76,6 +73,9 @@ const CompaniesPageContent = () => {
           const fiscalName = company.respFiscal?.name?.toLowerCase() || "";
           const dpName = company.respDp?.name?.toLowerCase() || "";
           return fiscalName.includes(searchTerm) || dpName.includes(searchTerm);
+        } else if (filters.searchColumn === "uf") {
+          // Adicionado filtro por UF
+          return company.uf?.toLowerCase().includes(searchTerm);
         } else {
           return company[filters.searchColumn]
             ?.toString()
@@ -146,14 +146,12 @@ const CompaniesPageContent = () => {
           toast.success(
             `Empresa "${companyData.name}" adicionada com sucesso!`
           );
-          // Atualiza o state local OTIMISTICAMENTE
           setCompanies((prev) => [...prev, newCompany]);
         } else if (modalType === "edit") {
           await api.patch(`/company/edit/${companyData.id}`, companyData);
           toast.success(
             `Empresa "${companyData.name}" atualizada com sucesso!`
           );
-          // Atualiza o state local OTIMISTICAMENTE
           setCompanies((prev) =>
             prev.map((c) =>
               c.id === companyData.id ? { ...c, ...companyData } : c
@@ -161,8 +159,7 @@ const CompaniesPageContent = () => {
           );
         }
 
-        // Você pode opcionalmente re-fetchar no background
-        fetchCompanies(); // Não precisa usar await aqui
+        fetchCompanies();
         closeModal();
       } catch (error) {
         toast.error(
@@ -184,7 +181,6 @@ const CompaniesPageContent = () => {
         );
         toast.success("Status da empresa atualizado com sucesso!");
 
-        // Atualização otimista: atualiza a empresa no estado local
         setCompanies((prev) =>
           prev.map((c) =>
             c.id === selectedStatusCompany.id
@@ -193,7 +189,6 @@ const CompaniesPageContent = () => {
           )
         );
 
-        // Chama fetchCompanies no background
         fetchCompanies();
         setShowStatusChangeModal(false);
       } catch (error) {
@@ -234,39 +229,29 @@ const CompaniesPageContent = () => {
     }
   }, []);
 
-  const handleManualArchiveCompany = useCallback(
-    async (companyToArchive) => {
-      if (
-        window.confirm(
-          `Tem certeza que deseja arquivar a empresa "${companyToArchive.name}"? Ela não aparecerá mais nas listagens comuns.`
-        )
-      ) {
-        try {
-          await api.patch(`/admin/company/${companyToArchive.id}/archive`);
-          toast.success(
-            `Empresa "${companyToArchive.name}" arquivada com sucesso.`
-          );
-          // Atualizar a lista de empresas removendo a arquivada (ou refetch)
-          setCompanies((prevCompanies) =>
-            prevCompanies.filter(
-              (company) => company.id !== companyToArchive.id
-            )
-          );
-          // Ou, se preferir refetch para garantir consistência com o backend:
-          // fetchCompanies();
-        } catch (error) {
-          toast.error(
-            `Erro ao arquivar a empresa: ${
-              error.response?.data?.message || error.message
-            }`
-          );
-        }
+  const handleManualArchiveCompany = useCallback(async (companyToArchive) => {
+    if (
+      window.confirm(
+        `Tem certeza que deseja arquivar a empresa "${companyToArchive.name}"? Ela não aparecerá mais nas listagens comuns.`
+      )
+    ) {
+      try {
+        await api.patch(`/admin/company/${companyToArchive.id}/archive`);
+        toast.success(
+          `Empresa "${companyToArchive.name}" arquivada com sucesso.`
+        );
+        setCompanies((prevCompanies) =>
+          prevCompanies.filter((company) => company.id !== companyToArchive.id)
+        );
+      } catch (error) {
+        toast.error(
+          `Erro ao arquivar a empresa: ${
+            error.response?.data?.message || error.message
+          }`
+        );
       }
-    },
-    [
-      /* fetchCompanies */
-    ]
-  ); // Adicionar fetchCompanies se for usar refetch
+    }
+  }, []);
 
   return (
     <div className="w-full px-8 py-8">
@@ -294,6 +279,7 @@ const CompaniesPageContent = () => {
               }
             />
           </div>
+          {/* O CompanyTable já contém o overflow-x-auto e table-fixed */}
           <CompanyTable
             companies={filteredCompanies}
             onEditCompany={handleEditCompany}

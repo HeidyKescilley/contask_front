@@ -12,13 +12,11 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
   useEffect(() => {
     const initialTempValues = {};
     companies.forEach((company) => {
-      // Se a empresa estiver "zerada", o valor temporário da bonificação deve ser fixado.
-      // Caso contrário, use o valor existente ou vazio.
       if (company.isZeroed) {
         if (user?.department === "Fiscal") {
-          initialTempValues[company.id] = 1; // Valor fixo para Fiscal
+          initialTempValues[company.id] = 1;
         } else if (user?.department === "Pessoal") {
-          initialTempValues[company.id] = 0; // Valor fixo para Pessoal
+          initialTempValues[company.id] = 0;
         }
       } else {
         if (user?.department === "Fiscal") {
@@ -33,10 +31,10 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
-    sentToClient: null, // null: todos, true: enviados, false: não enviados
-    declarationsCompleted: null, // null: todos, true: concluídos, false: não concluídos (este filtro se mantém para obrigações)
-    bonusFilled: null, // null: todos, true: preenchido, false: vazio (ainda útil para bonificação manual)
-    isZeroed: null, // null: todos, true: zerado, false: não zerado
+    sentToClient: null,
+    declarationsCompleted: null,
+    bonusFilled: null,
+    isZeroed: null,
     regime: [],
     classi: [],
   });
@@ -57,10 +55,8 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
         const newValue = !currentValue;
         const updateData = { [field]: newValue };
 
-        // Se o campo for "Zerado"
         if (field === "isZeroed") {
           if (newValue) {
-            // Se marcou "Zerado"
             if (user?.department === "Fiscal") {
               updateData.bonusValue = 1;
             } else if (user?.department === "Pessoal") {
@@ -71,7 +67,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
 
         await api.patch(`/company/update-agent-data/${companyId}`, updateData);
         toast.success("Dados atualizados com sucesso!");
-        fetchCompanies(); // Recarrega os dados
+        fetchCompanies();
       } catch (error) {
         toast.error(
           error.response?.data?.message || "Erro ao atualizar o checkbox."
@@ -84,7 +80,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
   const handleBonusChange = useCallback(
     (e, companyId) => {
       const { value } = e.target;
-      // Permitir apenas números para Fiscal (0-5) ou Pessoal (qualquer número)
       if (user?.department === "Fiscal") {
         if (value === "" || (/^[0-5]$/.test(value) && value.length <= 1)) {
           setTempBonusValues((prev) => ({
@@ -117,9 +112,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
         }
 
         const companyToUpdate = companies.find((c) => c.id === companyId);
-        // Bonificação só pode ser salva se não estiver zerada e envio/obrigações forem marcados (se aplicável, para não-zerado)
         if (companyToUpdate.isZeroed) {
-          // Se estiver zerado, não deveria precisar salvar bonificação, mas se insistir, o valor será o padrão 0 ou 1
           toast.info(
             "Empresa está marcada como 'Zerado'. O valor da bonificação é definido automaticamente."
           );
@@ -155,7 +148,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
 
         await api.patch(`/company/update-agent-data/${companyId}`, updateData);
         toast.success("Bonificação salva com sucesso!");
-        fetchCompanies(); // Recarrega os dados
+        fetchCompanies();
       } catch (error) {
         toast.error(
           error.response?.data?.message || "Erro ao salvar a bonificação."
@@ -186,7 +179,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
         bonusFilled: checked ? value : null,
       }));
     } else if (category === "isZeroed") {
-      // Novo filtro para Zerado
       setFilters((prev) => ({
         ...prev,
         isZeroed: checked ? value : null,
@@ -214,7 +206,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
       sentToClient: null,
       declarationsCompleted: null,
       bonusFilled: null,
-      isZeroed: null, // Resetar filtro de Zerado
+      isZeroed: null,
       regime: [],
       classi: [],
     });
@@ -223,18 +215,17 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
   const filteredAndSortedCompanies = useMemo(() => {
     let filtered = [...companies];
 
-    // Filtro por termo de pesquisa
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (company) =>
           company.name.toLowerCase().includes(lowerSearchTerm) ||
           company.num?.toString().includes(lowerSearchTerm) ||
-          company.cnpj?.includes(lowerSearchTerm)
+          company.cnpj?.includes(lowerSearchTerm) ||
+          company.uf?.toLowerCase().includes(lowerSearchTerm)
       );
     }
 
-    // Filtros de checkbox
     if (filters.sentToClient !== null) {
       filtered = filtered.filter(
         (company) => company.sentToClient === filters.sentToClient
@@ -264,7 +255,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
       }
     }
     if (filters.isZeroed !== null) {
-      // Aplicar filtro de Zerado
       filtered = filtered.filter(
         (company) => company.isZeroed === filters.isZeroed
       );
@@ -281,23 +271,18 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
       );
     }
 
-    // Ordenação: empresas que não estão "zeradas" e não estão com "envio" marcado vêm primeiro
-    // A prioridade agora é para empresas *não zeradas* e com "Envio" desmarcado
     filtered.sort((a, b) => {
-      // Prioriza não zeradas
       if (a.isZeroed !== b.isZeroed) {
-        return a.isZeroed ? 1 : -1; // isZeroed = false vem antes
+        return a.isZeroed ? 1 : -1;
       }
-      // Dentro das não zeradas, prioriza as que não foram enviadas
       if (!a.isZeroed && !b.isZeroed && a.sentToClient !== b.sentToClient) {
-        return a.sentToClient ? 1 : -1; // sentToClient = false vem antes
+        return a.sentToClient ? 1 : -1;
       }
-      // Em caso de empate, ordena por nome
       return a.name.localeCompare(b.name);
     });
 
     return filtered;
-  }, [companies, searchTerm, filters, user]); // Dependências do filtro
+  }, [companies, searchTerm, filters, user]);
 
   return (
     <div className="bg-white dark:bg-dark-card p-4 rounded shadow mb-4">
@@ -310,7 +295,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
         {/* Input de pesquisa */}
         <div>
           <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-            Pesquisa (Nome/Número/CNPJ):
+            Pesquisa (Nome/Número/CNPJ/UF):
           </label>
           <input
             type="text"
@@ -531,41 +516,40 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
 
       {/* Tabela */}
       <div className="overflow-x-auto mt-4">
-        <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
+        <table className="min-w-full table-fixed bg-white dark:bg-dark-card text-black dark:text-dark-text">
           <thead>
             <tr>
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
                 Nº
-              </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
                 Filial
-              </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-56">
                 Razão Social
-              </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-24">
                 Regime
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
+                UF
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
+                Matriz
               </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              {/* Nova coluna Matriz */}
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-20">
                 Envio
-              </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-32">
                 Obrigações Acessórias
-              </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-28">
                 Bonificação
-              </th>{" "}
-              {/* Adicionado text-left */}
-              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
+              </th>
+              <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-20">
                 Zerado
-              </th>{" "}
-              {/* Adicionado text-left */}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -573,27 +557,34 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
               <tr
                 key={company.id}
                 className={`border-b border-gray-400 dark:border-dark-border ${
-                  company.isZeroed ? "bg-purple-100 dark:bg-purple-900" : "" // Estilo para Zerado
+                  company.isZeroed ? "bg-purple-100 dark:bg-purple-900" : ""
                 }`}
               >
-                <td className="px-4 py-2 text-left">{company.num}</td>{" "}
-                {/* Adicionado text-left */}
+                <td className="px-4 py-2 text-left">{company.num}</td>
                 <td className="px-4 py-2 text-left">
                   {company.branchNumber || "N/A"}
-                </td>{" "}
-                {/* Adicionado text-left */}
-                <td className="px-4 py-2 text-left">
-                  {" "}
-                  {/* Adicionado text-left */}
-                  {company.name.length > 25
-                    ? company.name.substring(0, 25) + "..."
+                </td>
+                <td
+                  className="px-4 py-2 text-left whitespace-nowrap overflow-hidden text-ellipsis"
+                  title={company.name}
+                >
+                  {company.name.length > 15
+                    ? company.name.substring(0, 15) + "..."
                     : company.name}
                 </td>
-                <td className="px-4 py-2 text-left">{company.rule}</td>{" "}
-                {/* Adicionado text-left */}
+                <td className="px-4 py-2 text-left">{company.rule}</td>
+                <td className="px-4 py-2 text-left">{company.uf || "N/A"}</td>
                 <td className="px-4 py-2 text-left">
                   {" "}
-                  {/* Adicionado text-left */}
+                  {/* Nova célula para Matriz */}
+                  <input
+                    type="checkbox"
+                    checked={company.isHeadquarters || false}
+                    disabled // Desabilita edição direta na tabela
+                    className="form-checkbox h-5 w-5 text-blue-600 disabled:opacity-50"
+                  />
+                </td>
+                <td className="px-4 py-2 text-left">
                   <input
                     type="checkbox"
                     checked={company.sentToClient || false}
@@ -604,13 +595,11 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                         company.sentToClient
                       )
                     }
-                    disabled={company.isZeroed} // Desabilitado se "Zerado"
+                    disabled={company.isZeroed}
                     className="form-checkbox h-5 w-5 text-blue-600 disabled:opacity-50"
                   />
                 </td>
                 <td className="px-4 py-2 text-left">
-                  {" "}
-                  {/* Adicionado text-left */}
                   <input
                     type="checkbox"
                     checked={company.declarationsCompleted || false}
@@ -624,9 +613,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                     className="form-checkbox h-5 w-5 text-blue-600"
                   />
                 </td>
-                <td className="px-4 py-2 flex items-center space-x-2 text-left">
-                  {" "}
-                  {/* Adicionado text-left no td e centralizado o conteúdo */}
+                <td className="px-4 py-2 flex items-center space-x-1 justify-start">
                   <input
                     type="text"
                     value={
@@ -639,8 +626,8 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                       company.isZeroed ||
                       !company.sentToClient ||
                       !company.declarationsCompleted
-                    } // Desabilitado se "Zerado"
-                    className="w-20 border px-2 py-1 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded text-center disabled:opacity-50"
+                    }
+                    className="w-20 border px-2 py-1 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded text-left disabled:opacity-50"
                     placeholder={
                       user?.department === "Fiscal" ? "0-5" : "Funcionários"
                     }
@@ -653,15 +640,13 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                       company.isZeroed ||
                       !company.sentToClient ||
                       !company.declarationsCompleted
-                    } // Desabilitado se "Zerado"
+                    }
                     className="bg-accent-blue text-white p-2 rounded hover:bg-logo-dark-blue disabled:opacity-50"
                   >
                     <FiSave size={16} />
                   </button>
                 </td>
                 <td className="px-4 py-2 text-left">
-                  {" "}
-                  {/* Adicionado text-left */}
                   <input
                     type="checkbox"
                     checked={company.isZeroed || false}

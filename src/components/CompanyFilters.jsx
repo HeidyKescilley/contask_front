@@ -12,6 +12,7 @@ const CompanyFilters = ({ filters, setFilters, onClearFilters }) => {
     { value: "num", label: "Número" },
     { value: "cnpj", label: "CNPJ" },
     { value: "responsavel", label: "Responsável" },
+    { value: "uf", label: "UF" }, // Adicionado UF como opção de pesquisa
   ];
 
   const regimes = [

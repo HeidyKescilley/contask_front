@@ -1,4 +1,5 @@
-// D:\ContHub\contask_front\src\components\CompanyForm.jsx
+// src/components/CompanyForm.jsx
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,7 +18,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     phone: data.phone || "",
     rule: data.rule || "Simples",
     classi: data.classi || "Outros",
-    uf: data.uf || "", // Definir como string vazia para o valor inicial
+    uf: data.uf || "DF",
     contact: data.contact || "",
     contractInit: data.contractInit || "",
     openedByUs: data.openedByUs || false,
@@ -27,11 +28,13 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     respContabilId: data.respContabilId || "",
     respDpId: data.respDpId || "",
     contactModeId: data.contactModeId || "",
+    branchNumber: data.branchNumber || "", // Campo Filial
+    isHeadquarters: data.isHeadquarters || false, // Novo campo Matriz
   });
 
   const rules = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
-  // Removendo a lista estática de UFs daqui
+  const ufs = ["DF", "SP", "RJ", "MG", "RS", "BA", "PR"];
 
   // Estados para armazenar os usuários por departamento
   const [fiscalUsers, setFiscalUsers] = useState([]);
@@ -41,15 +44,11 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   // Estado para armazenar as formas de envio
   const [contactModes, setContactModes] = useState([]);
 
-  // NOVO ESTADO: Para armazenar as UFs da API
-  const [ufsFromApi, setUfsFromApi] = useState([]);
-
   // Estado para controlar o modal de adicionar nova forma
   const [showAddContactModeModal, setShowAddContactModeModal] = useState(false);
 
   useEffect(() => {
     fetchContactModes();
-    fetchUFs(); // Chamar a nova função para buscar as UFs
     if (type === "edit") {
       // Busca usuários para cada departamento apenas se for edição
       fetchUsersByDepartment("Fiscal", setFiscalUsers);
@@ -64,23 +63,6 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       setContactModes(res.data);
     } catch (error) {
       console.error("Erro ao buscar formas de envio:", error);
-    }
-  };
-
-  // NOVA FUNÇÃO: Para buscar as UFs da Brasil API
-  const fetchUFs = async () => {
-    try {
-      const response = await fetch("https://brasilapi.com.br/api/ibge/uf/v1");
-      if (!response.ok) {
-        throw new Error("Erro ao buscar UFs da Brasil API.");
-      }
-      const data = await response.json();
-      setUfsFromApi(data.map((uf) => uf.sigla)); // Extrair apenas a sigla e armazenar
-    } catch (error) {
-      console.error("Erro ao buscar UFs:", error);
-      // Opcional: Adicionar um toast de erro ou fallback para uma lista padrão
-      // Se a API falhar, você pode querer ter uma lista de fallback
-      // setUfsFromApi(["DF", "SP", "RJ", "MG", "RS", "BA", "PR"]); // Exemplo de fallback
     }
   };
 
@@ -137,6 +119,8 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       // important_info e obs podem ser vazios
       important_info: formData.important_info || "",
       obs: formData.obs || "",
+      branchNumber: formData.branchNumber || null,
+      isHeadquarters: formData.isHeadquarters, // Salva o valor booleano
     };
 
     onSubmit(sanitizedFormData);
@@ -284,7 +268,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             </select>
           </div>
 
-          {/* UF - AGORA DINÂMICO */}
+          {/* UF */}
           <div>
             <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
               UF <span className="text-red-500">*</span>
@@ -296,13 +280,27 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
               onChange={handleChange}
               required
             >
-              <option value="">Selecione a UF</option> {/* Opção padrão */}
-              {ufsFromApi.map((uf) => (
+              {ufs.map((uf) => (
                 <option key={uf} value={uf}>
                   {uf}
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Filial */}
+          <div>
+            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
+              Filial
+            </label>
+            <input
+              type="text"
+              name="branchNumber"
+              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              value={formData.branchNumber || ""}
+              onChange={handleChange}
+              placeholder="Número da Filial (opcional)"
+            />
           </div>
         </div>
 
@@ -374,6 +372,22 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             </label>
           </div>
         )}
+
+        {/* Novo campo: Matriz */}
+        <div className="mb-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="isHeadquarters"
+              checked={formData.isHeadquarters}
+              onChange={handleChange}
+              className="mr-2"
+            />
+            <label className="text-gray-800 dark:text-dark-text font-semibold">
+              Empresa Matriz?
+            </label>
+          </div>
+        </div>
 
         {type === "add" && (
           <div className="mb-4">
