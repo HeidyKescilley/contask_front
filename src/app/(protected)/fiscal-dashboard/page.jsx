@@ -7,10 +7,10 @@ import api from "../../../utils/api";
 import { useAuth } from "../../../hooks/useAuth";
 import { toast } from "react-toastify";
 import FiscalDashboardContent from "../../../components/FiscalDashboardContent"; // Importar o componente do dashboard
+import Loading from "../../../components/Loading"; // Importar componente de Loading
 
 const FiscalDashboardPage = () => {
   const { user } = useAuth();
-  // 'general' para todas as empresas, 'my_companies' para empresas do usuário Fiscal
   const [viewMode, setViewMode] = useState("general");
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,16 +18,22 @@ const FiscalDashboardPage = () => {
   // Determina se o switch 'Minhas Empresas' deve ser exibido
   const showMyCompaniesToggle = user?.department === "Fiscal";
 
+  // Hook useCallback otimizado para depender apenas do que realmente importa
   const fetchDashboardData = useCallback(async () => {
+    // Se o user não estiver carregado, ou se o modo for 'my_companies' sem um ID de usuário, não faz nada.
+    if (!user) return;
+
     setLoading(true);
+    setDashboardData(null); // Limpa os dados antigos antes de buscar novos
+
     try {
       let endpoint = "";
       if (viewMode === "general") {
         endpoint = "/company/fiscal-dashboard/all";
-      } else if (viewMode === "my_companies" && user?.department === "Fiscal") {
+      } else if (viewMode === "my_companies" && user.department === "Fiscal") {
         endpoint = `/company/fiscal-dashboard/my-companies/${user.id}`;
       } else {
-        toast.error("Modo de visualização inválido ou não autorizado.");
+        // Se a view for inválida para o usuário, não busca nada.
         setLoading(false);
         return;
       }
@@ -43,32 +49,23 @@ const FiscalDashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [viewMode, user]);
+  }, [viewMode, user]); // Depende apenas de viewMode e do objeto user
 
+  // Hook useEffect corrigido para quebrar o loop infinito
   useEffect(() => {
-    // Garante que o modo de visualização seja "general" se o usuário não for do Fiscal
-    if (!showMyCompaniesToggle && viewMode !== "general") {
+    // Garante que o modo de visualização seja 'general' se o usuário não for do Fiscal
+    if (user && user.department !== "Fiscal" && viewMode !== "general") {
       setViewMode("general");
     }
-    // Adiciona uma pequena verificação para não tentar buscar dados se o user ainda não estiver carregado e a role/department não for compatível
-    if (!user && loading) {
-      // se ainda está carregando o user e a role não é conhecida
-      return;
-    }
+
     fetchDashboardData();
-  }, [fetchDashboardData, showMyCompaniesToggle, viewMode, user, loading]); // Adicione user e loading como dependências
+  }, [user, viewMode, fetchDashboardData]); // Executa a busca quando o usuário ou o modo de visualização mudam
 
+  // Renderiza um componente de loading centralizado enquanto os dados são buscados.
+  // Isso evita o 'pisca-pisca'.
   if (loading) {
-    return (
-      <p className="flex items-center justify-center min-h-screen">
-        Carregando dashboard...
-      </p>
-    );
+    return <Loading />;
   }
-
-  // A ProtectedRoute já lida com o redirecionamento.
-  // Se chegamos aqui, o user já foi carregado e a permissão é concedida pelo ProtectedRoute.
-  // Não precisamos de uma verificação redundante aqui, pois a ProtectedRoute já o faz.
 
   return (
     <ProtectedRoute requiredRole={["admin", "fiscal"]}>
