@@ -1,7 +1,7 @@
-// src/components/FiscalDashboardContent.jsx
+// src/components/DashboardContent.jsx
 "use client";
 
-import { Bar, Pie } from "react-chartjs-2";
+import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { formatDate } from "../utils/utils";
 
 ChartJS.register(
   CategoryScale,
@@ -21,7 +22,7 @@ ChartJS.register(
   Legend
 );
 
-const FiscalDashboardContent = ({ data, viewMode, user }) => {
+const DashboardContent = ({ data, viewMode }) => {
   if (!data) {
     return (
       <p className="text-center text-gray-800 dark:text-dark-text">
@@ -30,35 +31,40 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
     );
   }
 
-  // Dados para os cards de estatísticas
-  const totalCompanies = data.totalCompanies || 0;
-  const zeroedCompanies = data.zeroedCompanies || 0;
-  const nonZeroedCompanies = totalCompanies - zeroedCompanies; // Calculado
-  const completedCompanies = data.completedCompanies || 0;
-  const nonCompletedCompanies = totalCompanies - completedCompanies; // Calculado
+  // ALTERADO: O total para os cards agora vem de campos diferentes.
+  const totalForCards = viewMode.includes("general")
+    ? data.absoluteTotalForDept
+    : data.totalCompanies;
+  const totalForCalculations = data.totalCompanies || 0; // Este é o total que exclui as exceções
 
-  // Dados para o gráfico de Concluídas vs Não Concluídas
+  const zeroedCompanies = data.zeroedCompanies || 0;
+  const completedCompanies = data.completedCompanies || 0;
+  const nonCompletedCompanies = totalForCalculations - completedCompanies; // Lógica mantida
+
+  const nonZeroedCompaniesForChart = totalForCalculations - zeroedCompanies;
+
+  // O resto da lógica dos gráficos permanece igual...
+
   const completedVsNonCompletedData = {
     labels: ["Concluídas", "Não Concluídas"],
     datasets: [
       {
         label: "Empresas",
         data: [completedCompanies, nonCompletedCompanies],
-        backgroundColor: ["#4CAF50", "#FFC107"], // Verde para concluídas, Amarelo para não concluídas
+        backgroundColor: ["#4CAF50", "#FFC107"],
         borderColor: ["#388E3C", "#FFA000"],
         borderWidth: 1,
       },
     ],
   };
 
-  // Dados para o gráfico de Zeradas vs Não Zeradas
   const zeroedVsNonZeroedData = {
     labels: ["Zeradas", "Não Zeradas"],
     datasets: [
       {
         label: "Empresas",
-        data: [zeroedCompanies, nonZeroedCompanies],
-        backgroundColor: ["#9C27B0", "#2196F3"], // Roxo para zeradas, Azul para não zeradas
+        data: [zeroedCompanies, nonZeroedCompaniesForChart],
+        backgroundColor: ["#9C27B0", "#2196F3"],
         borderColor: ["#7B1FA2", "#1976D2"],
         borderWidth: 1,
       },
@@ -72,7 +78,9 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
       legend: {
         position: "top",
         labels: {
-          color: "var(--dark-text-secondary)", // Cor da label da legenda
+          color: document.documentElement.classList.contains("dark")
+            ? "#B3B3B3"
+            : "#333",
         },
       },
       tooltip: {
@@ -83,15 +91,12 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
               label += ": ";
             }
             if (context.parsed !== null) {
-              // Verifica se o dataset tem um total para calcular a porcentagem
               const total = context.dataset.data.reduce(
                 (sum, val) => sum + val,
                 0
               );
               const percentage =
-                total > 0
-                  ? ((context.parsed / total) * 100).toFixed(2)
-                  : (0).toFixed(2);
+                total > 0 ? ((context.parsed / total) * 100).toFixed(1) : "0.0";
               label += context.parsed + " (" + percentage + "%)";
             }
             return label;
@@ -103,26 +108,21 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-        Estatísticas{" "}
-        {viewMode === "general" ? "Gerais" : " das Minhas Empresas"}
-      </h2>
-
-      {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-blue-100 dark:bg-blue-900 rounded-lg shadow-md p-4">
           <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">
             Total de Empresas
           </h3>
-          <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
-            {totalCompanies}
+          <p className="text-3xl font-bold text-blue-800 dark:text-blue-200">
+            {/* ALTERADO: Usa o novo total absoluto para o card */}
+            {totalForCards}
           </p>
         </div>
         <div className="bg-green-100 dark:bg-green-900 rounded-lg shadow-md p-4">
           <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">
             Empresas Concluídas
           </h3>
-          <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+          <p className="text-3xl font-bold text-green-800 dark:text-green-200">
             {completedCompanies}
           </p>
         </div>
@@ -130,7 +130,7 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
           <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">
             Empresas Não Concluídas
           </h3>
-          <p className="text-2xl font-bold text-yellow-800 dark:text-yellow-200">
+          <p className="text-3xl font-bold text-yellow-800 dark:text-yellow-200">
             {nonCompletedCompanies}
           </p>
         </div>
@@ -138,14 +138,14 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
           <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">
             Empresas Zeradas
           </h3>
-          <p className="text-2xl font-bold text-purple-800 dark:text-purple-200">
+          <p className="text-3xl font-bold text-purple-800 dark:text-purple-200">
             {zeroedCompanies}
           </p>
         </div>
       </div>
 
-      {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* ... Gráficos sem alterações ... */}
         <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-4 h-80 flex flex-col justify-center items-center">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-dark-text">
             Concluídas vs Não Concluídas
@@ -164,96 +164,97 @@ const FiscalDashboardContent = ({ data, viewMode, user }) => {
         </div>
       </div>
 
-      {/* Análise por Usuário (somente no modo geral) */}
-      {viewMode === "general" && data.usersData && (
-        <div className="mt-8 bg-white dark:bg-dark-card rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-dark-text">
-            Análise por Usuário
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
-                    Usuário
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
-                    Empresas Designadas
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
-                    Concluídas
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
-                    Não Concluídas
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
-                    Zeradas
-                  </th>
-                  <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left">
-                    Não Zeradas
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.usersData.map((userData) => {
-                  const totalAssigned = userData.totalCompaniesAssigned || 0;
-                  const completedPercent =
-                    totalAssigned > 0
-                      ? (
-                          (userData.completedCompanies / totalAssigned) *
-                          100
-                        ).toFixed(2)
-                      : (0).toFixed(2);
-                  const nonCompletedPercent =
-                    totalAssigned > 0
-                      ? (
-                          (userData.nonCompletedCompanies / totalAssigned) *
-                          100
-                        ).toFixed(2)
-                      : (0).toFixed(2);
-                  const zeroedPercent =
-                    totalAssigned > 0
-                      ? (
-                          (userData.zeroedCompanies / totalAssigned) *
-                          100
-                        ).toFixed(2)
-                      : (0).toFixed(2);
-                  const nonZeroed = totalAssigned - userData.zeroedCompanies;
-                  const nonZeroedPercent =
-                    totalAssigned > 0
-                      ? ((nonZeroed / totalAssigned) * 100).toFixed(2)
-                      : (0).toFixed(2);
+      {viewMode.includes("general") &&
+        data.usersData &&
+        data.usersData.length > 0 && (
+          <div className="mt-8 bg-white dark:bg-dark-card rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-dark-text text-left">
+              Análise por Usuário
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
+                <thead>
+                  <tr className="border-b-2 border-gray-300 dark:border-dark-border">
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Última Atualização
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Usuário
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Total Designado
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Concluídas
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Não Concluídas
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Zeradas
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* ALTERADO: Adicionado .filter() para ocultar usuários com 0 empresas */}
+                  {data.usersData
+                    .filter((user) => user.absoluteTotalAssigned > 0)
+                    .map((userData) => {
+                      const totalForPercentage =
+                        userData.totalCompaniesAssigned || 0;
+                      const completedPercent =
+                        totalForPercentage > 0
+                          ? (
+                              (userData.completedCompanies /
+                                totalForPercentage) *
+                              100
+                            ).toFixed(1)
+                          : "0.0";
+                      const nonCompletedPercent =
+                        totalForPercentage > 0
+                          ? (
+                              (userData.nonCompletedCompanies /
+                                totalForPercentage) *
+                              100
+                            ).toFixed(1)
+                          : "0.0";
 
-                  return (
-                    <tr
-                      key={userData.id}
-                      className="border-b border-gray-400 dark:border-dark-border"
-                    >
-                      <td className="px-4 py-2 text-left">{userData.name}</td>
-                      <td className="px-4 py-2 text-left">{totalAssigned}</td>
-                      <td className="px-4 py-2 text-left">
-                        {userData.completedCompanies} ({completedPercent}%)
-                      </td>
-                      <td className="px-4 py-2 text-left">
-                        {userData.nonCompletedCompanies} ({nonCompletedPercent}
-                        %)
-                      </td>
-                      <td className="px-4 py-2 text-left">
-                        {userData.zeroedCompanies} ({zeroedPercent}%)
-                      </td>
-                      <td className="px-4 py-2 text-left">
-                        {nonZeroed} ({nonZeroedPercent}%)
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      return (
+                        <tr
+                          key={userData.id}
+                          className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          <td className="px-4 py-3 text-left">
+                            {userData.lastCompletionDate
+                              ? formatDate(userData.lastCompletionDate)
+                              : "N/A"}
+                          </td>
+                          <td className="px-4 py-3 text-left">
+                            {userData.name}
+                          </td>
+                          <td className="px-4 py-3 text-left">
+                            {userData.absoluteTotalAssigned}
+                          </td>
+                          <td className="px-4 py-3 text-left text-green-600 dark:text-green-400">
+                            {userData.completedCompanies} ({completedPercent}%)
+                          </td>
+                          <td className="px-4 py-3 text-left text-yellow-600 dark:text-yellow-400">
+                            {userData.nonCompletedCompanies} (
+                            {nonCompletedPercent}%)
+                          </td>
+                          <td className="px-4 py-3 text-left text-purple-600 dark:text-purple-400">
+                            {userData.zeroedCompanies}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
 
-export default FiscalDashboardContent;
+export default DashboardContent;

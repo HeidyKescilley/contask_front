@@ -15,6 +15,7 @@ import {
   FiSettings,
   FiMail,
   FiBarChart2,
+  FiDownload,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -124,6 +125,13 @@ const Sidebar = () => {
         name: "Enviar Suspensas",
         action: handleSendSuspendedCompanies,
         icon: <FiMail size={24} />,
+        colorClass: "text-white",
+        hoverBgClass: "hover:bg-logo-dark-blue",
+      },
+      {
+        name: "Exportar Dados",
+        path: "/admin/export",
+        icon: <FiDownload size={24} />, // Ícone para download/exportação
         colorClass: "text-white",
         hoverBgClass: "hover:bg-logo-dark-blue",
       }
