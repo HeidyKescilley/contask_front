@@ -14,7 +14,7 @@ import {
   FiUsers,
   FiSettings,
   FiMail,
-  FiBarChart2, // Importar novo ícone para dashboard
+  FiBarChart2,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -48,6 +48,15 @@ const Sidebar = () => {
     }
   };
 
+  const handleMenuItemClick = (item) => {
+    if (item.path) {
+      router.push(item.path);
+    } else if (item.action) {
+      item.action();
+    }
+  };
+
+  // Estrutura de permissões corrigida: roles e departments separados
   const menuItems = [
     {
       name: "Home",
@@ -76,6 +85,7 @@ const Sidebar = () => {
       icon: <FiSend size={24} />,
       colorClass: "text-white",
       hoverBgClass: "hover:bg-logo-dark-blue",
+      permissions: { roles: ["admin"] }, // Apenas Admin
     },
     {
       name: "Contatos",
@@ -84,25 +94,23 @@ const Sidebar = () => {
       colorClass: "text-white",
       hoverBgClass: "hover:bg-logo-dark-blue",
     },
-    // NOVO ITEM DE MENU
     {
-      name: "Dashboard Fiscal",
-      path: "/fiscal-dashboard",
-      icon: <FiBarChart2 size={24} />, // Ícone de gráfico
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <FiBarChart2 size={24} />,
       colorClass: "text-white",
       hoverBgClass: "hover:bg-logo-dark-blue",
-      roles: ["fiscal", "admin"], // Apenas para Fiscal (departamento) e Admin (role)
+      permissions: { roles: ["admin"], departments: ["Fiscal", "Pessoal"] },
     },
     {
       name: "Nova Empresa",
-      action: () => handleAddCompanyClick(),
+      action: handleAddCompanyClick,
       icon: <FiPlus size={24} />,
       colorClass: "text-accent-green",
       hoverBgClass: "hover:bg-accent-green-light",
     },
   ];
 
-  // Se o usuário for administrador, adicionamos itens extras
   if (user && user.role === "admin") {
     menuItems.push(
       {
@@ -122,41 +130,28 @@ const Sidebar = () => {
     );
   }
 
-  const handleMenuItemClick = (item) => {
-    // Verifica a permissão antes de navegar
-    if (item.roles && user) {
-      let hasPermission = false;
-      if (item.roles.includes(user.role)) {
-        // Verifica se a role do usuário está na lista
-        hasPermission = true;
-      }
-      if (item.roles.includes("fiscal") && user.department === "Fiscal") {
-        // Verifica se é fiscal
-        hasPermission = true;
-      }
-
-      if (!hasPermission) {
-        toast.error("Você não tem permissão para acessar esta página.");
-        return;
-      }
+  // Função que verifica a permissão para exibir o item de menu
+  const checkDisplayPermission = (item) => {
+    if (!item.permissions || !user) {
+      return true; // Mostra se não tiver restrições ou se o usuário ainda não carregou
     }
 
-    if (item.path) {
-      router.push(item.path);
-    } else if (item.action) {
-      item.action();
-    }
+    const { roles = [], departments = [] } = item.permissions;
+
+    if (roles.length > 0 && roles.includes(user.role)) return true;
+    if (departments.length > 0 && departments.includes(user.department))
+      return true;
+
+    return false;
   };
 
   return (
     <div>
-      {/* Sidebar */}
       <div
         className={`h-screen bg-logo-light-blue dark:bg-dark-card ${
           isExpanded ? "w-64" : "w-20"
         } transition-all duration-200 ease-in-out flex flex-col shadow-md fixed top-0 left-0 z-50`}
       >
-        {/* Logo e botão de toggle */}
         <div
           className="p-4 bg-logo-light-blue dark:bg-gray-800 flex items-center justify-center cursor-pointer"
           onClick={toggleSidebar}
@@ -170,19 +165,13 @@ const Sidebar = () => {
             <Image src="/logo.png" width={30} height={30} alt="Logo" />
           )}
         </div>
-        {/* Itens do menu */}
         <div className="flex-1 flex flex-col justify-between">
           <div className="mt-4 flex flex-col items-center">
             {menuItems.map((item) => {
-              // Filtrar itens de menu por role/departamento se necessário
-              const shouldShowItem =
-                !item.roles ||
-                (user &&
-                  (item.roles.includes(user.role) ||
-                    (user.department === "Fiscal" &&
-                      item.roles.includes("fiscal"))));
-
-              if (!shouldShowItem) return null;
+              // Se o usuário não tiver permissão, o item nem é renderizado.
+              if (!checkDisplayPermission(item)) {
+                return null;
+              }
 
               return (
                 <div
@@ -210,9 +199,7 @@ const Sidebar = () => {
               );
             })}
           </div>
-          {/* Perfil e Logout */}
           <div className="mb-4 flex flex-col items-center">
-            {/* Perfil */}
             <div
               className={`w-full ${
                 pathname === "/profile" ? "bg-logo-dark-blue" : "bg-transparent"
@@ -232,7 +219,6 @@ const Sidebar = () => {
                 )}
               </button>
             </div>
-            {/* Logout */}
             <button
               onClick={logout}
               className={`w-full flex items-center px-4 py-2 text-white bg-accent-red hover:bg-accent-red-light focus:outline-none ${
