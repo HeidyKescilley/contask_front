@@ -16,6 +16,7 @@ import {
   FiMail,
   FiBarChart2,
   FiDownload,
+  FiAward,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -118,6 +119,14 @@ const Sidebar = () => {
         name: "Gestão de Usuários",
         path: "/admin/users",
         icon: <FiSettings size={24} />,
+        colorClass: "text-white",
+        hoverBgClass: "hover:bg-logo-dark-blue",
+      },
+      {
+        // <-- NOVO ITEM DE MENU A SER ADICIONADO
+        name: "Cálculo de Bônus",
+        path: "/admin/bonus",
+        icon: <FiAward size={24} />,
         colorClass: "text-white",
         hoverBgClass: "hover:bg-logo-dark-blue",
       },
