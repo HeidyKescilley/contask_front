@@ -1,10 +1,9 @@
-// src/app/(protected)/my-companies/AgentCompaniesView.jsx
+// D:\projetos\contask_v2\contask_front\src\app\(protected)\my-companies\AgentCompaniesView.jsx
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
-import { FiSave } from "react-icons/fi";
 import { formatDate } from "../../../utils/utils";
 
 const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
@@ -29,7 +28,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
   ];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
 
-  // Permissões de edição baseadas no departamento ou na role de admin
   const canEditFiscal = user?.department === "Fiscal";
   const canEditDp = user?.department === "Pessoal";
 
@@ -50,7 +48,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
         const newValue = !currentValue;
         const updateData = { [field]: newValue };
 
-        // Lógica para zerar campos automaticamente
         if (field === "isZeroedFiscal" && newValue) {
           updateData.bonusValue = 1;
           updateData.sentToClientFiscal = false;
@@ -59,26 +56,11 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
           updateData.employeesCount = 0;
           updateData.sentToClientDp = false;
         }
-
-        // Nova lógica ao marcar/desmarcar "Sem Obrigações"
         if (field === "hasNoFiscalObligations" && newValue) {
           updateData.declarationsCompletedFiscal = false;
-          // deixa a UI pronta antes do refetch
-          setTempValues((prev) => ({
-            ...prev,
-            [companyId]: {
-              ...prev[companyId],
-              // força o disabled aparecer já na primeira render
-              _hasNoFiscalObligations: true,
-            },
-          }));
         }
         if (field === "hasNoDpObligations" && newValue) {
           updateData.declarationsCompletedDp = false;
-          setTempValues((prev) => ({
-            ...prev,
-            [companyId]: { ...prev[companyId], _hasNoDpObligations: true },
-          }));
         }
 
         await api.patch(`/company/update-agent-data/${companyId}`, updateData);
@@ -101,61 +83,59 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
     }));
   }, []);
 
-  const handleSaveValue = useCallback(
-    async (companyId, field, value) => {
-      try {
-        if (value === undefined || value === null || value === "") {
-          toast.error("Por favor, preencha um valor.");
+  // ALTERAÇÃO: Função de salvar que será chamada pelo onBlur
+  const handleSaveOnBlur = useCallback(
+    async (companyId, field) => {
+      const company = companies.find((c) => c.id === companyId);
+      if (!company) return;
+
+      const valueToSave = tempValues[companyId]?.[field];
+
+      // Não faz nada se o valor não mudou ou está vazio
+      if (valueToSave === (company[field] ?? "") || valueToSave === "") return;
+
+      const updateData = {};
+
+      if (field === "bonusValue") {
+        if (
+          !company.sentToClientFiscal ||
+          !company.declarationsCompletedFiscal
+        ) {
+          toast.error(
+            "Marque 'Envio' e 'Obrigações' do Fiscal antes de salvar a bonificação."
+          );
           return;
         }
-
-        const company = companies.find((c) => c.id === companyId);
-        if (!company) return;
-
-        const updateData = {};
-
-        // Validação para o setor Fiscal
-        if (field === "bonusValue") {
-          if (
-            !company.sentToClientFiscal ||
-            !company.declarationsCompletedFiscal
-          ) {
-            toast.error(
-              "Marque 'Envio' e 'Obrigações' do Fiscal antes de salvar a bonificação."
-            );
-            return;
-          }
-          const parsedValue = parseInt(value, 10);
-          if (isNaN(parsedValue) || parsedValue < 0 || parsedValue > 5) {
-            toast.error("A nota para o Fiscal deve ser um número entre 0 e 5.");
-            return;
-          }
-          updateData[field] = parsedValue;
+        const parsedValue = parseInt(valueToSave, 10);
+        if (isNaN(parsedValue) || parsedValue < 0 || parsedValue > 5) {
+          toast.error("A nota para o Fiscal deve ser um número entre 0 e 5.");
+          return;
         }
-        // Validação para o setor de Pessoal
-        else if (field === "employeesCount") {
-          if (!company.sentToClientDp || !company.declarationsCompletedDp) {
-            toast.error(
-              "Marque 'Envio' e 'Obrigações' do DP antes de salvar o número de funcionários."
-            );
-            return;
-          }
-          const parsedValue = parseInt(value, 10);
-          if (isNaN(parsedValue) || parsedValue < 0) {
-            toast.error("O número de funcionários deve ser um número válido.");
-            return;
-          }
-          updateData[field] = parsedValue;
+        updateData[field] = parsedValue;
+      } else if (field === "employeesCount") {
+        if (!company.sentToClientDp || !company.declarationsCompletedDp) {
+          toast.error(
+            "Marque 'Envio' e 'Obrigações' do DP antes de salvar o número de funcionários."
+          );
+          return;
         }
+        const parsedValue = parseInt(valueToSave, 10);
+        if (isNaN(parsedValue) || parsedValue < 0) {
+          toast.error("O número de funcionários deve ser um número válido.");
+          return;
+        }
+        updateData[field] = parsedValue;
+      }
 
+      try {
         await api.patch(`/company/update-agent-data/${companyId}`, updateData);
         toast.success("Valor salvo com sucesso!");
-        fetchCompanies();
+        fetchCompanies(); // Atualiza os dados para refletir o valor salvo
       } catch (error) {
         toast.error(error.response?.data?.message || "Erro ao salvar o valor.");
       }
     },
-    [companies, fetchCompanies]
+    [companies, tempValues, fetchCompanies]
   );
 
   const handleFilterChange = useCallback((e) => {
@@ -211,37 +191,38 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
       );
     }
 
+    // ALTERAÇÃO: Lógica de filtros corrigida para ser ciente do departamento
+    const departmentFieldPrefix =
+      user?.department === "Fiscal" ? "Fiscal" : "Dp";
+
     if (filters.sentToClient !== null) {
-      filtered = filtered.filter(
-        (c) =>
-          c.sentToClientFiscal === filters.sentToClient ||
-          c.sentToClientDp === filters.sentToClient
-      );
+      const fieldName = `sentToClient${departmentFieldPrefix}`;
+      filtered = filtered.filter((c) => c[fieldName] === filters.sentToClient);
     }
     if (filters.declarationsCompleted !== null) {
+      const fieldName = `declarationsCompleted${departmentFieldPrefix}`;
       filtered = filtered.filter(
-        (c) =>
-          c.declarationsCompletedFiscal === filters.declarationsCompleted ||
-          c.declarationsCompletedDp === filters.declarationsCompleted
+        (c) => c[fieldName] === filters.declarationsCompleted
       );
-    }
-    if (filters.bonusFilled !== null) {
-      filtered = filtered.filter((c) => {
-        const fiscalBonusFilled =
-          c.bonusValue !== null && c.bonusValue !== undefined;
-        const dpBonusFilled =
-          c.employeesCount !== null && c.employeesCount !== undefined;
-        return filters.bonusFilled
-          ? fiscalBonusFilled || dpBonusFilled
-          : !fiscalBonusFilled && !dpBonusFilled;
-      });
     }
     if (filters.isZeroed !== null) {
-      filtered = filtered.filter(
-        (c) =>
-          c.isZeroedFiscal === filters.isZeroed ||
-          c.isZeroedDp === filters.isZeroed
-      );
+      const fieldName = `isZeroed${departmentFieldPrefix}`;
+      filtered = filtered.filter((c) => c[fieldName] === filters.isZeroed);
+    }
+    if (filters.bonusFilled !== null) {
+      if (user?.department === "Fiscal") {
+        filtered = filtered.filter(
+          (c) =>
+            (c.bonusValue !== null && c.bonusValue !== undefined) ===
+            filters.bonusFilled
+        );
+      } else if (user?.department === "Pessoal") {
+        filtered = filtered.filter(
+          (c) =>
+            (c.employeesCount !== null && c.employeesCount !== undefined) ===
+            filters.bonusFilled
+        );
+      }
     }
     if (filters.regime.length > 0) {
       filtered = filtered.filter((c) => filters.regime.includes(c.rule));
@@ -252,7 +233,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
 
     filtered.sort((a, b) => a.name.localeCompare(b.name));
     return filtered;
-  }, [companies, searchTerm, filters]);
+  }, [companies, searchTerm, filters, user]);
 
   return (
     <div className="bg-white dark:bg-dark-card p-4 rounded shadow mb-4">
@@ -276,6 +257,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {/* ... (código dos filtros de checkbox - sem alteração na sua estrutura) ... */}
         <div className="flex flex-col">
           <p className="font-semibold text-gray-800 dark:text-dark-text mb-1">
             Envio:
@@ -313,7 +295,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
             </label>
           </div>
         </div>
-
         <div className="flex flex-col">
           <p className="font-semibold text-gray-800 dark:text-dark-text mb-1">
             Obrigações Acessórias:
@@ -351,7 +332,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
             </label>
           </div>
         </div>
-
         <div className="flex flex-col">
           <p className="font-semibold text-gray-800 dark:text-dark-text mb-1">
             Bonificação/Funcionários:
@@ -389,7 +369,6 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
             </label>
           </div>
         </div>
-
         <div className="flex flex-col">
           <p className="font-semibold text-gray-800 dark:text-dark-text mb-1">
             Zerado:
@@ -423,7 +402,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
             </label>
           </div>
         </div>
-
+        {/* Filtro de Regime */}
         <div className="flex flex-col">
           <p className="font-semibold text-gray-800 dark:text-dark-text mb-1">
             Regime:
@@ -453,6 +432,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
           </div>
         </div>
 
+        {/* Filtro de Classificação */}
         <div className="flex flex-col">
           <p className="font-semibold text-gray-800 dark:text-dark-text mb-1">
             Classificação:
@@ -495,6 +475,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
       {/* Tabela de Empresas */}
       <div className="overflow-x-auto mt-4">
         <table className="min-w-full table-auto bg-white dark:bg-dark-card text-black dark:text-dark-text">
+          {/* ... (código do thead da tabela - sem alteração) ... */}
           <thead>
             <tr className="border-b-2 border-gray-400 dark:border-dark-border">
               <th className="px-2 py-2 text-left w-16" rowSpan="2">
@@ -515,10 +496,9 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
               <th className="px-2 py-2 text-center w-16" rowSpan="2">
                 Matriz
               </th>
-
               {canEditFiscal && (
                 <th
-                  colSpan="6" /* AUMENTADO PARA 6 */
+                  colSpan="6"
                   className="px-4 py-2 text-center border-b border-l border-gray-400 dark:border-dark-border bg-blue-100 dark:bg-blue-900"
                 >
                   Fiscal
@@ -526,7 +506,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
               )}
               {canEditDp && (
                 <th
-                  colSpan="6" /* AUMENTADO PARA 6 */
+                  colSpan="6"
                   className="px-4 py-2 text-center border-b border-l border-gray-400 dark:border-dark-border bg-green-100 dark:bg-green-900"
                 >
                   Departamento Pessoal
@@ -534,50 +514,46 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
               )}
             </tr>
             <tr className="border-b-2 border-gray-400 dark:border-dark-border">
-              {/* Colunas do Fiscal */}
               {canEditFiscal && (
                 <>
-                  <th className="px-2 py-2 text-left w-20 border-l border-gray-400 dark:border-dark-border bg-blue-50 dark:bg-blue-800">
+                  <th className="px-2 py-2 text-center w-20 border-l border-gray-400 dark:border-dark-border bg-blue-50 dark:bg-blue-800">
                     Envio
                   </th>
-                  <th className="px-2 py-2 text-left w-20 bg-blue-50 dark:bg-blue-800">
+                  <th className="px-2 py-2 text-center w-20 bg-blue-50 dark:bg-blue-800">
                     Obrigações Acessórias
                   </th>
-                  <th className="px-2 py-2 text-left w-24 bg-blue-50 dark:bg-blue-800">
+                  <th className="px-2 py-2 text-center w-24 bg-blue-50 dark:bg-blue-800">
                     Sem Obrigações
                   </th>
-                  <th className="px-2 py-2 text-left w-20 bg-blue-50 dark:bg-blue-800">
+                  <th className="px-2 py-2 text-center w-20 bg-blue-50 dark:bg-blue-800">
                     Zerado
                   </th>
-                  <th className="px-2 py-2 text-left w-32 bg-blue-50 dark:bg-blue-800">
-                    Bonificação
+                  <th className="px-2 py-2 text-center w-20 bg-blue-50 dark:bg-blue-800">
+                    Nota
                   </th>
-                  {/* NOVA COLUNA */}
-                  <th className="px-2 py-2 text-left w-28 bg-blue-50 dark:bg-blue-800">
+                  <th className="px-2 py-2 text-center w-28 bg-blue-50 dark:bg-blue-800">
                     Data Conclusão
                   </th>
                 </>
               )}
-              {/* Colunas do DP */}
               {canEditDp && (
                 <>
-                  <th className="px-2 py-2 text-left w-20 border-l border-gray-400 dark:border-dark-border bg-green-50 dark:bg-green-800">
+                  <th className="px-2 py-2 text-center w-20 border-l border-gray-400 dark:border-dark-border bg-green-50 dark:bg-green-800">
                     Envio
                   </th>
-                  <th className="px-2 py-2 text-left w-20 bg-green-50 dark:bg-green-800">
+                  <th className="px-2 py-2 text-center w-20 bg-green-50 dark:bg-green-800">
                     Obrigações Acessórias
                   </th>
-                  <th className="px-2 py-2 text-left w-24 bg-green-50 dark:bg-green-800">
+                  <th className="px-2 py-2 text-center w-24 bg-green-50 dark:bg-green-800">
                     Sem Obrigações
                   </th>
-                  <th className="px-2 py-2 text-left w-20 bg-green-50 dark:bg-green-800">
+                  <th className="px-2 py-2 text-center w-20 bg-green-50 dark:bg-green-800">
                     Zerado
                   </th>
-                  <th className="px-2 py-2 text-left w-32 bg-green-50 dark:bg-green-800">
+                  <th className="px-2 py-2 text-center w-32 bg-green-50 dark:bg-green-800">
                     Funcionários
                   </th>
-                  {/* NOVA COLUNA */}
-                  <th className="px-2 py-2 text-left w-28 bg-green-50 dark:bg-green-800">
+                  <th className="px-2 py-2 text-center w-28 bg-green-50 dark:bg-green-800">
                     Data Conclusão
                   </th>
                 </>
@@ -596,12 +572,12 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                 !company.declarationsCompletedDp ||
                 company.isZeroedDp ||
                 !canEditDp;
-
               return (
                 <tr
                   key={company.id}
                   className="border-b border-gray-300 dark:border-dark-border"
                 >
+                  {/* ... (código das células iniciais - sem alteração) ... */}
                   <td className="px-2 py-2 text-left">{company.num}</td>
                   <td
                     className="px-2 py-2 text-left whitespace-nowrap overflow-hidden text-ellipsis"
@@ -691,37 +667,25 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                         />
                       </td>
                       <td className="px-2 py-2">
-                        <div className="flex items-center space-x-1">
-                          <input
-                            type="text"
-                            value={tempValues[company.id]?.bonusValue ?? ""}
-                            onChange={(e) =>
-                              handleValueChange(
-                                company.id,
-                                "bonusValue",
-                                e.target.value
-                              )
-                            }
-                            disabled={disableFiscalBonus}
-                            className="w-16 border px-2 py-1 bg-gray-100 dark:bg-dark-bg text-center rounded disabled:opacity-50"
-                            placeholder="0-5"
-                          />
-                          <button
-                            onClick={() =>
-                              handleSaveValue(
-                                company.id,
-                                "bonusValue",
-                                tempValues[company.id]?.bonusValue
-                              )
-                            }
-                            disabled={disableFiscalBonus}
-                            className="bg-accent-blue text-white p-2 rounded disabled:opacity-50"
-                          >
-                            <FiSave size={16} />
-                          </button>
-                        </div>
+                        {/* ALTERAÇÃO: Removido botão de salvar e adicionado onBlur */}
+                        <input
+                          type="text"
+                          value={tempValues[company.id]?.bonusValue ?? ""}
+                          onChange={(e) =>
+                            handleValueChange(
+                              company.id,
+                              "bonusValue",
+                              e.target.value
+                            )
+                          }
+                          onBlur={() =>
+                            handleSaveOnBlur(company.id, "bonusValue")
+                          }
+                          disabled={disableFiscalBonus}
+                          className="w-full border px-2 py-1 bg-gray-100 dark:bg-dark-bg text-center rounded disabled:opacity-50"
+                          placeholder="0-5"
+                        />
                       </td>
-                      {/* NOVA CÉLULA PARA DATA DE CONCLUSÃO */}
                       <td className="px-2 py-2 text-left">
                         {company.fiscalCompletedAt
                           ? formatDate(company.fiscalCompletedAt)
@@ -795,37 +759,25 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
                         />
                       </td>
                       <td className="px-2 py-2">
-                        <div className="flex items-center space-x-1">
-                          <input
-                            type="text"
-                            value={tempValues[company.id]?.employeesCount ?? ""}
-                            onChange={(e) =>
-                              handleValueChange(
-                                company.id,
-                                "employeesCount",
-                                e.target.value
-                              )
-                            }
-                            disabled={disableDpEmployees}
-                            className="w-16 border px-2 py-1 bg-gray-100 dark:bg-dark-bg text-center rounded disabled:opacity-50"
-                            placeholder="Nº"
-                          />
-                          <button
-                            onClick={() =>
-                              handleSaveValue(
-                                company.id,
-                                "employeesCount",
-                                tempValues[company.id]?.employeesCount
-                              )
-                            }
-                            disabled={disableDpEmployees}
-                            className="bg-accent-blue text-white p-2 rounded disabled:opacity-50"
-                          >
-                            <FiSave size={16} />
-                          </button>
-                        </div>
+                        {/* ALTERAÇÃO: Removido botão de salvar e adicionado onBlur */}
+                        <input
+                          type="text"
+                          value={tempValues[company.id]?.employeesCount ?? ""}
+                          onChange={(e) =>
+                            handleValueChange(
+                              company.id,
+                              "employeesCount",
+                              e.target.value
+                            )
+                          }
+                          onBlur={() =>
+                            handleSaveOnBlur(company.id, "employeesCount")
+                          }
+                          disabled={disableDpEmployees}
+                          className="w-full border px-2 py-1 bg-gray-100 dark:bg-dark-bg text-center rounded disabled:opacity-50"
+                          placeholder="Nº"
+                        />
                       </td>
-                      {/* NOVA CÉLULA PARA DATA DE CONCLUSÃO */}
                       <td className="px-2 py-2 text-left">
                         {company.dpCompletedAt
                           ? formatDate(company.dpCompletedAt)
