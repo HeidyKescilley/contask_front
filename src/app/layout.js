@@ -25,7 +25,11 @@ export default function RootLayout({ children }) {
   }, []);
 
   return (
-    <html lang="pt-BR" className={theme === "dark" ? "dark" : ""}>
+    <html
+      lang="pt-BR"
+      className={theme === "dark" ? "dark" : ""}
+      style={{ fontSize: "90%" }}
+    >
       <body className={`${inter.className} bg-light-bg dark:bg-dark-bg`}>
         <AuthProvider>
           <CompanyModalProvider>
