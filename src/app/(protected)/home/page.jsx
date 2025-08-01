@@ -120,7 +120,10 @@ const HomePage = () => {
                 </thead>
                 <tbody>
                   {recentStatusChanges.map((company) => (
-                    <tr key={company.id}>
+                    <tr
+                      key={company.id}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.name}
                       </td>
@@ -158,7 +161,10 @@ const HomePage = () => {
                 </thead>
                 <tbody>
                   {recentActiveCompanies.map((company) => (
-                    <tr key={company.id}>
+                    <tr
+                      key={company.id}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.name}
                       </td>
@@ -205,7 +211,10 @@ const HomePage = () => {
                 </thead>
                 <tbody>
                   {recentCompanies.map((company) => (
-                    <tr key={company.id}>
+                    <tr
+                      key={company.id}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
                       <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
                         {company.name}
                       </td>

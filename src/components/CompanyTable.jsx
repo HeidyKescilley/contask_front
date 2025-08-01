@@ -68,7 +68,7 @@ const CompanyTable = ({
         <tbody>
           {companies.map((company) => {
             let rowClassName =
-              "border-b border-gray-400 dark:border-dark-border";
+              "border-b border-gray-400 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150";
 
             if (company.status === "SUSPENSA") {
               rowClassName += " bg-yellow-100 dark:bg-yellow-900";

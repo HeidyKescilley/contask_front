@@ -149,7 +149,7 @@ const AdminUsersPage = () => {
               {users.map((user) => (
                 <tr
                   key={user.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-600"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                 >
                   <td className="px-4 py-2 whitespace-nowrap">{user.name}</td>
                   <td className="px-4 py-2 whitespace-nowrap">

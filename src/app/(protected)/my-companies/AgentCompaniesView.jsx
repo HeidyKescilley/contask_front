@@ -575,7 +575,7 @@ const AgentCompaniesView = ({ companies, user, fetchCompanies }) => {
               return (
                 <tr
                   key={company.id}
-                  className="border-b border-gray-300 dark:border-dark-border"
+                  className="border-b border-gray-300 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                 >
                   {/* ... (código das células iniciais - sem alteração) ... */}
                   <td className="px-2 py-2 text-left">{company.num}</td>

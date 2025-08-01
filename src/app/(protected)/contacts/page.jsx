@@ -57,7 +57,7 @@ const ContactsPage = () => {
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-gray-400 dark:border-dark-border"
+                    className="border-b border-gray-400 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
                   >
                     <td className="px-4 py-2 text-left">{user.name}</td>
                     <td className="px-4 py-2 text-left">{user.department}</td>
