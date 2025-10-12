@@ -157,7 +157,9 @@ const AdminUsersPage = () => {
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">{user.role}</td>
                   <td className="px-4 py-2 whitespace-nowrap text-center">
-                    {user.department === "Fiscal" ? (
+                    {["Fiscal", "Pessoal", "Contábil"].includes(
+                      user.department
+                    ) ? (
                       <input
                         type="checkbox"
                         checked={user.hasBonus || false}

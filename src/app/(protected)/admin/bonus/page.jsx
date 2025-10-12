@@ -5,7 +5,13 @@ import { useState, useEffect, useMemo } from "react";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import api from "../../../../utils/api";
 import { toast } from "react-toastify";
-import { FiRefreshCw, FiSave, FiInfo, FiDollarSign } from "react-icons/fi";
+import {
+  FiRefreshCw,
+  FiSave,
+  FiInfo,
+  FiDollarSign,
+  FiTrash2,
+} from "react-icons/fi";
 import Loading from "../../../../components/Loading";
 
 const BonusPage = () => {
@@ -15,12 +21,15 @@ const BonusPage = () => {
     dp_fator_1: "0.00",
     dp_fator_2: "0.00",
     fiscal_valor_base_c: "0.00",
+    contabil_valor_mes: "0.00",
   });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [selectedDpUserId, setSelectedDpUserId] = useState("");
   const [selectedFiscalUserId, setSelectedFiscalUserId] = useState("");
+  const [selectedContabilUserId, setSelectedContabilUserId] = useState("");
 
   // --- DATA FETCHING ---
   const fetchData = async () => {
@@ -79,6 +88,27 @@ const BonusPage = () => {
     }
   };
 
+  const handleResetMonth = async () => {
+    if (
+      !confirm(
+        "ATENÇÃO: Esta ação é irreversível!\n\nTem certeza que deseja zerar todos os dados de progresso mensal (checkboxes e datas de conclusão) de TODOS os agentes? Isso deve ser feito apenas no início de um novo mês."
+      )
+    ) {
+      return;
+    }
+    setResetting(true);
+    try {
+      const res = await api.post("/admin/reset-agent-data");
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Erro ao zerar os dados do mês."
+      );
+    } finally {
+      setResetting(false);
+    }
+  };
+
   // --- MEMOIZED DATA FOR VIEWS ---
   const dpUsers = useMemo(
     () => results.filter((r) => r.department === "Pessoal"),
@@ -86,6 +116,10 @@ const BonusPage = () => {
   );
   const fiscalUsers = useMemo(
     () => results.filter((r) => r.department === "Fiscal"),
+    [results]
+  );
+  const contabilUsers = useMemo(
+    () => results.filter((r) => r.department === "Contábil"),
     [results]
   );
 
@@ -96,6 +130,11 @@ const BonusPage = () => {
   const selectedFiscalResult = useMemo(
     () => fiscalUsers.find((u) => u.userId == selectedFiscalUserId),
     [fiscalUsers, selectedFiscalUserId]
+  );
+
+  const selectedContabilResult = useMemo(
+    () => contabilUsers.find((u) => u.userId == selectedContabilUserId),
+    [contabilUsers, selectedContabilUserId]
   );
 
   const formatCurrency = (value) => {
@@ -117,6 +156,18 @@ const BonusPage = () => {
         {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Cálculo de Bônus</h1>
+          <button
+            onClick={handleResetMonth}
+            disabled={resetting || calculating}
+            className="flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-lg shadow-md hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+          >
+            {resetting ? (
+              <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+            ) : (
+              <FiTrash2 />
+            )}
+            {resetting ? "Zerando..." : "Zerar Mês"}
+          </button>
           <button
             onClick={handleRecalculate}
             disabled={calculating}
@@ -192,6 +243,24 @@ const BonusPage = () => {
                 className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
               />
             </div>
+            {/* Contábil Factor */}
+            <div>
+              <label
+                htmlFor="contabil_valor_mes"
+                className="block text-sm font-medium mb-1"
+              >
+                Contábil: Valor por Mês
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                name="contabil_valor_mes"
+                id="contabil_valor_mes"
+                value={factors.contabil_valor_mes}
+                onChange={handleFactorChange}
+                className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
             {/* Save Button */}
             <button
               onClick={handleSaveFactors}
@@ -206,7 +275,7 @@ const BonusPage = () => {
         <div className="bg-white dark:bg-dark-card p-6 rounded-lg shadow-md">
           <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
             <nav className="flex space-x-4">
-              {["dp", "fiscal", "geral"].map((tabName) => (
+              {["dp", "fiscal", "contabil", "geral"].map((tabName) => (
                 <button
                   key={tabName}
                   onClick={() => setView(tabName)}
@@ -218,6 +287,7 @@ const BonusPage = () => {
                 >
                   {tabName === "dp" && "Departamento Pessoal"}
                   {tabName === "fiscal" && "Departamento Fiscal"}
+                  {tabName === "contabil" && "Departamento Contábil"}
                   {tabName === "geral" && "Visão Geral"}
                 </button>
               ))}
@@ -341,6 +411,72 @@ const BonusPage = () => {
                         </td>
                         <td className="text-right p-2">
                           {formatCurrency(selectedFiscalResult.totalBonus)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CONTÁBIL VIEW */}
+          {view === "contabil" && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Selecione um funcionário do Contábil:
+              </label>
+              <select
+                value={selectedContabilUserId}
+                onChange={(e) => setSelectedContabilUserId(e.target.value)}
+                className="w-full md:w-1/3 p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:border-gray-600 mb-4"
+              >
+                <option value="">-- Selecione --</option>
+                {contabilUsers.map((user) => (
+                  <option key={user.userId} value={user.userId}>
+                    {user.userName}
+                  </option>
+                ))}
+              </select>
+
+              {selectedContabilResult && (
+                <div className="overflow-x-auto">
+                  <h3 className="text-lg font-bold mb-2">
+                    Detalhes para: {selectedContabilResult.userName}
+                  </h3>
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b dark:border-gray-600">
+                        <th className="text-left p-2">Razão Social</th>
+                        <th className="text-center p-2">
+                          Meses Contabilizados
+                        </th>
+                        <th className="text-right p-2">Valor Bonificação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedContabilResult.details.map((detail, i) => (
+                        <tr
+                          key={i}
+                          className="border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                        >
+                          <td className="p-2">{detail.companyName}</td>
+                          <td className="text-center p-2">
+                            {detail.accountingMonthsCount}
+                          </td>
+                          <td className="text-right p-2">
+                            {formatCurrency(detail.bonus)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="font-bold border-t-2 dark:border-gray-500">
+                        <td colSpan="2" className="text-right p-2">
+                          Total:
+                        </td>
+                        <td className="text-right p-2">
+                          {formatCurrency(selectedContabilResult.totalBonus)}
                         </td>
                       </tr>
                     </tfoot>

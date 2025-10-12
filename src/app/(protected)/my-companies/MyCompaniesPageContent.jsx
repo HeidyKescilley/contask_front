@@ -51,7 +51,9 @@ const MyCompaniesPageContent = () => {
     // Determinar se o modo "Agente" está disponível para o usuário
     if (
       user &&
-      (user.department === "Fiscal" || user.department === "Pessoal")
+      (user.department === "Fiscal" ||
+        user.department === "Pessoal" ||
+        user.department === "Contábil")
     ) {
       setIsAgentViewAvailable(true);
     } else {
@@ -132,7 +134,9 @@ const MyCompaniesPageContent = () => {
           company.status === "ATIVA" &&
           ((user?.department === "Fiscal" &&
             company.respFiscalId === user?.id) ||
-            (user?.department === "Pessoal" && company.respDpId === user?.id))
+            (user?.department === "Pessoal" && company.respDpId === user?.id) ||
+            (user?.department === "Contábil" &&
+              company.respContabilId === user?.id))
       );
     }
 

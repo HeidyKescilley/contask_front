@@ -31,6 +31,50 @@ const DashboardContent = ({ data, viewMode }) => {
     );
   }
 
+  // RENDERIZAÇÃO SIMPLIFICADA PARA O DASHBOARD CONTÁBIL
+  if (viewMode === "contabil_general") {
+    return (
+      <div className="mt-8 bg-white dark:bg-dark-card rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-dark-text text-left">
+          Análise por Usuário
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white dark:bg-dark-card text-black dark:text-dark-text">
+            <thead>
+              <tr className="border-b-2 border-gray-300 dark:border-dark-border">
+                <th className="px-4 py-3 text-left font-semibold">Usuário</th>
+                <th className="px-4 py-3 text-left font-semibold">
+                  Total Designado
+                </th>
+                <th className="px-4 py-3 text-left font-semibold">
+                  Total de Meses Contabilizados
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.usersData
+                .filter((user) => user.totalCompaniesAssigned > 0)
+                .map((userData) => (
+                  <tr
+                    key={userData.id}
+                    className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <td className="px-4 py-3 text-left">{userData.name}</td>
+                    <td className="px-4 py-3 text-left">
+                      {userData.totalCompaniesAssigned}
+                    </td>
+                    <td className="px-4 py-3 text-left font-semibold">
+                      {userData.totalAccountingMonths}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   // ALTERADO: O total para os cards agora vem de campos diferentes.
   const totalForCards = viewMode.includes("general")
     ? data.absoluteTotalForDept

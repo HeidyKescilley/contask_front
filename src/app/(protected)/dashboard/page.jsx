@@ -19,6 +19,7 @@ const DashboardPage = () => {
   const isAdmin = user?.role === "admin";
   const isFiscal = user?.department === "Fiscal";
   const isPessoal = user?.department === "Pessoal";
+  const isContabil = user?.department === "Contábil";
   const canSeeMyCompanies = isFiscal || isPessoal;
 
   useEffect(() => {
@@ -26,7 +27,8 @@ const DashboardPage = () => {
     if (isAdmin) setViewMode("fiscal_general");
     else if (isFiscal) setViewMode("fiscal_general");
     else if (isPessoal) setViewMode("dp_general");
-  }, [user, isAdmin, isFiscal, isPessoal]);
+    else if (isContabil) setViewMode("contabil_general");
+  }, [user, isAdmin, isFiscal, isPessoal, isContabil]);
 
   const fetchDashboardData = useCallback(async () => {
     if (!viewMode || !user) return;
@@ -38,6 +40,9 @@ const DashboardPage = () => {
         break;
       case "dp_general":
         endpoint = "/company/dashboard/dp/general";
+        break;
+      case "contabil_general":
+        endpoint = "/company/dashboard/contabil/general";
         break;
       case "my_companies":
         if (isFiscal)
@@ -72,6 +77,8 @@ const DashboardPage = () => {
         return "Dashboard de Atividades Fiscais";
       case "dp_general":
         return "Dashboard de Atividades do DP";
+      case "contabil_general":
+        return "Dashboard de Atividades Contábeis";
       case "my_companies":
         return `Dashboard de Minhas Empresas (${user?.department})`;
       default:
@@ -128,6 +135,16 @@ const DashboardPage = () => {
                   }`}
                 >
                   DP Geral
+                </button>
+                <button
+                  onClick={() => handleViewChange("contabil_general")}
+                  className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
+                    viewMode === "contabil_general"
+                      ? "bg-white text-logo-light-blue shadow"
+                      : "text-white"
+                  }`}
+                >
+                  Contábil Geral
                 </button>
                 {canSeeMyCompanies && (
                   <button

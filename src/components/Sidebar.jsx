@@ -17,6 +17,7 @@ import {
   FiBarChart2,
   FiDownload,
   FiAward,
+  FiGrid,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -119,6 +120,13 @@ const Sidebar = () => {
         name: "Gestão de Usuários",
         path: "/admin/users",
         icon: <FiSettings size={24} />,
+        colorClass: "text-white",
+        hoverBgClass: "hover:bg-logo-dark-blue",
+      },
+      {
+        name: "Visão de Equipes",
+        path: "/admin/team-view",
+        icon: <FiGrid size={24} />, // Ícone de "grade" para representar a visão
         colorClass: "text-white",
         hoverBgClass: "hover:bg-logo-dark-blue",
       },
