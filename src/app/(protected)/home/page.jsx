@@ -8,7 +8,12 @@ import { formatDate } from "../../../utils/utils";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
 import CompanyModal from "../../../components/CompanyModal";
 import { toast } from "react-toastify";
-import { FiEdit } from "react-icons/fi"; // Importação do ícone de edição
+import {
+  FiEdit,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiPlusCircle,
+} from "react-icons/fi";
 
 const HomePage = () => {
   const [recentStatusChanges, setRecentStatusChanges] = useState([]);
@@ -60,10 +65,8 @@ const HomePage = () => {
 
   const handleEditCompany = async (company) => {
     try {
-      // Buscar os dados completos da empresa
       const res = await api.get(`/company/${company.id}`);
       const fullCompanyData = res.data;
-
       setModalType("edit");
       setSelectedCompany(fullCompanyData);
       setShowModal(true);
@@ -77,7 +80,7 @@ const HomePage = () => {
     try {
       await api.patch(`/company/edit/${companyData.id}`, companyData);
       toast.success(`Empresa "${companyData.name}" atualizada com sucesso!`);
-      fetchRecentCompanies(); // Atualiza os dados após a edição
+      fetchRecentCompanies();
       closeModal();
     } catch (error) {
       toast.error(
@@ -88,175 +91,197 @@ const HomePage = () => {
     }
   };
 
+  const getStatusBadge = (status) => {
+    const styles = {
+      SUSPENSA:
+        "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+      BAIXADA:
+        "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+      DISTRATO:
+        "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+      ATIVA:
+        "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+    };
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          styles[status] || "bg-gray-100 text-gray-700"
+        }`}
+      >
+        {status}
+      </span>
+    );
+  };
+
   return (
     <ProtectedRoute>
-      <div className="w-full px-8 py-8">
-        <h1 className="text-2xl font-bold mb-6 text-black dark:text-dark-text">
-          Home
-        </h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1 */}
-          <div className="bg-white dark:bg-dark-card rounded shadow-md">
-            <div className="bg-logo-light-blue dark:bg-dark-card p-4 rounded-t">
-              <h2 className="text-xl font-semibold text-white dark:text-dark-text">
-                Últimas Empresas Suspensas, Baixadas ou Distratadas
-              </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Card 1 - Status Changes */}
+        <div className="card p-0 overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-dark-border">
+            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+              <FiAlertTriangle size={18} />
             </div>
-            <div className="p-6">
-              {/* Tabela */}
-              <table className="min-w-full">
-                <thead>
+            <h2 className="text-base font-semibold text-light-text dark:text-dark-text">
+              Suspensas, Baixadas ou Distratadas
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="table-header">Empresa</th>
+                  <th className="table-header">Status</th>
+                  <th className="table-header">Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentStatusChanges.length === 0 ? (
                   <tr>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Empresa
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Status
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Data
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentStatusChanges.map((company) => (
-                    <tr
-                      key={company.id}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    <td
+                      colSpan={3}
+                      className="table-cell text-center text-light-text-secondary dark:text-dark-text-secondary"
                     >
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.name}
+                      Nenhum registro recente
+                    </td>
+                  </tr>
+                ) : (
+                  recentStatusChanges.map((company) => (
+                    <tr key={company.id} className="table-row">
+                      <td className="table-cell font-medium">{company.name}</td>
+                      <td className="table-cell">
+                        {getStatusBadge(company.status)}
                       </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.status}
-                      </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="table-cell text-light-text-secondary dark:text-dark-text-secondary">
                         {formatDate(company.statusUpdatedAt)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-          {/* Card 2 */}
-          <div className="bg-white dark:bg-dark-card rounded shadow-md">
-            <div className="bg-logo-light-blue dark:bg-dark-card p-4 rounded-t">
-              <h2 className="text-xl font-semibold text-white dark:text-dark-text">
-                Últimas Empresas Liberadas
-              </h2>
+        </div>
+
+        {/* Card 2 - Active Companies */}
+        <div className="card p-0 overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-dark-border">
+            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+              <FiCheckCircle size={18} />
             </div>
-            <div className="p-6">
-              {/* Tabela */}
-              <table className="min-w-full">
-                <thead>
+            <h2 className="text-base font-semibold text-light-text dark:text-dark-text">
+              Ultimas Empresas Liberadas
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="table-header">Empresa</th>
+                  <th className="table-header">Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentActiveCompanies.length === 0 ? (
                   <tr>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Empresa
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Data
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentActiveCompanies.map((company) => (
-                    <tr
-                      key={company.id}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    <td
+                      colSpan={2}
+                      className="table-cell text-center text-light-text-secondary dark:text-dark-text-secondary"
                     >
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.name}
-                      </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      Nenhum registro recente
+                    </td>
+                  </tr>
+                ) : (
+                  recentActiveCompanies.map((company) => (
+                    <tr key={company.id} className="table-row">
+                      <td className="table-cell font-medium">{company.name}</td>
+                      <td className="table-cell text-light-text-secondary dark:text-dark-text-secondary">
                         {formatDate(company.statusUpdatedAt)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-          {/* Card 3 */}
-          <div className="bg-white dark:bg-dark-card rounded shadow-md md:col-span-2">
-            <div className="bg-logo-light-blue dark:bg-dark-card p-4 rounded-t">
-              <h2 className="text-xl font-semibold text-white dark:text-dark-text">
-                Novas Empresas
-              </h2>
+        </div>
+
+        {/* Card 3 - New Companies (full width) */}
+        <div className="card p-0 overflow-hidden lg:col-span-2">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-dark-border">
+            <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
+              <FiPlusCircle size={18} />
             </div>
-            <div className="p-6">
-              {/* Tabela */}
-              <table className="min-w-full">
-                <thead>
+            <h2 className="text-base font-semibold text-light-text dark:text-dark-text">
+              Novas Empresas
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="table-header">Empresa</th>
+                  <th className="table-header">Resp. Fiscal</th>
+                  <th className="table-header">Resp. DP</th>
+                  <th className="table-header">Resp. Contabil</th>
+                  <th className="table-header">Data de Inicio</th>
+                  <th className="table-header w-16">Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentCompanies.length === 0 ? (
                   <tr>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Empresa
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Resp. Fiscal
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Resp. DP
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Resp. Contábil
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Data de Início
-                    </th>
-                    <th className="text-left text-black dark:text-dark-text border-b border-gray-400">
-                      Ações
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentCompanies.map((company) => (
-                    <tr
-                      key={company.id}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    <td
+                      colSpan={6}
+                      className="table-cell text-center text-light-text-secondary dark:text-dark-text-secondary"
                     >
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
-                        {company.name}
-                      </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      Nenhum registro recente
+                    </td>
+                  </tr>
+                ) : (
+                  recentCompanies.map((company) => (
+                    <tr key={company.id} className="table-row">
+                      <td className="table-cell font-medium">{company.name}</td>
+                      <td className="table-cell">
                         {company.respFiscal?.name?.split(" ")[0] || "N/A"}
                       </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="table-cell">
                         {company.respDp?.name?.split(" ")[0] || "N/A"}
                       </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="table-cell">
                         {company.respContabil?.name?.split(" ")[0] || "N/A"}
                       </td>
-                      <td className="text-left text-black dark:text-dark-text border-b border-gray-400 px-4 py-2">
+                      <td className="table-cell text-light-text-secondary dark:text-dark-text-secondary">
                         {company.contractInit
                           ? formatDate(company.contractInit)
                           : "N/A"}
                       </td>
-                      <td className="border-b border-gray-400 px-4 py-2">
+                      <td className="table-cell">
                         <button
                           onClick={() => handleEditCompany(company)}
-                          className="text-green-500 dark:text-accent-green"
+                          className="p-1.5 rounded-lg text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
                           aria-label="Editar Empresa"
                         >
-                          <FiEdit />
+                          <FiEdit size={15} />
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-        {showModal && (
-          <CompanyModal
-            type={modalType}
-            company={selectedCompany}
-            onClose={closeModal}
-            onSave={handleSaveCompany}
-          />
-        )}
       </div>
+
+      {showModal && (
+        <CompanyModal
+          type={modalType}
+          company={selectedCompany}
+          onClose={closeModal}
+          onSave={handleSaveCompany}
+        />
+      )}
     </ProtectedRoute>
   );
 };

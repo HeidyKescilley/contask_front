@@ -18,7 +18,6 @@ const RegisterPage = () => {
     confirmpassword: "",
   });
 
-  // Redireciona se já estiver autenticado
   useEffect(() => {
     if (user) {
       router.push("/home");
@@ -48,63 +47,61 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg">
+    <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg p-6">
       <form
-        className="w-full max-w-md bg-white dark:bg-dark-card p-6 rounded shadow"
+        className="w-full max-w-md card p-8 space-y-4"
         onSubmit={handleSubmit}
       >
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-dark-text">
-          Registro
-        </h2>
-        {/* Campos do formulário */}
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Nome
-          </label>
+        <div className="text-center mb-2">
+          <h2 className="text-2xl font-bold">Registro</h2>
+          <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
+            Crie sua conta para acessar o sistema
+          </p>
+        </div>
+
+        <div>
+          <label className="label-base">Nome</label>
           <input
             type="text"
             name="name"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.name}
             onChange={handleChange}
             placeholder="Nome completo"
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Email
-          </label>
+
+        <div>
+          <label className="label-base">Email</label>
           <input
             type="email"
             name="email"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.email}
             onChange={handleChange}
             placeholder="Seu email"
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Data de Nascimento
-          </label>
+
+        <div>
+          <label className="label-base">Data de Nascimento</label>
           <input
             type="date"
             name="birthday"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.birthday}
             onChange={handleChange}
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Departamento
-          </label>
+
+        <div>
+          <label className="label-base">Departamento</label>
           <select
             name="department"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.department}
             onChange={handleChange}
             required
@@ -117,51 +114,58 @@ const RegisterPage = () => {
             ))}
           </select>
         </div>
-        {/* Campo Ramal (opcional) */}
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Ramal (opcional)
-          </label>
+
+        <div>
+          <label className="label-base">Ramal (opcional)</label>
           <input
             type="text"
             name="ramal"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.ramal}
             onChange={handleChange}
             placeholder="Ramal"
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Senha
-          </label>
+
+        <div>
+          <label className="label-base">Senha</label>
           <input
             type="password"
             name="password"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.password}
             onChange={handleChange}
             placeholder="Sua senha"
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text">
-            Confirme a Senha
-          </label>
+
+        <div>
+          <label className="label-base">Confirme a Senha</label>
           <input
             type="password"
             name="confirmpassword"
-            className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+            className="input-base"
             value={formData.confirmpassword}
             onChange={handleChange}
             placeholder="Confirme sua senha"
             required
           />
         </div>
-        <button className="w-full bg-accent-blue text-white py-2 rounded">
+
+        <button type="submit" className="btn-primary w-full">
           Registrar
         </button>
+
+        <p className="text-center text-sm text-gray-500 dark:text-dark-text-secondary">
+          Já tem uma conta?{" "}
+          <a
+            href="/login"
+            className="text-primary-500 hover:text-primary-400 font-medium transition-colors"
+          >
+            Faça login
+          </a>
+        </p>
       </form>
     </div>
   );

@@ -19,7 +19,7 @@ const DashboardPage = () => {
   const isAdmin = user?.role === "admin";
   const isFiscal = user?.department === "Fiscal";
   const isPessoal = user?.department === "Pessoal";
-  const isContabil = user?.department === "Contábil";
+  const isContabil = user?.department === "Contabil";
   const canSeeMyCompanies = isFiscal || isPessoal;
 
   useEffect(() => {
@@ -71,21 +71,6 @@ const DashboardPage = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const getTitle = () => {
-    switch (viewMode) {
-      case "fiscal_general":
-        return "Dashboard de Atividades Fiscais";
-      case "dp_general":
-        return "Dashboard de Atividades do DP";
-      case "contabil_general":
-        return "Dashboard de Atividades Contábeis";
-      case "my_companies":
-        return `Dashboard de Minhas Empresas (${user?.department})`;
-      default:
-        return "Dashboard";
-    }
-  };
-
   const handleViewChange = (newView) => {
     if (newView === "my_companies_toggle") {
       setViewMode((prev) =>
@@ -100,6 +85,27 @@ const DashboardPage = () => {
     }
   };
 
+  // Build tabs based on user role
+  const tabs = [];
+  if (isAdmin) {
+    tabs.push(
+      { key: "fiscal_general", label: "Fiscal Geral" },
+      { key: "dp_general", label: "DP Geral" },
+      { key: "contabil_general", label: "Contabil Geral" }
+    );
+    if (canSeeMyCompanies) {
+      tabs.push({ key: "my_companies", label: "Minhas Empresas" });
+    }
+  } else if (canSeeMyCompanies) {
+    tabs.push(
+      {
+        key: isFiscal ? "fiscal_general" : "dp_general",
+        label: "Geral",
+      },
+      { key: "my_companies", label: "Minhas Empresas" }
+    );
+  }
+
   return (
     <ProtectedRoute
       requiredPermissions={{
@@ -107,103 +113,40 @@ const DashboardPage = () => {
         departments: ["Fiscal", "Pessoal"],
       }}
     >
-      <div className="w-full px-8 py-8">
-        <div className="bg-white dark:bg-dark-card rounded shadow-md overflow-hidden">
-          <div className="bg-logo-light-blue dark:bg-dark-card flex items-center justify-between px-6 py-4">
-            <h1 className="text-2xl font-bold text-white dark:text-dark-text">
-              {getTitle()}
-            </h1>
-
-            {isAdmin ? (
-              <div className="flex items-center gap-1 bg-white/20 rounded-full p-1">
-                <button
-                  onClick={() => handleViewChange("fiscal_general")}
-                  className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === "fiscal_general"
-                      ? "bg-white text-logo-light-blue shadow"
-                      : "text-white"
-                  }`}
-                >
-                  Fiscal Geral
-                </button>
-                <button
-                  onClick={() => handleViewChange("dp_general")}
-                  className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === "dp_general"
-                      ? "bg-white text-logo-light-blue shadow"
-                      : "text-white"
-                  }`}
-                >
-                  DP Geral
-                </button>
-                <button
-                  onClick={() => handleViewChange("contabil_general")}
-                  className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === "contabil_general"
-                      ? "bg-white text-logo-light-blue shadow"
-                      : "text-white"
-                  }`}
-                >
-                  Contábil Geral
-                </button>
-                {canSeeMyCompanies && (
-                  <button
-                    onClick={() => handleViewChange("my_companies")}
-                    className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                      viewMode === "my_companies"
-                        ? "bg-white text-logo-light-blue shadow"
-                        : "text-white"
-                    }`}
-                  >
-                    Minhas Empresas
-                  </button>
-                )}
-              </div>
-            ) : (
-              canSeeMyCompanies && (
-                <div className="flex items-center gap-1 bg-white/20 rounded-full p-1">
-                  <button
-                    onClick={() =>
-                      handleViewChange(
-                        isFiscal ? "fiscal_general" : "dp_general"
-                      )
-                    }
-                    className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                      viewMode === "my_companies"
-                        ? "text-white"
-                        : "bg-white text-logo-light-blue shadow"
-                    }`}
-                  >
-                    Geral
-                  </button>
-                  <button
-                    onClick={() => handleViewChange("my_companies_toggle")}
-                    className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                      viewMode === "my_companies"
-                        ? "bg-white text-logo-light-blue shadow"
-                        : "text-white"
-                    }`}
-                  >
-                    Minhas Empresas
-                  </button>
-                </div>
-              )
-            )}
-          </div>
-
-          <div className="p-6">
-            {loading ? (
-              <Loading />
-            ) : dashboardData ? (
-              <DashboardContent data={dashboardData} viewMode={viewMode} />
-            ) : (
-              <p className="text-center text-gray-800 dark:text-dark-text">
-                Não foi possível carregar os dados. Tente selecionar outra
-                visualização.
-              </p>
-            )}
-          </div>
+      {/* Tabs */}
+      {tabs.length > 1 && (
+        <div className="flex gap-1 mb-5 border-b border-gray-200 dark:border-dark-border">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleViewChange(tab.key)}
+              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors
+                ${
+                  viewMode === tab.key
+                    ? "border-b-2 border-primary-500 text-primary-500"
+                    : "text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text"
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+      )}
+
+      {/* Content */}
+      <div className="card">
+        {loading ? (
+          <div className="flex justify-center items-center py-10">
+            <div className="w-10 h-10 rounded-full border-[3px] border-gray-200 dark:border-dark-border border-t-primary-500 animate-spin" />
+          </div>
+        ) : dashboardData ? (
+          <DashboardContent data={dashboardData} viewMode={viewMode} />
+        ) : (
+          <p className="text-center text-light-text-secondary dark:text-dark-text-secondary py-10">
+            Nao foi possivel carregar os dados. Tente selecionar outra
+            visualizacao.
+          </p>
+        )}
       </div>
     </ProtectedRoute>
   );

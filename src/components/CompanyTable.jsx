@@ -1,6 +1,7 @@
 // src/components/CompanyTable.jsx
 "use client";
 
+import { memo, useCallback } from "react";
 import {
   FiEdit,
   FiLock,
@@ -12,6 +13,145 @@ import {
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
 import { useAuth } from "../hooks/useAuth";
 
+const STATUS_STYLES = {
+  ATIVA:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  SUSPENSA: "bg-amber-100  text-amber-700  dark:bg-amber-900/40  dark:text-amber-400",
+  BAIXADA:  "bg-red-100    text-red-700    dark:bg-red-900/40    dark:text-red-400",
+  DISTRATO: "bg-red-100    text-red-700    dark:bg-red-900/40    dark:text-red-400",
+};
+
+const ROW_HIGHLIGHT = {
+  SUSPENSA: " bg-amber-50/40 dark:bg-amber-950/15",
+  BAIXADA:  " bg-red-50/40   dark:bg-red-950/15",
+  DISTRATO: " bg-red-50/40   dark:bg-red-950/15",
+};
+
+const StatusBadge = memo(({ status }) => (
+  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+    STATUS_STYLES[status] || "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+  }`}>
+    {status}
+  </span>
+));
+StatusBadge.displayName = "StatusBadge";
+
+const ActionButton = memo(({ onClick, className, label, children }) => (
+  <button
+    onClick={onClick}
+    className={`p-1 rounded-lg transition-colors ${className}`}
+    aria-label={label}
+    title={label}
+  >
+    {children}
+  </button>
+));
+ActionButton.displayName = "ActionButton";
+
+const CompanyRow = memo(({
+  company, isAdmin,
+  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany
+}) => {
+  const rowClass = `table-row${ROW_HIGHLIGHT[company.status] || ""}`;
+
+  return (
+    <tr className={rowClass}>
+      <td className="table-cell font-mono text-xs">{company.num}</td>
+      <td className="table-cell text-center">{company.branchNumber || "–"}</td>
+      <td className="table-cell max-w-[160px]">
+        <div className="flex items-center gap-1">
+          <span
+            className="block truncate text-xs"
+            title={company.name}
+          >
+            {company.name.length > 35
+              ? `${company.name.slice(0, 35)}…`
+              : company.name}
+          </span>
+          <button
+            onClick={() => copyToClipboard(company.name, "Razão Social")}
+            className="flex-shrink-0 text-gray-400 hover:text-primary-500 transition-colors"
+            title="Copiar Razão Social"
+          >
+            <FiCopy size={12} />
+          </button>
+        </div>
+      </td>
+      <td className="table-cell whitespace-nowrap relative group pr-7">
+        <span className="font-mono text-xs tracking-[0.06em] tabular-nums">
+          {formatCNPJ(company.cnpj)}
+        </span>
+        <button
+          onClick={() => copyToClipboard(company.cnpj, "CNPJ")}
+          className="absolute right-2 top-1/2 -translate-y-1/2
+            text-gray-300 dark:text-gray-600
+            group-hover:text-primary-500 dark:group-hover:text-primary-400
+            transition-colors"
+          title="Copiar CNPJ"
+        >
+          <FiCopy size={12} />
+        </button>
+      </td>
+      <td className="table-cell">{company.rule}</td>
+      <td className="table-cell">{company.contactMode?.name || "–"}</td>
+      <td className="table-cell">{company.respFiscal?.name?.split(" ")[0] || "–"}</td>
+      <td className="table-cell">{company.respDp?.name?.split(" ")[0] || "–"}</td>
+      <td className="table-cell text-center">{company.uf || "–"}</td>
+      <td className="table-cell text-center">
+        {company.isHeadquarters ? (
+          <span className="w-2 h-2 bg-primary-500 rounded-full inline-block" title="Matriz" />
+        ) : (
+          <span className="text-gray-300 dark:text-gray-600 text-xs">–</span>
+        )}
+      </td>
+      <td className="table-cell"><StatusBadge status={company.status} /></td>
+      <td className="table-cell">
+        <div className="flex items-center gap-0.5">
+          <ActionButton
+            onClick={() => onEditCompany(company)}
+            className="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+            label="Editar"
+          >
+            <FiEdit size={14} />
+          </ActionButton>
+          {isAdmin && (
+            <ActionButton
+              onClick={() => onBlockCompany(company)}
+              className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+              label="Alterar Status"
+            >
+              <FiLock size={14} />
+            </ActionButton>
+          )}
+          <ActionButton
+            onClick={() => onViewHistory(company)}
+            className="text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+            label="Historico"
+          >
+            <FiClock size={14} />
+          </ActionButton>
+          <ActionButton
+            onClick={() => onManageAutomations(company)}
+            className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            label="Automacoes"
+          >
+            <FiZap size={14} />
+          </ActionButton>
+          {onManualArchiveCompany && (
+            <ActionButton
+              onClick={() => onManualArchiveCompany(company)}
+              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600"
+              label="Arquivar"
+            >
+              <FiArchive size={14} />
+            </ActionButton>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+});
+CompanyRow.displayName = "CompanyRow";
+
 const CompanyTable = ({
   companies,
   onEditCompany,
@@ -21,160 +161,53 @@ const CompanyTable = ({
   onManualArchiveCompany,
 }) => {
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   return (
-    <div className="overflow-x-auto mt-4">
-      <table className="min-w-full table-fixed bg-white dark:bg-dark-card text-black dark:text-dark-text">
-        <thead>
-          <tr>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
-              Nº
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
-              Filial
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-96">
-              Razão Social
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-44">
-              CNPJ
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-24">
-              Regime
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-24">
-              Padrão
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-32">
-              Resp. Fiscal
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-32">
-              Resp. DP
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
-              UF
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-16">
-              Matriz
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-24">
-              Status
-            </th>
-            <th className="px-4 py-2 border-b border-gray-400 dark:border-dark-border text-left w-28">
-              Ações
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map((company) => {
-            let rowClassName =
-              "border-b border-gray-400 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150";
-
-            if (company.status === "SUSPENSA") {
-              rowClassName += " bg-yellow-100 dark:bg-yellow-900";
-            } else if (
-              company.status === "BAIXADA" ||
-              company.status === "DISTRATO"
-            ) {
-              rowClassName += " bg-red-100 dark:bg-red-900";
-            }
-
-            return (
-              <tr key={company.id} className={rowClassName}>
-                <td className="px-4 py-2 text-left">{company.num}</td>
-                <td className="px-4 py-2 text-left">
-                  {company.branchNumber || "N/A"}
-                </td>
-                <td
-                  className="px-4 py-2 text-left whitespace-nowrap overflow-hidden text-ellipsis"
-                  title={company.name}
-                >
-                  {company.name.length > 50
-                    ? company.name.substring(0, 50) + "..."
-                    : company.name}
-                </td>
-                <td className="px-4 py-2 text-left flex items-center">
-                  <span className="flex-grow whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
-                    {" "}
-                    {/* Ajustado mr para 0.5 */}
-                    {formatCNPJ(company.cnpj)}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(formatCNPJ(company.cnpj))}
-                    className="flex-shrink-0 text-logo-dark-blue dark:text-accent-blue ml-0.5" /* Ajustado ml para 0.5 */
-                  >
-                    <FiCopy />
-                  </button>
-                </td>
-                <td className="px-4 py-2 text-left">{company.rule}</td>
-                <td className="px-4 py-2 text-left">
-                  {company.contactMode ? company.contactMode.name : "N/A"}
-                </td>
-                <td className="px-4 py-2 text-left">
-                  {company.respFiscal?.name?.split(" ")[0] || "N/A"}
-                </td>
-                <td className="px-4 py-2 text-left">
-                  {company.respDp?.name?.split(" ")[0] || "N/A"}
-                </td>
-                <td className="px-4 py-2 text-left">{company.uf || "N/A"}</td>
-                <td className="px-4 py-2 text-left">
-                  <input
-                    type="checkbox"
-                    checked={company.isHeadquarters || false}
-                    disabled
-                    className="form-checkbox h-5 w-5 text-purple-600 disabled:opacity-50" // Cor roxa para destaque
-                  />
-                </td>
-                <td className="px-4 py-2 text-left">{company.status}</td>
-                <td className="px-4 py-2 flex space-x-2">
-                  <button
-                    onClick={() => onEditCompany(company)}
-                    className="text-green-500 dark:text-accent-green"
-                    aria-label="Editar Empresa"
-                  >
-                    <FiEdit />
-                  </button>
-                  {user?.role === "admin" && (
-                    <button
-                      onClick={() => onBlockCompany(company)}
-                      className="text-red-500"
-                      aria-label="Alterar Status da Empresa"
-                    >
-                      <FiLock />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onViewHistory(company)}
-                    className="text-yellow-500"
-                    aria-label="Visualizar Histórico"
-                  >
-                    <FiClock />
-                  </button>
-                  <button
-                    onClick={() => onManageAutomations(company)}
-                    className="text-blue-500"
-                    aria-label="Gerenciar Automações"
-                  >
-                    <FiZap />
-                  </button>
-                  {onManualArchiveCompany && (
-                    <button
-                      onClick={() => onManualArchiveCompany(company)}
-                      className="text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
-                      aria-label="Arquivar Empresa Manualmente"
-                      title="Arquivar Empresa Manualmente"
-                    >
-                      <FiArchive />
-                    </button>
-                  )}
+    <div className="card p-0 overflow-hidden mt-3">
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-fixed">
+          <thead>
+            <tr>
+              <th className="table-header w-12">Nº</th>
+              <th className="table-header w-12 text-center">Filial</th>
+              <th className="table-header" style={{ minWidth: "200px" }}>Razao Social</th>
+              <th className="table-header w-44">CNPJ</th>
+              <th className="table-header w-20">Regime</th>
+              <th className="table-header w-20">Padrao</th>
+              <th className="table-header w-24">Resp. Fiscal</th>
+              <th className="table-header w-24">Resp. DP</th>
+              <th className="table-header w-10 text-center">UF</th>
+              <th className="table-header w-14 text-center">Matriz</th>
+              <th className="table-header w-24">Status</th>
+              <th className="table-header w-24">Acoes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {companies.map((company) => (
+              <CompanyRow
+                key={company.id}
+                company={company}
+                isAdmin={isAdmin}
+                onEditCompany={onEditCompany}
+                onBlockCompany={onBlockCompany}
+                onViewHistory={onViewHistory}
+                onManageAutomations={onManageAutomations}
+                onManualArchiveCompany={onManualArchiveCompany}
+              />
+            ))}
+            {companies.length === 0 && (
+              <tr>
+                <td colSpan={12} className="table-cell text-center py-8 text-gray-400 dark:text-dark-text-secondary">
+                  Nenhuma empresa encontrada
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
-export default CompanyTable;
+export default memo(CompanyTable);

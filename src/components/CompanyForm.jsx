@@ -2,58 +2,141 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import {
+  FiX,
+  FiPlus,
+  FiMail,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiCheck,
+} from "react-icons/fi";
 import api from "../utils/api";
 import AddContactModeModal from "./AddContactModeModal";
 import { useAuth } from "../hooks/useAuth";
+import {
+  applyDocumentMask,
+  validateDocument,
+  getDocumentType,
+  formatCNPJ,
+  formatCPF,
+} from "../utils/utils";
 
+// ── Divisor de seção ──────────────────────────────────────────────────────────
+const SectionDivider = ({ label }) => (
+  <div className="flex items-center gap-2 mb-2 mt-3 first:mt-0">
+    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-dark-text-secondary whitespace-nowrap">
+      {label}
+    </span>
+    <div className="flex-1 h-px bg-gray-100 dark:bg-dark-border" />
+  </div>
+);
+
+// ── Toggle pill para checkboxes ────────────────────────────────────────────────
+const TogglePill = ({ checked, onChange, label, disabled = false }) => (
+  <label
+    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer
+      text-sm font-medium transition-all duration-150 select-none
+      ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+      ${
+        checked
+          ? "border-primary-400 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300 dark:border-primary-500"
+          : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text-secondary"
+      }`}
+  >
+    <input
+      type="checkbox"
+      className="sr-only"
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+    />
+    <span
+      className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors
+        ${checked
+          ? "bg-primary-500 text-white"
+          : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface"
+        }`}
+    >
+      {checked && <FiCheck size={9} strokeWidth={3} />}
+    </span>
+    {label}
+  </label>
+);
+
+
+// ── Componente principal ──────────────────────────────────────────────────────
 const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   const { user } = useAuth();
   const data = initialData || {};
+
+  const parseEmails = (emailStr) => {
+    if (!emailStr) return [];
+    return emailStr.split(",").map((e) => e.trim()).filter(Boolean);
+  };
+
   const [formData, setFormData] = useState({
-    id: data.id || "",
-    num: data.num || "",
-    name: data.name || "",
-    cnpj: data.cnpj || "",
-    ie: data.ie || "",
-    email: data.email || "",
-    phone: data.phone || "",
-    rule: data.rule || "Simples",
-    classi: data.classi || "Outros",
-    uf: data.uf || "DF",
-    contact: data.contact || "",
-    contractInit: data.contractInit || "",
-    openedByUs: data.openedByUs || false,
-    important_info: data.important_info || "",
-    obs: data.obs || "",
-    respFiscalId: data.respFiscalId || "",
-    respContabilId: data.respContabilId || "",
-    respDpId: data.respDpId || "",
-    contactModeId: data.contactModeId || "",
-    branchNumber: data.branchNumber || "", // Campo Filial
-    isHeadquarters: data.isHeadquarters || false, // Novo campo Matriz
+    id:               data.id               || "",
+    num:              data.num              || "",
+    name:             data.name             || "",
+    cnpj:             data.cnpj             || "",
+    ie:               data.ie              || "",
+    email:            data.email            || "",
+    phone:            data.phone            || "",
+    rule:             data.rule             || "Simples",
+    classi:           data.classi           || "Outros",
+    uf:               data.uf              || "DF",
+    contact:          data.contact          || "",
+    contractInit:     data.contractInit     || "",
+    openedByUs:       data.openedByUs       || false,
+    important_info:   data.important_info   || "",
+    obs:              data.obs              || "",
+    respFiscalId:     data.respFiscalId     || "",
+    respContabilId:   data.respContabilId   || "",
+    respDpId:         data.respDpId         || "",
+    contactModeId:    data.contactModeId    || "",
+    branchNumber:     data.isHeadquarters ? "1" : (data.branchNumber || ""),
+    isHeadquarters:   data.isHeadquarters   || false,
   });
 
-  const rules = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
+  // ── Email tags ────────────────────────────────────────────────────────────
+  const [emails, setEmails]         = useState(() => parseEmails(data.email));
+  const [emailInput, setEmailInput] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const emailInputRef               = useRef(null);
+  const EMAIL_REGEX                 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // ── CPF/CNPJ ─────────────────────────────────────────────────────────────
+  const initDocDisplay = (raw) => {
+    if (!raw) return "";
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length === 11) return formatCPF(digits);
+    if (digits.length === 14) return formatCNPJ(digits);
+    return digits;
+  };
+  const [cnpjDisplay, setCnpjDisplay] = useState(() => initDocDisplay(data.cnpj));
+  const [cnpjError, setCnpjError]     = useState("");
+  const [cnpjValid, setCnpjValid]     = useState(false);
+
+  // ── Listas ────────────────────────────────────────────────────────────────
+  const rules        = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
-  const ufs = ["DF", "SP", "RJ", "MG", "RS", "BA", "PR"];
+  const ufs = [
+    "AC","AL","AP","AM","BA","CE","DF","ES","GO",
+    "MA","MT","MS","MG","PA","PB","PR","PE","PI",
+    "RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+  ];
 
-  // Estados para armazenar os usuários por departamento
-  const [fiscalUsers, setFiscalUsers] = useState([]);
+  const [fiscalUsers, setFiscalUsers]   = useState([]);
   const [contabilUsers, setContabilUsers] = useState([]);
-  const [dpUsers, setDpUsers] = useState([]);
-
-  // Estado para armazenar as formas de envio
+  const [dpUsers, setDpUsers]           = useState([]);
   const [contactModes, setContactModes] = useState([]);
-
-  // Estado para controlar o modal de adicionar nova forma
   const [showAddContactModeModal, setShowAddContactModeModal] = useState(false);
 
   useEffect(() => {
     fetchContactModes();
     if (type === "edit") {
-      // Busca usuários para cada departamento apenas se for edição
-      fetchUsersByDepartment("Fiscal", setFiscalUsers);
+      fetchUsersByDepartment("Fiscal",  setFiscalUsers);
       fetchUsersByDepartment("Contábil", setContabilUsers);
       fetchUsersByDepartment("Pessoal", setDpUsers);
     }
@@ -63,8 +146,8 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     try {
       const res = await api.get("/company/contact-modes");
       setContactModes(res.data);
-    } catch (error) {
-      console.error("Erro ao buscar formas de envio:", error);
+    } catch (err) {
+      console.error("Erro ao buscar formas de envio:", err);
     }
   };
 
@@ -72,79 +155,145 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     try {
       const res = await api.get(`/department/${department}`);
       setUsers(res.data);
-    } catch (error) {
-      console.error(
-        `Erro ao buscar usuários para o departamento ${department}:`,
-        error
-      );
+    } catch (err) {
+      console.error(`Erro ao buscar usuários do departamento ${department}:`, err);
     }
   };
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value, type: inputType, checked } = e.target;
-    let newValue = inputType === "checkbox" ? checked : value;
+    setFormData((prev) => ({ ...prev, [name]: inputType === "checkbox" ? checked : value }));
+  };
 
-    setFormData({
-      ...formData,
-      [name]: newValue,
-    });
+  // Matriz → Filial 1 automático
+  const handleIsHeadquartersChange = (e) => {
+    const checked = e.target.checked;
+    setFormData((prev) => ({
+      ...prev,
+      isHeadquarters: checked,
+      branchNumber: checked ? "1" : "",
+    }));
   };
 
   const handleAddContactMode = async (name) => {
     try {
       const res = await api.post("/company/contact-modes", { name });
-      // Atualizar a lista de formas de envio
       fetchContactModes();
-      // Selecionar a nova forma de envio
-      setFormData((prev) => ({
-        ...prev,
-        contactModeId: res.data.contactMode.id,
-      }));
+      setFormData((prev) => ({ ...prev, contactModeId: res.data.contactMode.id }));
       setShowAddContactModeModal(false);
-    } catch (error) {
-      console.error("Erro ao adicionar nova forma de envio:", error);
+    } catch (err) {
+      console.error("Erro ao adicionar nova forma de envio:", err);
     }
   };
 
+  // CPF/CNPJ
+  const handleCnpjChange = (e) => {
+    const masked = applyDocumentMask(e.target.value);
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+    setCnpjDisplay(masked);
+    setCnpjError("");
+    setCnpjValid(false);
+    setFormData((prev) => ({ ...prev, cnpj: digits }));
+  };
+
+  const handleCnpjBlur = () => {
+    const digits = formData.cnpj;
+    if (!digits) return;
+    const docType = getDocumentType(digits);
+    if (!docType) {
+      setCnpjError("Digite 11 dígitos (CPF) ou 14 dígitos (CNPJ)");
+      setCnpjValid(false);
+    } else if (!validateDocument(digits)) {
+      setCnpjError(`${docType} inválido`);
+      setCnpjValid(false);
+    } else {
+      setCnpjError("");
+      setCnpjValid(true);
+    }
+  };
+
+  // Emails
+  const tryAddEmail = (value) => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) return false;
+    if (!EMAIL_REGEX.test(trimmed)) { setEmailError("E-mail inválido"); return false; }
+    if (emails.includes(trimmed)) { setEmailInput(""); setEmailError(""); return true; }
+    setEmails((prev) => [...prev, trimmed]);
+    setEmailInput("");
+    setEmailError("");
+    emailInputRef.current?.focus();
+    return true;
+  };
+
+  const removeEmail = (index) => setEmails((prev) => prev.filter((_, i) => i !== index));
+
+  const handleEmailInputChange = (e) => {
+    const val = e.target.value;
+    if ((val.endsWith(" ") || val.endsWith(",")) && val.trim()) {
+      tryAddEmail(val);
+    } else {
+      setEmailInput(val);
+      if (emailError) setEmailError("");
+    }
+  };
+
+  const handleEmailKeyDown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); tryAddEmail(emailInput); }
+    if (e.key === "Backspace" && emailInput === "" && emails.length > 0) removeEmail(emails.length - 1);
+  };
+
+  // Submit
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const sanitizedFormData = {
-      ...formData,
-      // Se o valor for vazio, salva como null
-      respFiscalId: formData.respFiscalId || null,
-      respContabilId: formData.respContabilId || null,
-      respDpId: formData.respDpId || null,
-      contactModeId: formData.contactModeId || null,
-      contact: formData.contact || null,
-      contractInit: formData.contractInit || null,
-      // important_info e obs podem ser vazios
-      important_info: formData.important_info || "",
-      obs: formData.obs || "",
-      branchNumber: formData.branchNumber || null,
-      isHeadquarters: formData.isHeadquarters, // Salva o valor booleano
-    };
+    if (!validateDocument(formData.cnpj)) { handleCnpjBlur(); return; }
 
-    onSubmit(sanitizedFormData);
+    let finalEmails = [...emails];
+    if (emailInput.trim()) {
+      const trimmed = emailInput.trim().toLowerCase();
+      if (!EMAIL_REGEX.test(trimmed)) { setEmailError("E-mail inválido — corrija ou remova antes de salvar"); return; }
+      if (!finalEmails.includes(trimmed)) { finalEmails = [...finalEmails, trimmed]; setEmails(finalEmails); setEmailInput(""); }
+    }
+    if (finalEmails.length === 0) { setEmailError("Adicione ao menos um e-mail"); return; }
+
+    onSubmit({
+      ...formData,
+      email:          finalEmails.join(","),
+      respFiscalId:   formData.respFiscalId   || null,
+      respContabilId: formData.respContabilId || null,
+      respDpId:       formData.respDpId       || null,
+      contactModeId:  formData.contactModeId  || null,
+      contact:        formData.contact        || null,
+      contractInit:   formData.contractInit   || null,
+      important_info: formData.important_info || "",
+      obs:            formData.obs            || "",
+      branchNumber:   formData.branchNumber   || null,
+    });
   };
 
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-dark-text">
+        <h2 className="text-xl font-bold mb-5">
           {type === "add" ? "Nova Empresa" : "Editar Empresa"}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Número */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 1 · Identificação
+        ───────────────────────────────────────────────────────────────── */}
+        <SectionDivider label="Identificação" />
+        <div className="grid grid-cols-12 gap-3 mb-2">
+
+          {/* Nº */}
+          <div className="col-span-1 min-w-0">
+            <label className="label-base">
               Nº <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="num"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              className="input-base"
               value={formData.num}
               onChange={handleChange}
               required
@@ -152,348 +301,346 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             />
           </div>
 
+          {/* Filial */}
+          <div className="col-span-2 min-w-0">
+            <label className="label-base">Filial</label>
+            <input
+              type="text"
+              name="branchNumber"
+              className="input-base"
+              value={formData.isHeadquarters ? "1" : (formData.branchNumber || "")}
+              onChange={handleChange}
+              disabled={formData.isHeadquarters}
+              placeholder="Ex: 2, 3…"
+            />
+          </div>
+
           {/* Razão Social */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
+          <div className="col-span-5 min-w-0">
+            <label className="label-base">
               Razão Social <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="name"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              className="input-base"
               value={formData.name}
               onChange={handleChange}
               required
             />
           </div>
 
-          {/* CNPJ */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              CNPJ <span className="text-red-500">*</span>
+          {/* CPF / CNPJ */}
+          <div className="col-span-4 min-w-0">
+            <label className="label-base">
+              {getDocumentType(formData.cnpj) || "CPF / CNPJ"} <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              name="cnpj"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.cnpj}
-              onChange={handleChange}
-              required
-              maxLength={14}
-              disabled={type === "edit"}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={cnpjDisplay}
+                onChange={handleCnpjChange}
+                onBlur={handleCnpjBlur}
+                required
+                maxLength={18}
+                disabled={type === "edit" && user?.role !== "admin"}
+                placeholder="000.000.000-00 / 00.000.000/0000-00"
+                className={`input-base pr-7 ${
+                  cnpjError
+                    ? "border-red-500 focus:ring-red-500/40 focus:border-red-500"
+                    : cnpjValid
+                    ? "border-emerald-500 focus:ring-emerald-500/40 focus:border-emerald-500"
+                    : ""
+                }`}
+              />
+              {(cnpjError || cnpjValid) && (
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  {cnpjError
+                    ? <FiAlertCircle size={14} className="text-red-500" />
+                    : <FiCheckCircle size={14} className="text-emerald-500" />
+                  }
+                </span>
+              )}
+            </div>
+            {cnpjError && (
+              <small className="text-xs text-red-500 mt-0.5 block">{cnpjError}</small>
+            )}
           </div>
+        </div>
 
-          {/* Inscrição Estadual */}
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 2 · Enquadramento Fiscal
+        ───────────────────────────────────────────────────────────────── */}
+        <SectionDivider label="Enquadramento Fiscal" />
+        <div className="grid grid-cols-4 gap-3 mb-2">
           <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Inscrição Estadual
-            </label>
+            <label className="label-base">Inscrição Estadual</label>
             <input
               type="text"
               name="ie"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              className="input-base"
               value={formData.ie}
               onChange={handleChange}
+              placeholder="Opcional"
             />
           </div>
-
-          {/* E-mail */}
           <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
+            <label className="label-base">
+              Regime <span className="text-red-500">*</span>
+            </label>
+            <select name="rule" className="input-base" value={formData.rule} onChange={handleChange} required>
+              {rules.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label-base">
+              Classificação <span className="text-red-500">*</span>
+            </label>
+            <select name="classi" className="input-base" value={formData.classi} onChange={handleChange} required>
+              {classificacoes.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label-base">
+              UF <span className="text-red-500">*</span>
+            </label>
+            <select name="uf" className="input-base" value={formData.uf} onChange={handleChange} required>
+              {ufs.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 3 · Contato
+        ───────────────────────────────────────────────────────────────── */}
+        <SectionDivider label="Contato" />
+        <div className="grid grid-cols-4 gap-3 mb-2">
+
+          {/* E-mail (tag input) */}
+          <div className="col-span-3">
+            <label className="label-base">
               E-mail <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              name="email"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-            <small className="text-gray-600 dark:text-gray-400">
-              Caso haja mais de um e-mail, separe-os por vírgula.
-            </small>
+            <div
+              className={`min-h-[40px] w-full border rounded-xl px-2 py-1.5
+                bg-gray-50 border-gray-200 dark:bg-dark-surface dark:border-dark-border
+                focus-within:ring-2 focus-within:ring-primary-500/40 focus-within:border-primary-500
+                transition-all duration-150 flex flex-wrap gap-1.5 items-center`}
+            >
+              {emails.map((email, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 bg-primary-100 text-primary-700
+                    dark:bg-primary-900/30 dark:text-primary-300
+                    text-xs font-medium px-2 py-0.5 rounded-full max-w-[220px]"
+                >
+                  <FiMail size={10} className="flex-shrink-0" />
+                  <span className="truncate" title={email}>{email}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeEmail(idx)}
+                    className="flex-shrink-0 hover:text-red-500 transition-colors ml-0.5"
+                    title="Remover e-mail"
+                  >
+                    <FiX size={10} />
+                  </button>
+                </span>
+              ))}
+              <input
+                ref={emailInputRef}
+                type="text"
+                value={emailInput}
+                onChange={handleEmailInputChange}
+                onKeyDown={handleEmailKeyDown}
+                placeholder={emails.length === 0 ? "Digite o e-mail e pressione Enter ou Espaço" : "Adicionar mais…"}
+                className="flex-1 min-w-[180px] bg-transparent text-sm text-gray-800 dark:text-dark-text
+                  placeholder-gray-400 dark:placeholder-gray-500 outline-none py-0.5 px-1"
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              {emailError ? (
+                <small className="flex items-center gap-1 text-xs text-red-500">
+                  <FiAlertCircle size={11} /> {emailError}
+                </small>
+              ) : (
+                <small className="text-xs text-gray-400 dark:text-gray-500">
+                  <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-dark-card rounded text-[10px]">Enter</kbd>
+                  {" · "}
+                  <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-dark-card rounded text-[10px]">Espaço</kbd>
+                  {" · "}
+                  <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-dark-card rounded text-[10px]">,</kbd>
+                  {" para adicionar · "}
+                  <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-dark-card rounded text-[10px]">⌫</kbd>
+                  {" para remover o último"}
+                </small>
+              )}
+              <button
+                type="button"
+                onClick={() => tryAddEmail(emailInput)}
+                disabled={!emailInput.trim()}
+                className="inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400
+                  hover:text-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ml-2 shrink-0"
+              >
+                <FiPlus size={12} /> Adicionar
+              </button>
+            </div>
           </div>
 
           {/* Telefone */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Telefone
-            </label>
+          <div className="col-span-1">
+            <label className="label-base">Telefone</label>
             <input
               type="tel"
               name="phone"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              className="input-base"
               value={formData.phone}
               onChange={handleChange}
-            />
-          </div>
-
-          {/* Regime */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Regime <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="rule"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.rule}
-              onChange={handleChange}
-              required
-            >
-              {rules.map((regime) => (
-                <option key={regime} value={regime}>
-                  {regime}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Classificação */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Classificação <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="classi"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.classi}
-              onChange={handleChange}
-              required
-            >
-              {classificacoes.map((classi) => (
-                <option key={classi} value={classi}>
-                  {classi}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* UF */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              UF <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="uf"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.uf}
-              onChange={handleChange}
-              required
-            >
-              {ufs.map((uf) => (
-                <option key={uf} value={uf}>
-                  {uf}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filial */}
-          <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Filial
-            </label>
-            <input
-              type="text"
-              name="branchNumber"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.branchNumber || ""}
-              onChange={handleChange}
-              placeholder="Número da Filial (opcional)"
+              placeholder="Opcional"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Contato na Empresa */}
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 4 · Administrativo
+        ───────────────────────────────────────────────────────────────── */}
+        <SectionDivider label="Administrativo" />
+        <div className="grid grid-cols-3 gap-3 mb-4">
           <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Contato na Empresa
-            </label>
+            <label className="label-base">Contato na Empresa</label>
             <input
               type="text"
               name="contact"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              className="input-base"
               value={formData.contact || ""}
               onChange={handleChange}
               placeholder="Opcional"
             />
           </div>
-
-          {/* Início do Contrato */}
           <div>
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Início do Contrato
-            </label>
+            <label className="label-base">Início do Contrato</label>
             <input
               type="date"
               name="contractInit"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+              className="input-base"
               value={formData.contractInit || ""}
               onChange={handleChange}
-              placeholder="Opcional"
             />
           </div>
-
-          {/* Forma de Envio (somente no modo edit) */}
           {type === "edit" && (
             <div>
-              <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-                Forma de Envio
+              <label className="label-base flex items-center justify-between">
+                <span>Forma de Envio</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddContactModeModal(true)}
+                  className="text-[10px] text-primary-600 dark:text-primary-400 hover:underline font-normal normal-case tracking-normal"
+                >
+                  + Nova forma
+                </button>
               </label>
               <select
                 name="contactModeId"
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
+                className="input-base"
                 value={formData.contactModeId || ""}
                 onChange={handleChange}
               >
                 <option value="">Opcional</option>
-                {contactModes.map((mode) => (
-                  <option key={mode.id} value={mode.id}>
-                    {mode.name}
-                  </option>
+                {contactModes.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
             </div>
           )}
         </div>
 
-        {type === "add" && (
-          <div className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              name="openedByUs"
+        {/* ─────────────────────────────────────────────────────────────────
+            Checkboxes · Configurações
+        ───────────────────────────────────────────────────────────────── */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <TogglePill
+            checked={formData.isHeadquarters}
+            onChange={handleIsHeadquartersChange}
+            label="Empresa Matriz"
+          />
+          {type === "add" && (
+            <TogglePill
               checked={formData.openedByUs}
-              onChange={handleChange}
-              className="mr-2"
+              onChange={(e) => setFormData((prev) => ({ ...prev, openedByUs: e.target.checked }))}
+              label="Aberta pela Contelb"
             />
-            <label className="text-gray-800 dark:text-dark-text font-semibold">
-              Empresa aberta pela Contelb?
-            </label>
-          </div>
-        )}
-
-        {/* Novo campo: Matriz */}
-        <div className="mb-4">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isHeadquarters"
-              checked={formData.isHeadquarters}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label className="text-gray-800 dark:text-dark-text font-semibold">
-              Empresa Matriz?
-            </label>
-          </div>
+          )}
         </div>
 
-        {type === "add" && (
-          <div className="mb-4">
-            <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-              Informações Importantes
-            </label>
-            <textarea
-              name="important_info"
-              className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-              value={formData.important_info}
-              onChange={handleChange}
-            ></textarea>
-          </div>
-        )}
-
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 5 · Responsáveis (somente edição)
+        ───────────────────────────────────────────────────────────────── */}
         {type === "edit" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {/* Responsável Fiscal */}
-            <div>
-              <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-                Responsável Fiscal
-              </label>
-              <select
-                name="respFiscalId"
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-                value={formData.respFiscalId || ""}
-                onChange={handleChange}
-              >
-                <option value="">Nenhum</option>
-                {fiscalUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+          <>
+            <SectionDivider label="Responsáveis" />
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="label-base">Responsável Fiscal</label>
+                <select name="respFiscalId" className="input-base" value={formData.respFiscalId || ""} onChange={handleChange}>
+                  <option value="">Nenhum</option>
+                  {fiscalUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label-base">Responsável Contábil</label>
+                <select name="respContabilId" className="input-base" value={formData.respContabilId || ""} onChange={handleChange}>
+                  <option value="">Nenhum</option>
+                  {contabilUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label-base">Responsável DP</label>
+                <select name="respDpId" className="input-base" value={formData.respDpId || ""} onChange={handleChange}>
+                  <option value="">Nenhum</option>
+                  {dpUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
             </div>
-
-            {/* Responsável Contábil */}
-            <div>
-              <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-                Responsável Contábil
-              </label>
-              <select
-                name="respContabilId"
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-                value={formData.respContabilId || ""}
-                onChange={handleChange}
-              >
-                <option value="">Nenhum</option>
-                {contabilUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Responsável DP */}
-            <div>
-              <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-                Responsável DP
-              </label>
-              <select
-                name="respDpId"
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-                value={formData.respDpId || ""}
-                onChange={handleChange}
-              >
-                <option value="">Nenhum</option>
-                {dpUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          </>
         )}
 
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-800 dark:text-dark-text font-semibold">
-            Observações
-          </label>
-          <textarea
-            name="obs"
-            className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text rounded"
-            value={formData.obs}
-            onChange={handleChange}
-            placeholder="Opcional"
-          ></textarea>
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 6 · Observações
+        ───────────────────────────────────────────────────────────────── */}
+        <SectionDivider label="Observações" />
+        <div className={`grid gap-3 mb-4 ${type === "add" ? "grid-cols-2" : "grid-cols-1"}`}>
+          {type === "add" && (
+            <div>
+              <label className="label-base">Informações Importantes</label>
+              <textarea
+                name="important_info"
+                className="input-base min-h-[60px] resize-none"
+                value={formData.important_info}
+                onChange={handleChange}
+                placeholder="Informações relevantes sobre a empresa…"
+              />
+            </div>
+          )}
+          <div>
+            <label className="label-base">Observações Gerais</label>
+            <textarea
+              name="obs"
+              className="input-base min-h-[60px] resize-none"
+              value={formData.obs}
+              onChange={handleChange}
+              placeholder="Opcional"
+            />
+          </div>
         </div>
 
-        <div className="flex justify-end space-x-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="bg-gray-500 text-white px-4 py-2 rounded"
-          >
+        {/* ─────────────────────────────────────────────────────────────────
+            Rodapé
+        ───────────────────────────────────────────────────────────────── */}
+        <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-dark-border">
+          <button type="button" onClick={onCancel} className="btn-ghost">
             Cancelar
           </button>
-          <button
-            type="submit"
-            className="bg-accent-blue text-white px-4 py-2 rounded"
-          >
+          <button type="submit" className="btn-primary">
             Salvar
           </button>
         </div>

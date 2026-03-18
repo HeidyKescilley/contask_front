@@ -1,5 +1,4 @@
 // src/app/layout.js
-
 "use client";
 
 import "../styles/globals.css";
@@ -7,37 +6,37 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "../context/AuthContext";
 import { CompanyModalProvider } from "../context/CompanyModalContext";
 import { SidebarProvider } from "../context/SidebarContext";
+import { ThemeProvider, ThemeContext } from "../context/ThemeContext";
+import { ZoomProvider } from "../context/ZoomContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({ children }) {
-  const [theme, setTheme] = useState("light");
-
-  // Synchronize theme with localStorage
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme") || "light";
-    setTheme(storedTheme);
-    document.documentElement.classList.toggle("dark", storedTheme === "dark");
-  }, []);
+function LayoutInner({ children }) {
+  const { theme } = useContext(ThemeContext);
 
   return (
-    <html
-      lang="pt-BR"
-      className={theme === "dark" ? "dark" : ""}
-      style={{ fontSize: "90%" }}
-    >
-      <body className={`${inter.className} bg-light-bg dark:bg-dark-bg`}>
+    <html lang="pt-BR" className={theme === "dark" ? "dark" : ""}>
+      <body
+        className={`${inter.className} bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text`}
+      >
         <AuthProvider>
           <CompanyModalProvider>
             <SidebarProvider>
-              <ToastContainer />
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                closeOnClick
+                pauseOnHover
+                theme={theme === "dark" ? "dark" : "light"}
+                toastClassName="!rounded-xl !shadow-card"
+              />
               {children}
-              {/* Fixed Theme Toggle Button */}
-              <div className="fixed bottom-4 right-4">
+              <div className="fixed bottom-5 right-5 z-50">
                 <ThemeToggle />
               </div>
             </SidebarProvider>
@@ -45,5 +44,15 @@ export default function RootLayout({ children }) {
         </AuthProvider>
       </body>
     </html>
+  );
+}
+
+export default function RootLayout({ children }) {
+  return (
+    <ZoomProvider>
+      <ThemeProvider>
+        <LayoutInner>{children}</LayoutInner>
+      </ThemeProvider>
+    </ZoomProvider>
   );
 }

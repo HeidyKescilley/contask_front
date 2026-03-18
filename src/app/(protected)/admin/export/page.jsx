@@ -7,29 +7,29 @@ import api from "../../../../utils/api";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { formatDate } from "../../../../utils/utils";
+import { FiDownload } from "react-icons/fi";
 
-// Mapeamento de chaves para nomes amigáveis e funções de formatação
 const COLUMN_MAP = [
-  { key: "num", label: "Número" },
-  { key: "name", label: "Razão Social" },
+  { key: "num", label: "Numero" },
+  { key: "name", label: "Razao Social" },
   { key: "cnpj", label: "CNPJ" },
-  { key: "ie", label: "Inscrição Estadual" },
+  { key: "ie", label: "Inscricao Estadual" },
   { key: "rule", label: "Regime" },
-  { key: "classi", label: "Classificação" },
+  { key: "classi", label: "Classificacao" },
   { key: "status", label: "Status" },
   { key: "uf", label: "UF" },
   { key: "branchNumber", label: "Filial" },
   {
     key: "isHeadquarters",
-    label: "É Matriz?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    label: "E Matriz?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   { key: "email", label: "Email" },
   { key: "phone", label: "Telefone" },
   { key: "contact", label: "Contato" },
   {
     key: "contractInit",
-    label: "Início do Contrato",
+    label: "Inicio do Contrato",
     formatter: (val) => (val ? formatDate(val) : ""),
   },
   {
@@ -39,17 +39,17 @@ const COLUMN_MAP = [
   },
   {
     key: "respFiscalId",
-    label: "Responsável Fiscal",
+    label: "Responsavel Fiscal",
     formatter: (val, company) => company.respFiscal?.name || "N/A",
   },
   {
     key: "respDpId",
-    label: "Responsável DP",
+    label: "Responsavel DP",
     formatter: (val, company) => company.respDp?.name || "N/A",
   },
   {
     key: "respContabilId",
-    label: "Responsável Contábil",
+    label: "Responsavel Contabil",
     formatter: (val, company) => company.respContabil?.name || "N/A",
   },
   {
@@ -60,66 +60,66 @@ const COLUMN_MAP = [
   {
     key: "isZeroedFiscal",
     label: "Fiscal Zerado?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "sentToClientFiscal",
     label: "Fiscal Enviado?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "declarationsCompletedFiscal",
-    label: "Fiscal Obrigações OK?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    label: "Fiscal Obrigacoes OK?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "hasNoFiscalObligations",
-    label: "Fiscal Sem Obrigações?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    label: "Fiscal Sem Obrigacoes?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "fiscalCompletedAt",
-    label: "Fiscal Data Conclusão",
+    label: "Fiscal Data Conclusao",
     formatter: (val) => (val ? formatDate(val) : ""),
   },
-  { key: "bonusValue", label: "Nota Bonificação (Fiscal)" }, // <-- NOVO CAMPO ADICIONADO
+  { key: "bonusValue", label: "Nota Bonificacao (Fiscal)" },
   {
     key: "isZeroedDp",
     label: "DP Zerado?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "sentToClientDp",
     label: "DP Enviado?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "declarationsCompletedDp",
-    label: "DP Obrigações OK?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    label: "DP Obrigacoes OK?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "hasNoDpObligations",
-    label: "DP Sem Obrigações?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    label: "DP Sem Obrigacoes?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
     key: "dpCompletedAt",
-    label: "DP Data Conclusão",
+    label: "DP Data Conclusao",
     formatter: (val) => (val ? formatDate(val) : ""),
   },
-  { key: "employeesCount", label: "Qtd. Funcionários (DP)" }, // <-- NOVO CAMPO ADICIONADO
+  { key: "employeesCount", label: "Qtd. Funcionarios (DP)" },
   {
     key: "openedByUs",
-    label: "Aberta por Nós?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    label: "Aberta por Nos?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
   { key: "important_info", label: "Infos Importantes" },
-  { key: "obs", label: "Observações" },
+  { key: "obs", label: "Observacoes" },
   {
     key: "isArchived",
     label: "Arquivado?",
-    formatter: (val) => (val ? "Sim" : "Não"),
+    formatter: (val) => (val ? "Sim" : "Nao"),
   },
 ];
 
@@ -135,7 +135,6 @@ const ExportPage = () => {
   const [exporting, setExporting] = useState(false);
   const [selectAll, setSelectAll] = useState(true);
 
-  // --- ESTADO PARA OS FILTROS ---
   const [filters, setFilters] = useState({
     status: ["ATIVA"],
     respFiscal: "",
@@ -168,7 +167,6 @@ const ExportPage = () => {
     [users]
   );
 
-  // --- LÓGICA PARA ATUALIZAR OS FILTROS ---
   const handleFilterChange = (filterName, value) => {
     setFilters((prev) => ({ ...prev, [filterName]: value }));
   };
@@ -188,9 +186,7 @@ const ExportPage = () => {
     const newColumns = [...columns];
     newColumns[index].checked = !newColumns[index].checked;
     setColumns(newColumns);
-    if (!newColumns[index].checked) {
-      setSelectAll(false);
-    }
+    if (!newColumns[index].checked) setSelectAll(false);
   };
 
   const handleSelectAll = (e) => {
@@ -202,7 +198,6 @@ const ExportPage = () => {
   const handleExport = () => {
     setExporting(true);
 
-    // 1. APLICAR FILTROS
     const filteredCompanies = allCompanies.filter((company) => {
       const statusMatch =
         filters.status.length === 0 || filters.status.includes(company.status);
@@ -227,7 +222,6 @@ const ExportPage = () => {
     }
 
     const selectedColumns = columns.filter((col) => col.checked);
-
     if (selectedColumns.length === 0) {
       toast.error("Selecione pelo menos uma coluna para exportar.");
       setExporting(false);
@@ -263,173 +257,139 @@ const ExportPage = () => {
 
   return (
     <ProtectedRoute requiredPermissions={{ roles: ["admin"] }}>
-      <div className="w-full px-8 py-8">
-        <div className="bg-white dark:bg-dark-card p-6 rounded shadow-md">
-          <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-dark-text">
-            Exportar Dados de Empresas
-          </h1>
-
-          {/* --- SEÇÃO DE FILTROS --- */}
-          <div className="border-y py-4 my-4">
-            <h2 className="text-xl font-semibold mb-3 text-gray-700 dark:text-gray-300">
-              Filtros
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Filtro de Status */}
-              <div>
-                <label className="block font-medium mb-1">Status</label>
-                <div className="flex flex-wrap gap-x-4 gap-y-2">
-                  {ALL_STATUS.map((status) => (
-                    <label key={status} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes(status)}
-                        onChange={() => handleStatusFilterChange(status)}
-                        className="mr-1"
-                      />
-                      {status}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              {/* Filtro de Responsáveis */}
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label className="block font-medium mb-1">
-                    Responsável Fiscal
-                  </label>
-                  <select
-                    value={filters.respFiscal}
-                    onChange={(e) =>
-                      handleFilterChange("respFiscal", e.target.value)
-                    }
-                    className="w-full p-2 border rounded bg-gray-50 dark:bg-dark-bg"
-                  >
-                    <option value="">Todos</option>
-                    {fiscalUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">
-                    Responsável DP
-                  </label>
-                  <select
-                    value={filters.respDp}
-                    onChange={(e) =>
-                      handleFilterChange("respDp", e.target.value)
-                    }
-                    className="w-full p-2 border rounded bg-gray-50 dark:bg-dark-bg"
-                  >
-                    <option value="">Todos</option>
-                    {dpUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              {/* Filtro de Arquivadas */}
-              <div>
-                <label className="block font-medium mb-1">
-                  Empresas Arquivadas
-                </label>
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="archived"
-                      value="non-archived"
-                      checked={filters.archived === "non-archived"}
-                      onChange={(e) =>
-                        handleFilterChange("archived", e.target.value)
-                      }
-                      className="mr-2"
-                    />
-                    Apenas Não Arquivadas
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="archived"
-                      value="archived"
-                      checked={filters.archived === "archived"}
-                      onChange={(e) =>
-                        handleFilterChange("archived", e.target.value)
-                      }
-                      className="mr-2"
-                    />
-                    Apenas Arquivadas
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="archived"
-                      value="all"
-                      checked={filters.archived === "all"}
-                      onChange={(e) =>
-                        handleFilterChange("archived", e.target.value)
-                      }
-                      className="mr-2"
-                    />
-                    Incluir Todas
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <h2 className="text-xl font-semibold mb-3 text-gray-700 dark:text-gray-300">
-            Colunas
-          </h2>
-          {loading ? (
-            <p>Carregando colunas...</p>
-          ) : (
-            <>
-              <div className="mb-4 border-b pb-4">
-                <label className="flex items-center font-semibold text-lg">
+      {/* Filters */}
+      <div className="card mb-5">
+        <h2 className="text-base font-semibold mb-4">Filtros</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div>
+            <p className="label-base">Status</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {ALL_STATUS.map((status) => (
+                <label
+                  key={status}
+                  className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer"
+                >
                   <input
                     type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="w-5 h-5 mr-3"
+                    checked={filters.status.includes(status)}
+                    onChange={() => handleStatusFilterChange(status)}
                   />
-                  Selecionar / Desselecionar Todos
+                  {status}
                 </label>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-                {columns.map((col, index) => (
-                  <label key={col.key} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={col.checked}
-                      onChange={() => handleColumnToggle(index)}
-                      className="w-4 h-4 mr-2"
-                    />
-                    <span className="text-gray-800 dark:text-dark-text">
-                      {col.label}
-                    </span>
-                  </label>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="label-base">Responsavel Fiscal</label>
+              <select
+                value={filters.respFiscal}
+                onChange={(e) =>
+                  handleFilterChange("respFiscal", e.target.value)
+                }
+                className="input-base"
+              >
+                <option value="">Todos</option>
+                {fiscalUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
                 ))}
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={handleExport}
-                  disabled={exporting || loading}
-                  className="bg-accent-green text-white font-bold py-2 px-6 rounded disabled:bg-gray-400"
+              </select>
+            </div>
+            <div>
+              <label className="label-base">Responsavel DP</label>
+              <select
+                value={filters.respDp}
+                onChange={(e) => handleFilterChange("respDp", e.target.value)}
+                className="input-base"
+              >
+                <option value="">Todos</option>
+                {dpUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <p className="label-base">Empresas Arquivadas</p>
+            <div className="flex flex-col gap-2">
+              {[
+                { value: "non-archived", label: "Apenas Nao Arquivadas" },
+                { value: "archived", label: "Apenas Arquivadas" },
+                { value: "all", label: "Incluir Todas" },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer"
                 >
-                  {exporting ? "Gerando..." : "Criar Planilha"}
-                </button>
-              </div>
-            </>
-          )}
+                  <input
+                    type="radio"
+                    name="archived"
+                    value={opt.value}
+                    checked={filters.archived === opt.value}
+                    onChange={(e) =>
+                      handleFilterChange("archived", e.target.value)
+                    }
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Columns */}
+      <div className="card">
+        <h2 className="text-base font-semibold mb-4">Colunas</h2>
+        {loading ? (
+          <p className="text-light-text-secondary dark:text-dark-text-secondary">
+            Carregando...
+          </p>
+        ) : (
+          <>
+            <div className="mb-4 pb-3 border-b border-gray-100 dark:border-dark-border">
+              <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                />
+                Selecionar / Desselecionar Todos
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+              {columns.map((col, index) => (
+                <label
+                  key={col.key}
+                  className="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={col.checked}
+                    onChange={() => handleColumnToggle(index)}
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={handleExport}
+                disabled={exporting || loading}
+                className="btn-success"
+              >
+                <FiDownload size={16} />
+                {exporting ? "Gerando..." : "Criar Planilha"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </ProtectedRoute>
   );

@@ -4,15 +4,51 @@
 import { useState, useEffect, useCallback, useContext, useMemo } from "react";
 import CompanyTable from "../../../components/CompanyTable";
 import CompanyFilters from "../../../components/CompanyFilters";
-import CompanyModal from "../../../components/CompanyModal";
 import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
-import { useAuth } from "../../../hooks/useAuth"; // Importar useAuth
-import AgentCompaniesView from "./AgentCompaniesView"; // Importar o novo componente
+import { useAuth } from "../../../hooks/useAuth";
+import AgentCompaniesView from "./AgentCompaniesView";
+import {
+  FiLayers,
+  FiCheckCircle,
+  FiAlertTriangle,
+  FiClock,
+} from "react-icons/fi";
+
+// Verifica se uma empresa está 100% concluída para o departamento do agente
+const isCompanyComplete = (company, department) => {
+  if (department === "Fiscal") {
+    if (company.isZeroedFiscal) return true;
+    return (
+      company.sentToClientFiscal === true &&
+      (company.declarationsCompletedFiscal === true ||
+        company.hasNoFiscalObligations === true) &&
+      company.bonusValue !== null &&
+      company.bonusValue !== undefined
+    );
+  }
+  if (department === "Pessoal") {
+    if (company.isZeroedDp) return true;
+    return (
+      company.sentToClientDp === true &&
+      (company.declarationsCompletedDp === true ||
+        company.hasNoDpObligations === true) &&
+      company.employeesCount !== null &&
+      company.employeesCount !== undefined
+    );
+  }
+  if (department === "Contábil") {
+    return (
+      company.accountingMonthsCount !== null &&
+      company.accountingMonthsCount !== undefined
+    );
+  }
+  return false;
+};
 
 const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
@@ -38,13 +74,10 @@ const MyCompaniesPageContent = () => {
     useState(null);
 
   const {
-    showModal,
-    modalType,
-    selectedCompany,
-    closeModal,
     setShowModal,
     setModalType,
     setSelectedCompany,
+    refreshTrigger,
   } = useContext(CompanyModalContext);
 
   useEffect(() => {
@@ -74,6 +107,11 @@ const MyCompaniesPageContent = () => {
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
+
+  // Re-busca ao salvar empresa via modal do layout
+  useEffect(() => {
+    if (refreshTrigger > 0) fetchCompanies();
+  }, [refreshTrigger, fetchCompanies]);
 
   const filteredCompanies = useMemo(() => {
     let filtered = [...companies];
@@ -154,27 +192,6 @@ const MyCompaniesPageContent = () => {
     [setModalType, setSelectedCompany, setShowModal]
   );
 
-  const handleSaveCompany = useCallback(
-    async (companyData) => {
-      try {
-        await api.patch(`/company/edit/${companyData.id}`, companyData);
-        toast.success(`Empresa "${companyData.name}" atualizada com sucesso!`);
-
-        // Recarrega a lista para ter certeza de que os dados estão atualizados
-        await fetchCompanies();
-
-        closeModal();
-      } catch (error) {
-        toast.error(
-          `Erro ao salvar a empresa: ${
-            error.response?.data?.message || error.message
-          }`
-        );
-      }
-    },
-    [closeModal, fetchCompanies]
-  );
-
   const handleSaveStatusChange = useCallback(
     async (statusData) => {
       try {
@@ -226,6 +243,17 @@ const MyCompaniesPageContent = () => {
     }
   }, []);
 
+  // Contadores para o modo Agente (usam filteredCompanies já filtrado por dept/status)
+  const agentStats = useMemo(() => {
+    if (viewMode !== "agent" || !user?.department) return null;
+    const dept = user.department;
+    const total = filteredCompanies.length;
+    const concluidas = filteredCompanies.filter((c) =>
+      isCompanyComplete(c, dept)
+    ).length;
+    return { total, concluidas, pendentes: total - concluidas };
+  }, [filteredCompanies, viewMode, user]);
+
   const totalCompanies = companies.length;
   const activeCompanies = companies.filter(
     (company) => company.status === "ATIVA"
@@ -238,100 +266,133 @@ const MyCompaniesPageContent = () => {
   ).length;
 
   return (
-    <div className="w-full px-8 py-8">
-      {/* Barra de Contadores (só no modo padrão) */}
-      {viewMode === "standard" && (
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-dark-card rounded shadow-md p-4">
-            <p className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-              Total de Empresas: {totalCompanies}
-            </p>
-          </div>
-          <div className="bg-green-100 dark:bg-green-900 rounded shadow-md p-4">
-            <p className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-              Empresas Ativas: {activeCompanies}
-            </p>
-          </div>
-          <div className="bg-red-100 dark:bg-red-900 rounded shadow-md p-4">
-            <p className="text-xl font-semibold text-gray-800 dark:text-dark-text">
-              Empresas Inativas: {inactiveCompanies}
-            </p>
-          </div>
+    <>
+      {/* Toggle padrao/agente — sempre no topo quando disponível */}
+      {isAgentViewAvailable && (
+        <div className="flex items-center gap-3 mb-5">
+          <span className={`text-sm font-medium ${viewMode === "standard" ? "text-light-text dark:text-dark-text" : "text-light-text-secondary dark:text-dark-text-secondary"}`}>
+            Padrao
+          </span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={viewMode === "agent"}
+              onChange={() =>
+                setViewMode(viewMode === "standard" ? "agent" : "standard")
+              }
+            />
+            <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500" />
+          </label>
+          <span className={`text-sm font-medium ${viewMode === "agent" ? "text-light-text dark:text-dark-text" : "text-light-text-secondary dark:text-dark-text-secondary"}`}>
+            Agente
+          </span>
         </div>
       )}
 
-      {/* Conteúdo Principal */}
-      <div className="bg-white dark:bg-dark-card rounded shadow-md">
-        <div className="bg-logo-light-blue dark:bg-dark-card p-4 rounded-t flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white dark:text-dark-text">
-            Minhas Empresas
-          </h1>
-          {isAgentViewAvailable && ( // Mostrar o switch apenas se a visualização Agente estiver disponível
-            <div className="flex items-center space-x-2">
-              <span className="text-white dark:text-dark-text">Padrão</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  value=""
-                  className="sr-only peer"
-                  checked={viewMode === "agent"}
-                  onChange={() =>
-                    setViewMode(viewMode === "standard" ? "agent" : "standard")
-                  }
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-              </label>
-              <span className="text-white dark:text-dark-text">Agente</span>
+      {/* Cards de resumo — padrão ou agente, sempre abaixo do toggle */}
+      {viewMode === "standard" ? (
+        <div className="mb-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="card flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
+              <FiLayers size={18} />
             </div>
-          )}
+            <div>
+              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Total</p>
+              <p className="text-lg font-bold">{totalCompanies}</p>
+            </div>
+          </div>
+          <div className="card flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+              <FiCheckCircle size={18} />
+            </div>
+            <div>
+              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Ativas</p>
+              <p className="text-lg font-bold">{activeCompanies}</p>
+            </div>
+          </div>
+          <div className="card flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+              <FiAlertTriangle size={18} />
+            </div>
+            <div>
+              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Inativas</p>
+              <p className="text-lg font-bold">{inactiveCompanies}</p>
+            </div>
+          </div>
         </div>
-        <div className="p-6">
-          {viewMode === "standard" ? (
-            <>
-              <div className="mb-4">
-                <CompanyFilters
-                  filters={filters}
-                  setFilters={setFilters}
-                  onClearFilters={() =>
-                    setFilters({
-                      searchColumn: "name",
-                      searchTerm: "",
-                      regime: [],
-                      situacao: [],
-                      classificacao: [],
-                      semFiscal: false,
-                      semDp: false,
-                    })
-                  }
-                />
-              </div>
-              <CompanyTable
-                companies={filteredCompanies}
-                onEditCompany={handleEditCompany}
-                onBlockCompany={handleBlockCompany}
-                onViewHistory={handleViewHistory}
-                onManageAutomations={handleManageAutomations}
-              />
-            </>
-          ) : (
-            <AgentCompaniesView
-              companies={filteredCompanies}
-              user={user} // Passar o usuário para o componente AgentCompaniesView
-              fetchCompanies={fetchCompanies} // Passar a função para recarregar as empresas
-            />
-          )}
+      ) : agentStats ? (
+        <div className="mb-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="card flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
+              <FiLayers size={18} />
+            </div>
+            <div>
+              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                Total de Empresas
+              </p>
+              <p className="text-lg font-bold">{agentStats.total}</p>
+            </div>
+          </div>
+          <div className="card flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+              <FiCheckCircle size={18} />
+            </div>
+            <div>
+              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                100% Concluídas
+              </p>
+              <p className="text-lg font-bold">{agentStats.concluidas}</p>
+            </div>
+          </div>
+          <div className="card flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+              <FiClock size={18} />
+            </div>
+            <div>
+              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                Pendentes
+              </p>
+              <p className="text-lg font-bold">{agentStats.pendentes}</p>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* Modais (permanecem os mesmos) */}
-      {showModal && (
-        <CompanyModal
-          type={modalType}
-          company={selectedCompany}
-          onClose={closeModal}
-          onSave={handleSaveCompany}
+      {/* Conteudo */}
+      {viewMode === "standard" ? (
+        <>
+          <CompanyFilters
+            filters={filters}
+            setFilters={setFilters}
+            onClearFilters={() =>
+              setFilters({
+                searchColumn: "name",
+                searchTerm: "",
+                regime: [],
+                situacao: [],
+                classificacao: [],
+                semFiscal: false,
+                semDp: false,
+              })
+            }
+          />
+          <CompanyTable
+            companies={filteredCompanies}
+            onEditCompany={handleEditCompany}
+            onBlockCompany={handleBlockCompany}
+            onViewHistory={handleViewHistory}
+            onManageAutomations={handleManageAutomations}
+          />
+        </>
+      ) : (
+        <AgentCompaniesView
+          companies={filteredCompanies}
+          user={user}
+          fetchCompanies={fetchCompanies}
         />
       )}
+
       {showHistoryModal && (
         <HistoryModal
           company={selectedHistoryCompany}
@@ -351,7 +412,7 @@ const MyCompaniesPageContent = () => {
           onClose={() => setShowAutomationModal(false)}
         />
       )}
-    </div>
+    </>
   );
 };
 

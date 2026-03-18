@@ -1,37 +1,31 @@
 // src/components/ThemeToggle.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import { FiSun, FiMoon } from "react-icons/fi";
+import { ThemeContext } from "../context/ThemeContext";
 
 const ThemeToggle = () => {
-  const [theme, setTheme] = useState("light");
-
-  // Inicializa o tema
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme") || "light";
-    setTheme(storedTheme);
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    // Atualiza a classe 'dark' no elemento <html>
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
+  const { theme, toggleTheme } = useContext(ThemeContext);
 
   return (
-    <button onClick={toggleTheme} className="focus:outline-none">
-      {theme === "dark" ? (
-        <FiSun className="text-yellow-500 w-6 h-6" />
-      ) : (
-        <FiMoon className="text-gray-800 w-6 h-6" />
-      )}
+    <button
+      onClick={toggleTheme}
+      className="relative p-2.5 rounded-xl bg-gray-100 dark:bg-dark-card-hover
+        hover:bg-gray-200 dark:hover:bg-dark-border
+        border border-gray-200 dark:border-dark-border
+        transition-all duration-300 ease-in-out
+        focus:outline-none focus:ring-2 focus:ring-primary-500/40
+        shadow-sm hover:shadow-md"
+      aria-label="Alternar tema"
+    >
+      <div className="relative w-5 h-5">
+        {theme === "dark" ? (
+          <FiSun className="w-5 h-5 text-amber-400 transition-transform duration-300 rotate-0 hover:rotate-45" />
+        ) : (
+          <FiMoon className="w-5 h-5 text-slate-600 transition-transform duration-300" />
+        )}
+      </div>
     </button>
   );
 };

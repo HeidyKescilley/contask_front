@@ -1,9 +1,9 @@
 // src/app/(protected)/layout.js
-
 "use client";
 
-import { useEffect, useState, useContext } from "react";
+import { useContext } from "react";
 import Sidebar from "../../components/Sidebar";
+import PageHeader from "../../components/PageHeader";
 import { CompanyModalContext } from "../../context/CompanyModalContext";
 import CompanyModal from "../../components/CompanyModal";
 import api from "../../utils/api";
@@ -13,7 +13,7 @@ import { SidebarContext } from "../../context/SidebarContext";
 export default function ProtectedLayout({ children }) {
   const { isExpanded } = useContext(SidebarContext);
 
-  const { showModal, modalType, selectedCompany, closeModal } =
+  const { showModal, modalType, selectedCompany, closeModal, triggerRefresh } =
     useContext(CompanyModalContext);
 
   const handleSaveCompany = async (companyData) => {
@@ -26,6 +26,7 @@ export default function ProtectedLayout({ children }) {
         toast.success(`Empresa "${companyData.name}" atualizada com sucesso!`);
       }
       closeModal();
+      triggerRefresh();
     } catch (error) {
       toast.error(
         `Erro ao salvar a empresa: ${
@@ -36,20 +37,21 @@ export default function ProtectedLayout({ children }) {
   };
 
   return (
-    <div className="flex">
-      {/* Sidebar */}
+    <div className="flex min-h-screen">
       <Sidebar />
 
-      {/* Conteúdo Principal */}
-      <div
-        className={`flex-1 bg-light-bg dark:bg-dark-bg min-h-screen transition-all duration-200 ease-in-out ${
-          isExpanded ? "ml-64" : "ml-20"
-        }`}
+      <main
+        className={`flex-1 bg-light-bg dark:bg-dark-bg min-h-screen
+          transition-[margin] duration-300 ease-in-out
+          ${isExpanded ? "ml-56" : "ml-[60px]"}`}
       >
-        {children}
-      </div>
+        {/* Inner scroll container for content */}
+        <div className="p-4 md:p-5 min-w-0">
+          <PageHeader />
+          {children}
+        </div>
+      </main>
 
-      {/* Modais */}
       {showModal && (
         <CompanyModal
           type={modalType}

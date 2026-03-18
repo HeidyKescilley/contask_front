@@ -1,4 +1,4 @@
-// D:\projetos\contask_v2\contask_front\src\app\(protected)\admin\users\page.jsx
+// src/app/(protected)/admin/users/page.jsx
 "use client";
 
 import ProtectedRoute from "../../../../components/ProtectedRoute";
@@ -19,13 +19,12 @@ const AdminUsersPage = () => {
   const fetchUsers = async () => {
     try {
       const response = await api.get("/admin/users");
-      // Ordena os usuários em ordem alfabética pelo nome
       const sortedUsers = response.data.users.sort((a, b) =>
         a.name.localeCompare(b.name)
       );
       setUsers(sortedUsers);
     } catch (error) {
-      toast.error("Erro ao buscar usuários.");
+      toast.error("Erro ao buscar usuarios.");
     }
   };
 
@@ -33,7 +32,6 @@ const AdminUsersPage = () => {
     fetchUsers();
   }, []);
 
-  // --- Funções para Nível (Role) ---
   const handleChangeRole = (user) => {
     setSelectedUser(user);
     setShowChangeRoleModal(true);
@@ -41,12 +39,12 @@ const AdminUsersPage = () => {
   const handleSaveRole = async (newRole) => {
     try {
       await api.patch(`/admin/user/${selectedUser.id}/role`, { role: newRole });
-      toast.success("Nível do usuário atualizado com sucesso.");
+      toast.success("Nivel do usuario atualizado com sucesso.");
       fetchUsers();
       setShowChangeRoleModal(false);
       setSelectedUser(null);
     } catch (error) {
-      toast.error("Erro ao atualizar nível do usuário.");
+      toast.error("Erro ao atualizar nivel do usuario.");
     }
   };
   const handleCloseModal = () => {
@@ -54,20 +52,18 @@ const AdminUsersPage = () => {
     setSelectedUser(null);
   };
 
-  // --- Função para Deletar ---
   const handleDeleteUser = async (userId, userName) => {
-    if (confirm(`Tem certeza que deseja deletar o usuário ${userName}?`)) {
+    if (confirm(`Tem certeza que deseja deletar o usuario ${userName}?`)) {
       try {
         await api.delete(`/admin/user/${userId}`);
-        toast.success("Usuário deletado com sucesso.");
+        toast.success("Usuario deletado com sucesso.");
         fetchUsers();
       } catch (error) {
-        toast.error("Erro ao deletar usuário.");
+        toast.error("Erro ao deletar usuario.");
       }
     }
   };
 
-  // --- Funções para Senha ---
   const openChangePasswordModal = (user) => {
     setSelectedUserForPassword(user);
     setShowChangePasswordModal(true);
@@ -79,20 +75,16 @@ const AdminUsersPage = () => {
   const handleSaveNewPassword = async (userId, newPassword) => {
     try {
       await api.patch(`/admin/user/${userId}/change-password`, { newPassword });
-      toast.success(
-        "Senha do usuário atualizada com sucesso e email de notificação enviado."
-      );
+      toast.success("Senha do usuario atualizada com sucesso.");
       closeChangePasswordModal();
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Erro ao atualizar a senha do usuário."
+        error.response?.data?.message || "Erro ao atualizar a senha do usuario."
       );
     }
   };
 
-  // --- Função para Bônus ---
   const handleToggleBonus = async (userId, currentStatus) => {
-    // Feedback visual imediato
     setUsers(
       users.map((u) =>
         u.id === userId ? { ...u, hasBonus: !currentStatus } : u
@@ -100,14 +92,11 @@ const AdminUsersPage = () => {
     );
     try {
       await api.patch(`/admin/user/${userId}/toggle-bonus`);
-      toast.success("Status de bônus atualizado!");
-      // Opcional: Re-fetch para garantir consistência total, embora o feedback visual já tenha sido dado.
-      // fetchUsers();
+      toast.success("Status de bonus atualizado!");
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Erro ao alterar status de bônus."
+        error.response?.data?.message || "Erro ao alterar status de bonus."
       );
-      // Reverte a mudança visual em caso de erro
       setUsers(
         users.map((u) =>
           u.id === userId ? { ...u, hasBonus: currentStatus } : u
@@ -116,48 +105,45 @@ const AdminUsersPage = () => {
     }
   };
 
+  const getRoleBadge = (role) => {
+    const styles = {
+      admin: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
+      user: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+      "not-validated": "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+    };
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          styles[role] || "bg-gray-100 text-gray-700"
+        }`}
+      >
+        {role}
+      </span>
+    );
+  };
+
   return (
     <ProtectedRoute requiredPermissions={{ roles: ["admin"] }}>
-      <div className="w-full px-8 py-8">
-        <h1 className="text-2xl font-bold mb-6 text-black dark:text-dark-text">
-          Gestão de Usuários
-        </h1>
+      <div className="card p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          {/* AJUSTE DE DESIGN: adicionado table-fixed e w-full */}
-          <table className="min-w-full table-fixed w-full bg-white dark:bg-dark-card text-black dark:text-dark-text rounded shadow">
+          <table className="min-w-full table-fixed">
             <thead>
-              <tr className="bg-gray-100 dark:bg-gray-700">
-                {/* AJUSTE DE DESIGN: adicionado classes de largura (w-*) para cada coluna */}
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/3">
-                  Nome
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/5">
-                  Departamento
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/5">
-                  Nível
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[120px]">
-                  Recebe Bônus?
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[120px]">
-                  Ações
-                </th>
+              <tr>
+                <th className="table-header w-1/3">Nome</th>
+                <th className="table-header w-1/5">Departamento</th>
+                <th className="table-header w-1/5">Nivel</th>
+                <th className="table-header w-[120px] text-center">Bonus</th>
+                <th className="table-header w-[120px]">Acoes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-dark-border">
+            <tbody>
               {users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-                >
-                  <td className="px-4 py-2 whitespace-nowrap">{user.name}</td>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    {user.department}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap">{user.role}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-center">
-                    {["Fiscal", "Pessoal", "Contábil"].includes(
+                <tr key={user.id} className="table-row">
+                  <td className="table-cell font-medium">{user.name}</td>
+                  <td className="table-cell">{user.department}</td>
+                  <td className="table-cell">{getRoleBadge(user.role)}</td>
+                  <td className="table-cell text-center">
+                    {["Fiscal", "Pessoal", "Contabil"].includes(
                       user.department
                     ) ? (
                       <input
@@ -166,56 +152,60 @@ const AdminUsersPage = () => {
                         onChange={() =>
                           handleToggleBonus(user.id, user.hasBonus)
                         }
-                        className="h-5 w-5 text-accent-blue focus:ring-accent-blue border-gray-300 rounded cursor-pointer"
+                        className="cursor-pointer"
                       />
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <span className="text-light-text-secondary dark:text-dark-text-secondary">
+                        -
+                      </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap flex space-x-3">
-                    <button
-                      onClick={() => handleChangeRole(user)}
-                      className="text-blue-500 hover:text-blue-700"
-                      title="Alterar Nível"
-                    >
-                      <FiEdit size={18} />
-                    </button>
-                    <button
-                      onClick={() => openChangePasswordModal(user)}
-                      className="text-orange-500 hover:text-orange-700"
-                      title="Alterar Senha"
-                    >
-                      <FiKey size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(user.id, user.name)}
-                      className="text-red-500 hover:text-red-700"
-                      title="Deletar Usuário"
-                    >
-                      <FiTrash2 size={18} />
-                    </button>
+                  <td className="table-cell">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleChangeRole(user)}
+                        className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        title="Alterar Nivel"
+                      >
+                        <FiEdit size={15} />
+                      </button>
+                      <button
+                        onClick={() => openChangePasswordModal(user)}
+                        className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                        title="Alterar Senha"
+                      >
+                        <FiKey size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id, user.name)}
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Deletar Usuario"
+                      >
+                        <FiTrash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {/* Modais */}
-        {showChangeRoleModal && selectedUser && (
-          <ChangeRoleModal
-            user={selectedUser}
-            onClose={handleCloseModal}
-            onSave={handleSaveRole}
-          />
-        )}
-        {showChangePasswordModal && selectedUserForPassword && (
-          <ChangePasswordByAdminModal
-            user={selectedUserForPassword}
-            onClose={closeChangePasswordModal}
-            onSave={handleSaveNewPassword}
-          />
-        )}
       </div>
+
+      {showChangeRoleModal && selectedUser && (
+        <ChangeRoleModal
+          user={selectedUser}
+          onClose={handleCloseModal}
+          onSave={handleSaveRole}
+        />
+      )}
+      {showChangePasswordModal && selectedUserForPassword && (
+        <ChangePasswordByAdminModal
+          user={selectedUserForPassword}
+          onClose={closeChangePasswordModal}
+          onSave={handleSaveNewPassword}
+        />
+      )}
     </ProtectedRoute>
   );
 };

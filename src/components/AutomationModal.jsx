@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiX } from "react-icons/fi";
+import { FiX, FiPlus } from "react-icons/fi";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
@@ -59,11 +59,11 @@ const AutomationModal = ({ company, onClose }) => {
       return;
     }
     try {
-      const res = await api.post("/automation/create", {
+      await api.post("/automation/create", {
         name: newAutomationName.trim(),
       });
       toast.success("Automação adicionada com sucesso!");
-      fetchAutomations(); // Atualiza a lista
+      fetchAutomations();
       setShowAddAutomationModal(false);
       setNewAutomationName("");
     } catch (error) {
@@ -74,92 +74,93 @@ const AutomationModal = ({ company, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      {/* Modal Principal */}
-      <div className="bg-white dark:bg-dark-card p-6 rounded shadow-lg w-full max-w-md relative">
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-box max-w-md relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600
+            hover:bg-gray-100 dark:hover:bg-dark-card-hover dark:hover:text-dark-text transition-colors"
         >
-          <FiX size={24} />
+          <FiX size={20} />
         </button>
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-dark-text">
-          Gerenciar Automações
-        </h2>
-        <div className="mb-4">
+
+        <h2 className="text-xl font-bold mb-5">Gerenciar Automações</h2>
+
+        <div className="space-y-2 mb-5">
           {allAutomations.map((automation) => (
-            <label key={automation.id} className="flex items-center">
+            <label
+              key={automation.id}
+              className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-card-hover
+                cursor-pointer transition-colors"
+            >
               <input
                 type="checkbox"
                 checked={selectedAutomations.includes(automation.id)}
                 onChange={() => handleCheckboxChange(automation.id)}
-                className="mr-2"
               />
-              <span className="text-gray-800 dark:text-dark-text">
-                {automation.name}
-              </span>
+              <span className="text-sm">{automation.name}</span>
             </label>
           ))}
         </div>
-        <div className="flex justify-between">
+
+        <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-dark-border">
           <button
             onClick={() => setShowAddAutomationModal(true)}
-            className="bg-accent-green text-white px-4 py-2 rounded"
+            className="btn-success text-sm"
           >
-            Adicionar Automação
+            <FiPlus size={16} />
+            Adicionar
           </button>
-          <div className="flex space-x-2">
-            <button
-              onClick={onClose}
-              className="bg-gray-500 text-white px-4 py-2 rounded"
-            >
+          <div className="flex gap-2">
+            <button onClick={onClose} className="btn-ghost text-sm">
               Cancelar
             </button>
-            <button
-              onClick={handleSave}
-              className="bg-blue-500 dark:bg-accent-blue text-white px-4 py-2 rounded"
-            >
+            <button onClick={handleSave} className="btn-primary text-sm">
               Salvar
             </button>
           </div>
         </div>
       </div>
 
-      {/* Modal para Adicionar Nova Automação */}
       {showAddAutomationModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-60">
-          <div className="bg-white dark:bg-dark-card p-6 rounded shadow-lg w-full max-w-md relative">
+        <div
+          className="modal-overlay"
+          onClick={() => setShowAddAutomationModal(false)}
+        >
+          <div
+            className="modal-box max-w-md relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setShowAddAutomationModal(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600
+                hover:bg-gray-100 dark:hover:bg-dark-card-hover dark:hover:text-dark-text transition-colors"
             >
-              <FiX size={24} />
+              <FiX size={20} />
             </button>
-            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-dark-text">
-              Adicionar Nova Automação
+            <h2 className="text-xl font-bold mb-5">
+              Nova Automação
             </h2>
-            <div className="mb-4">
-              <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                Nome da Automação
-              </label>
+            <div className="mb-5">
+              <label className="label-base">Nome da Automação</label>
               <input
                 type="text"
                 value={newAutomationName}
                 onChange={(e) => setNewAutomationName(e.target.value)}
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+                className="input-base"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowAddAutomationModal(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded"
+                className="btn-ghost"
               >
                 Cancelar
               </button>
-              <button
-                onClick={handleAddAutomation}
-                className="bg-green-500 dark:bg-accent-green text-white px-4 py-2 rounded"
-              >
+              <button onClick={handleAddAutomation} className="btn-success">
                 Salvar
               </button>
             </div>

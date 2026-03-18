@@ -1,7 +1,7 @@
 // src/context/CompanyModalContext.jsx
 "use client";
 
-import { createContext, useState } from "react";
+import { createContext, useState, useCallback } from "react";
 
 export const CompanyModalContext = createContext();
 
@@ -9,6 +9,11 @@ export const CompanyModalProvider = ({ children }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("add"); // 'add' ou 'edit'
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger((n) => n + 1);
+  }, []);
 
   const openAddCompanyModal = () => {
     setModalType("add");
@@ -39,6 +44,8 @@ export const CompanyModalProvider = ({ children }) => {
         setShowModal,
         setModalType,
         setSelectedCompany,
+        refreshTrigger,
+        triggerRefresh,
       }}
     >
       {children}

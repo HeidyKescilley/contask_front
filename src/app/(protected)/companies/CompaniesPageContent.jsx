@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useContext, useMemo } from "react";
 import CompanyTable from "../../../components/CompanyTable";
 import CompanyFilters from "../../../components/CompanyFilters";
-import CompanyModal from "../../../components/CompanyModal";
 import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
@@ -23,6 +22,7 @@ const CompaniesPageContent = () => {
     classificacao: [],
     semFiscal: false,
     semDp: false,
+    showArchived: false,
   });
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryCompany, setSelectedHistoryCompany] = useState(null);
@@ -33,14 +33,11 @@ const CompaniesPageContent = () => {
     useState(null);
 
   const {
-    showModal,
-    modalType,
-    selectedCompany,
     openAddCompanyModal,
-    closeModal,
     setShowModal,
     setModalType,
     setSelectedCompany,
+    refreshTrigger,
   } = useContext(CompanyModalContext);
 
   const router = useRouter();
@@ -49,10 +46,7 @@ const CompaniesPageContent = () => {
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await api.get("/company/all");
-      const nonArchivedCompanies = res.data.filter(
-        (company) => company.status !== "ARCHIVED" && !company.isArchived
-      );
-      setCompanies(nonArchivedCompanies);
+      setCompanies(res.data); // armazena todas, inclusive arquivadas
     } catch (error) {
       toast.error("Erro ao buscar empresas.");
     }
@@ -63,8 +57,25 @@ const CompaniesPageContent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-busca ao salvar empresa via modal do layout
+  useEffect(() => {
+    if (refreshTrigger > 0) fetchCompanies();
+  }, [refreshTrigger, fetchCompanies]);
+
   const filteredCompanies = useMemo(() => {
     let filtered = [...companies];
+
+    // Empresas arquivadas ficam ocultas por padrão
+    if (!filters.showArchived) {
+      filtered = filtered.filter(
+        (c) => c.status !== "ARCHIVED" && !c.isArchived
+      );
+    } else {
+      // Quando exibindo arquivadas, mostra APENAS as arquivadas
+      filtered = filtered.filter(
+        (c) => c.status === "ARCHIVED" || c.isArchived
+      );
+    }
 
     if (filters.searchTerm) {
       filtered = filtered.filter((company) => {
@@ -134,42 +145,6 @@ const CompaniesPageContent = () => {
       setShowModal(true);
     },
     [setModalType, setSelectedCompany, setShowModal]
-  );
-
-  const handleSaveCompany = useCallback(
-    async (companyData) => {
-      try {
-        let newCompany;
-        if (modalType === "add") {
-          const res = await api.post("/company/add", companyData);
-          newCompany = res.data.company;
-          toast.success(
-            `Empresa "${companyData.name}" adicionada com sucesso!`
-          );
-          setCompanies((prev) => [...prev, newCompany]);
-        } else if (modalType === "edit") {
-          await api.patch(`/company/edit/${companyData.id}`, companyData);
-          toast.success(
-            `Empresa "${companyData.name}" atualizada com sucesso!`
-          );
-          setCompanies((prev) =>
-            prev.map((c) =>
-              c.id === companyData.id ? { ...c, ...companyData } : c
-            )
-          );
-        }
-
-        fetchCompanies();
-        closeModal();
-      } catch (error) {
-        toast.error(
-          `Erro ao salvar a empresa: ${
-            error.response?.data?.message || error.message
-          }`
-        );
-      }
-    },
-    [modalType, closeModal, fetchCompanies]
   );
 
   const handleSaveStatusChange = useCallback(
@@ -254,50 +229,31 @@ const CompaniesPageContent = () => {
   }, []);
 
   return (
-    <div className="w-full px-8 py-8">
-      <div className="bg-white dark:bg-dark-card rounded shadow-md">
-        <div className="bg-logo-light-blue dark:bg-dark-card p-4 rounded-t">
-          <h1 className="text-2xl font-bold text-white dark:text-dark-text">
-            Empresas
-          </h1>
-        </div>
-        <div className="p-6">
-          <div className="mb-4">
-            <CompanyFilters
-              filters={filters}
-              setFilters={setFilters}
-              onClearFilters={() =>
-                setFilters({
-                  searchColumn: "name",
-                  searchTerm: "",
-                  regime: [],
-                  situacao: [],
-                  classificacao: [],
-                  semFiscal: false,
-                  semDp: false,
-                })
-              }
-            />
-          </div>
-          {/* O CompanyTable já contém o overflow-x-auto e table-fixed */}
-          <CompanyTable
-            companies={filteredCompanies}
-            onEditCompany={handleEditCompany}
-            onBlockCompany={handleBlockCompany}
-            onViewHistory={handleViewHistory}
-            onManageAutomations={handleManageAutomations}
-            onManualArchiveCompany={handleManualArchiveCompany}
-          />
-        </div>
-      </div>
-      {showModal && (
-        <CompanyModal
-          type={modalType}
-          company={selectedCompany}
-          onClose={closeModal}
-          onSave={handleSaveCompany}
-        />
-      )}
+    <>
+      <CompanyFilters
+        filters={filters}
+        setFilters={setFilters}
+        onClearFilters={() =>
+          setFilters({
+            searchColumn: "name",
+            searchTerm: "",
+            regime: [],
+            situacao: [],
+            classificacao: [],
+            semFiscal: false,
+            semDp: false,
+            showArchived: false,
+          })
+        }
+      />
+      <CompanyTable
+        companies={filteredCompanies}
+        onEditCompany={handleEditCompany}
+        onBlockCompany={handleBlockCompany}
+        onViewHistory={handleViewHistory}
+        onManageAutomations={handleManageAutomations}
+        onManualArchiveCompany={handleManualArchiveCompany}
+      />
       {showHistoryModal && (
         <HistoryModal
           company={selectedHistoryCompany}
@@ -317,7 +273,7 @@ const CompaniesPageContent = () => {
           onClose={() => setShowAutomationModal(false)}
         />
       )}
-    </div>
+    </>
   );
 };
 

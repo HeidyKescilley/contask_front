@@ -12,7 +12,6 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Redireciona se já estiver autenticado
   useEffect(() => {
     if (user) {
       router.push("/home");
@@ -26,53 +25,74 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg">
+      {/* Lado esquerdo — imagem de fundo */}
       <div
-        className="w-1/2 bg-cover"
+        className="hidden lg:block lg:w-1/2 bg-cover bg-center relative"
         style={{ backgroundImage: "url(/your-image.png)" }}
       >
-        {/* Imagem do lado esquerdo */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-900/80 to-primary-800/40" />
+        <div className="relative z-10 flex flex-col justify-end h-full p-12 text-white">
+          <h1 className="text-4xl font-bold mb-3">Contask</h1>
+          <p className="text-lg text-white/80 max-w-md">
+            Gerencie suas empresas, tarefas e equipes em um só lugar.
+          </p>
+        </div>
       </div>
-      <div className="w-1/2 flex items-center justify-center">
+
+      {/* Lado direito — formulário */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
         <form
-          className="w-full max-w-md bg-white dark:bg-dark-card p-6 rounded shadow"
+          className="w-full max-w-md card p-8 space-y-6"
           onSubmit={handleSubmit}
         >
-          <div className="flex justify-center mb-4">
-            <Image src="/logo.png" width="150" height="150" alt="Logo" />
+          <div className="flex justify-center mb-2">
+            <Image src="/logo.png" width={120} height={120} alt="Logo" />
           </div>
-          <div className="mb-4">
-            <label className="block mb-1 text-gray-800 dark:text-dark-text">
-              Email
-            </label>
+
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">
+              Bem-vindo de volta
+            </h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-dark-text-secondary">
+              Faça login para acessar sua conta
+            </p>
+          </div>
+
+          <div>
+            <label className="label-base">Email</label>
             <input
               type="email"
-              className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+              className="input-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Seu email"
+              placeholder="seu@email.com"
               required
             />
           </div>
-          <div className="mb-4">
-            <label className="block mb-1 text-gray-800 dark:text-dark-text">
-              Senha
-            </label>
+
+          <div>
+            <label className="label-base">Senha</label>
             <input
               type="password"
-              className="w-full px-3 py-2 rounded-md bg-gray-100 dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
+              className="input-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Sua senha"
               required
             />
           </div>
-          <button className="w-full bg-accent-blue text-white py-2 rounded-md">
+
+          <button type="submit" className="btn-primary w-full">
             Entrar
           </button>
-          <p className="flex my-2 justify-center text-gray-800 dark:text-dark-text-secondary">
-            Não tem uma conta?
-            <a href="/register" className="pl-2 underline">
-              Clique aqui
+
+          <p className="text-center text-sm text-gray-500 dark:text-dark-text-secondary">
+            Não tem uma conta?{" "}
+            <a
+              href="/register"
+              className="text-primary-500 hover:text-primary-400 font-medium transition-colors"
+            >
+              Cadastre-se
             </a>
           </p>
         </form>

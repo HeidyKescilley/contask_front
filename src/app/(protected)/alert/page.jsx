@@ -7,8 +7,8 @@ import api from "../../../utils/api";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import { toast } from "react-toastify";
+import { FiSend } from "react-icons/fi";
 
-// Dynamically import ReactQuill to prevent SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const AlertPage = () => {
@@ -24,21 +24,16 @@ const AlertPage = () => {
   const [selectAllCompanies, setSelectAllCompanies] = useState(false);
 
   useEffect(() => {
-    fetchDepartments();
-    fetchCompanies();
-  }, []);
-
-  const fetchDepartments = async () => {
-    // Assuming departments are predefined
     setAllDepartments([
       "Pessoal",
       "Fiscal",
-      "Contábil",
+      "Contabil",
       "Processual",
       "Financeiro",
       "Outros",
     ]);
-  };
+    fetchCompanies();
+  }, []);
 
   const fetchCompanies = async () => {
     try {
@@ -53,7 +48,7 @@ const AlertPage = () => {
     e.preventDefault();
 
     if (!title || !content) {
-      toast.error("Título e conteúdo são obrigatórios.");
+      toast.error("Titulo e conteudo sao obrigatorios.");
       return;
     }
 
@@ -76,7 +71,6 @@ const AlertPage = () => {
       );
     }
 
-    // Append attachments
     attachments.forEach((file) => {
       formData.append("attachments", file);
     });
@@ -84,7 +78,6 @@ const AlertPage = () => {
     try {
       await api.post("/alerts/create", formData);
       toast.success("Alerta criado e emails enviados com sucesso!");
-      // Reset form
       setTitle("");
       setContent("");
       setDepartments([]);
@@ -98,170 +91,144 @@ const AlertPage = () => {
 
   return (
     <ProtectedRoute requiredRole="admin">
-      <div className="w-full px-8 py-8">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-dark-text">
-          Criar Alerta
-        </h1>
-        {/* Formulário para criar alerta */}
-        <div className="bg-white dark:bg-dark-card p-6 rounded shadow">
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                Título
+      <div className="card max-w-3xl">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="label-base">Titulo</label>
+            <input
+              type="text"
+              className="input-base"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Titulo do alerta"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="label-base">Conteudo</label>
+            <ReactQuill
+              value={content}
+              onChange={setContent}
+              className="bg-white dark:bg-dark-surface rounded-xl overflow-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="label-base">Anexos</label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setAttachments(Array.from(e.target.files))}
+              className="text-sm text-light-text-secondary dark:text-dark-text-secondary"
+            />
+          </div>
+
+          <div>
+            <label className="label-base">Tipo de Alerta</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="input-base !w-auto min-w-[200px]"
+            >
+              <option value="internal">Interno</option>
+              <option value="external">Externo</option>
+            </select>
+          </div>
+
+          {type === "internal" && (
+            <div>
+              <label className="label-base">Departamentos</label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={selectAllDepartments}
+                  onChange={(e) => {
+                    setSelectAllDepartments(e.target.checked);
+                    setDepartments(e.target.checked ? allDepartments : []);
+                  }}
+                />
+                Selecionar Todos
               </label>
-              <input
-                type="text"
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Título do alerta"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                Conteúdo
-              </label>
-              <ReactQuill
-                value={content}
-                onChange={setContent}
-                className="bg-white dark:bg-dark-bg text-gray-800 dark:text-dark-text"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                Anexos
-              </label>
-              <input
-                type="file"
-                multiple
-                onChange={(e) => setAttachments(Array.from(e.target.files))}
-                className="w-full"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                Tipo de Alerta
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full border px-3 py-2 bg-gray-100 dark:bg-dark-bg border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text"
-              >
-                <option value="internal">Interno</option>
-                <option value="external">Externo</option>
-              </select>
-            </div>
-            {type === "internal" && (
-              <div className="mb-4">
-                <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                  Departamentos
-                </label>
-                <div className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    checked={selectAllDepartments}
-                    onChange={(e) => {
-                      setSelectAllDepartments(e.target.checked);
-                      if (e.target.checked) {
-                        setDepartments(allDepartments);
-                      } else {
-                        setDepartments([]);
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-gray-800 dark:text-dark-text">
-                    Selecionar Todos
-                  </span>
+              {!selectAllDepartments && (
+                <div className="grid grid-cols-2 gap-2">
+                  {allDepartments.map((dept) => (
+                    <label
+                      key={dept}
+                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        value={dept}
+                        checked={departments.includes(dept)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setDepartments((prev) =>
+                            prev.includes(value)
+                              ? prev.filter((d) => d !== value)
+                              : [...prev, value]
+                          );
+                        }}
+                      />
+                      {dept}
+                    </label>
+                  ))}
                 </div>
-                {!selectAllDepartments && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {allDepartments.map((dept) => (
-                      <label key={dept} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          value={dept}
-                          checked={departments.includes(dept)}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setDepartments((prev) =>
-                              prev.includes(value)
-                                ? prev.filter((d) => d !== value)
-                                : [...prev, value]
-                            );
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-800 dark:text-dark-text">
-                          {dept}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {type === "external" && (
-              <div className="mb-4">
-                <label className="block mb-1 text-gray-800 dark:text-dark-text">
-                  Empresas
-                </label>
-                <div className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    checked={selectAllCompanies}
-                    onChange={(e) => {
-                      setSelectAllCompanies(e.target.checked);
-                      if (e.target.checked) {
-                        setCompanyIds(allCompanies.map((c) => c.id));
-                      } else {
-                        setCompanyIds([]);
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-gray-800 dark:text-dark-text">
-                    Selecionar Todas
-                  </span>
-                </div>
-                {!selectAllCompanies && (
-                  <div className="max-h-64 overflow-y-scroll border p-2 bg-gray-100 dark:bg-dark-bg">
-                    {allCompanies.map((company) => (
-                      <label key={company.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          value={company.id}
-                          checked={companyIds.includes(company.id)}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            setCompanyIds((prev) =>
-                              prev.includes(value)
-                                ? prev.filter((id) => id !== value)
-                                : [...prev, value]
-                            );
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-800 dark:text-dark-text">
-                          {company.name}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="bg-blue-500 dark:bg-accent-blue text-white px-4 py-2 rounded"
-              >
-                Enviar
-              </button>
+              )}
             </div>
-          </form>
-        </div>
+          )}
+
+          {type === "external" && (
+            <div>
+              <label className="label-base">Empresas</label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={selectAllCompanies}
+                  onChange={(e) => {
+                    setSelectAllCompanies(e.target.checked);
+                    setCompanyIds(
+                      e.target.checked ? allCompanies.map((c) => c.id) : []
+                    );
+                  }}
+                />
+                Selecionar Todas
+              </label>
+              {!selectAllCompanies && (
+                <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-dark-border rounded-xl p-3 space-y-1">
+                  {allCompanies.map((company) => (
+                    <label
+                      key={company.id}
+                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        value={company.id}
+                        checked={companyIds.includes(company.id)}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          setCompanyIds((prev) =>
+                            prev.includes(value)
+                              ? prev.filter((id) => id !== value)
+                              : [...prev, value]
+                          );
+                        }}
+                      />
+                      {company.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <button type="submit" className="btn-primary">
+              <FiSend size={16} />
+              Enviar
+            </button>
+          </div>
+        </form>
       </div>
     </ProtectedRoute>
   );
