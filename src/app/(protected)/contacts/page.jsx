@@ -22,35 +22,37 @@ const ContactsPage = () => {
       setUsers(sortedUsers);
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Erro ao buscar os usuarios."
+        error.response?.data?.message || "Erro ao buscar os usuários."
       );
     }
   };
 
   return (
     <ProtectedRoute>
-      <div className="card p-0 overflow-hidden max-w-4xl">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="table-header">Nome</th>
-                <th className="table-header">Setor</th>
-                <th className="table-header">E-mail</th>
-                <th className="table-header">Ramal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="table-row">
-                  <td className="table-cell font-medium">{user.name}</td>
-                  <td className="table-cell">{user.department}</td>
-                  <td className="table-cell">{user.email}</td>
-                  <td className="table-cell">{user.ramal || "N/A"}</td>
+      <div className="flex justify-center">
+        <div className="card p-0 overflow-hidden w-full max-w-3xl">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="table-header">Nome</th>
+                  <th className="table-header">Setor</th>
+                  <th className="table-header">E-mail</th>
+                  <th className="table-header">Ramal</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="table-row">
+                    <td className="table-cell font-medium">{user.name}</td>
+                    <td className="table-cell">{user.department}</td>
+                    <td className="table-cell">{user.email}</td>
+                    <td className="table-cell">{user.ramal || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </ProtectedRoute>

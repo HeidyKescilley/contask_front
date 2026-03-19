@@ -17,9 +17,12 @@ import {
   FiDownload,
   FiAward,
   FiGrid,
+  FiClipboard,
+  FiDollarSign,
   FiChevronLeft,
   FiZoomIn,
   FiZoomOut,
+  FiPauseCircle,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -77,6 +80,9 @@ const Sidebar = () => {
         { name: "Gestao de Usuarios", path: "/admin/users", icon: <FiSettings size={18} /> },
         { name: "Visao de Equipes", path: "/admin/team-view", icon: <FiGrid size={18} /> },
         { name: "Calculo de Bonus", path: "/admin/bonus", icon: <FiAward size={18} /> },
+        { name: "Obrigações", path: "/admin/obligations", icon: <FiClipboard size={18} /> },
+        { name: "Impostos", path: "/admin/taxes", icon: <FiDollarSign size={18} /> },
+        { name: "Paralisações", path: "/admin/suspensions", icon: <FiPauseCircle size={18} /> },
         { name: "Exportar Dados", path: "/admin/export", icon: <FiDownload size={18} /> },
       ],
     });
@@ -123,7 +129,7 @@ const Sidebar = () => {
           {item.icon}
         </div>
         {isExpanded && (
-          <span className="text-sm font-medium truncate leading-none">{item.name}</span>
+          <span className="text-sm font-medium truncate leading-none min-w-0 flex-1">{item.name}</span>
         )}
         {!isExpanded && (
           <div className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-gray-900 text-white text-xs
@@ -142,7 +148,7 @@ const Sidebar = () => {
       className={`h-screen bg-sidebar-bg flex flex-col fixed top-0 left-0 z-50
         border-r border-white/5 shadow-xl
         transition-[width] duration-300 ease-in-out
-        ${isExpanded ? "w-56" : "w-[60px]"}`}
+        ${isExpanded ? "w-64" : "w-[60px]"}`}
     >
       {/* Header */}
       <div
@@ -167,7 +173,7 @@ const Sidebar = () => {
       </div>
 
       {/* Menu — overflow-hidden quando colapsado para evitar scrollbar */}
-      <nav className={`flex-1 py-2 px-1.5 ${isExpanded ? "overflow-y-auto" : "overflow-hidden"}`}>
+      <nav className={`flex-1 py-2 px-1.5 overflow-x-hidden ${isExpanded ? "overflow-y-auto" : "overflow-hidden"}`} style={isExpanded ? { scrollbarWidth: "thin" } : {}}>
         {menuGroups.map((group, groupIndex) => {
           const visibleItems = group.items.filter(checkDisplayPermission);
           if (visibleItems.length === 0) return null;
@@ -234,7 +240,7 @@ const Sidebar = () => {
             <FiUser size={18} />
           </div>
           {isExpanded && user && (
-            <span className="text-sm font-medium truncate leading-none">{user.name}</span>
+            <span className="text-sm font-medium truncate leading-none min-w-0 flex-1">{user.name}</span>
           )}
           {!isExpanded && (
             <div className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-gray-900 text-white text-xs

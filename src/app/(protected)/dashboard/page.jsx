@@ -7,6 +7,7 @@ import api from "../../../utils/api";
 import { useAuth } from "../../../hooks/useAuth";
 import { toast } from "react-toastify";
 import DashboardContent from "../../../components/DashboardContent";
+import ObligationsDashboard from "../../../components/ObligationsDashboard";
 import Loading from "../../../components/Loading";
 
 const DashboardPage = () => {
@@ -24,14 +25,16 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (isAdmin) setViewMode("fiscal_general");
-    else if (isFiscal) setViewMode("fiscal_general");
+    if (isAdmin) setViewMode("obligations");
+    else if (isFiscal) setViewMode("obligations");
     else if (isPessoal) setViewMode("dp_general");
     else if (isContabil) setViewMode("contabil_general");
   }, [user, isAdmin, isFiscal, isPessoal, isContabil]);
 
   const fetchDashboardData = useCallback(async () => {
     if (!viewMode || !user) return;
+    // A aba de Obrigações gerencia seus próprios dados internamente
+    if (viewMode === "obligations") { setLoading(false); return; }
     setLoading(true);
     let endpoint = "";
     switch (viewMode) {
@@ -76,7 +79,7 @@ const DashboardPage = () => {
       setViewMode((prev) =>
         prev === "my_companies"
           ? isFiscal
-            ? "fiscal_general"
+            ? "obligations"
             : "dp_general"
           : "my_companies"
       );
@@ -89,21 +92,25 @@ const DashboardPage = () => {
   const tabs = [];
   if (isAdmin) {
     tabs.push(
-      { key: "fiscal_general", label: "Fiscal Geral" },
+      { key: "obligations", label: "Obrigações/Impostos" },
       { key: "dp_general", label: "DP Geral" },
-      { key: "contabil_general", label: "Contabil Geral" }
+      { key: "contabil_general", label: "Contábil Geral" }
     );
     if (canSeeMyCompanies) {
       tabs.push({ key: "my_companies", label: "Minhas Empresas" });
     }
   } else if (canSeeMyCompanies) {
-    tabs.push(
-      {
-        key: isFiscal ? "fiscal_general" : "dp_general",
-        label: "Geral",
-      },
-      { key: "my_companies", label: "Minhas Empresas" }
-    );
+    if (isFiscal) {
+      tabs.push(
+        { key: "obligations", label: "Obrigações/Impostos" },
+        { key: "my_companies", label: "Minhas Empresas" }
+      );
+    } else {
+      tabs.push(
+        { key: "dp_general", label: "Geral" },
+        { key: "my_companies", label: "Minhas Empresas" }
+      );
+    }
   }
 
   return (
@@ -134,20 +141,26 @@ const DashboardPage = () => {
       )}
 
       {/* Content */}
-      <div className="card">
-        {loading ? (
-          <div className="flex justify-center items-center py-10">
-            <div className="w-10 h-10 rounded-full border-[3px] border-gray-200 dark:border-dark-border border-t-primary-500 animate-spin" />
-          </div>
-        ) : dashboardData ? (
-          <DashboardContent data={dashboardData} viewMode={viewMode} />
-        ) : (
-          <p className="text-center text-light-text-secondary dark:text-dark-text-secondary py-10">
-            Nao foi possivel carregar os dados. Tente selecionar outra
-            visualizacao.
-          </p>
-        )}
-      </div>
+      {viewMode === "obligations" ? (
+        <div className="card">
+          <ObligationsDashboard />
+        </div>
+      ) : (
+        <div className="card">
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="w-10 h-10 rounded-full border-[3px] border-gray-200 dark:border-dark-border border-t-primary-500 animate-spin" />
+            </div>
+          ) : dashboardData ? (
+            <DashboardContent data={dashboardData} viewMode={viewMode} />
+          ) : (
+            <p className="text-center text-light-text-secondary dark:text-dark-text-secondary py-10">
+              Nao foi possivel carregar os dados. Tente selecionar outra
+              visualizacao.
+            </p>
+          )}
+        </div>
+      )}
     </ProtectedRoute>
   );
 };

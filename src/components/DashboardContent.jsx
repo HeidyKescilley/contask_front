@@ -83,21 +83,30 @@ const DashboardContent = ({ data, viewMode }) => {
     );
   }
 
+  const isFiscal = !!data.isFiscal;
   const totalForCards = viewMode.includes("general")
     ? data.absoluteTotalForDept
     : data.totalCompanies;
   const totalForCalculations = data.totalCompanies || 0;
   const zeroedCompanies = data.zeroedCompanies || 0;
   const completedCompanies = data.completedCompanies || 0;
+  const sentCompanies = data.sentCompanies ?? completedCompanies;
   const nonCompletedCompanies = totalForCalculations - completedCompanies;
+  const notSentCompanies = totalForCalculations - sentCompanies;
   const nonZeroedCompaniesForChart = totalForCalculations - zeroedCompanies;
 
+  // Para Fiscal: "Enviadas vs Não Enviadas". Para outros: "Concluídas vs Não Concluídas"
+  const completedLabel = isFiscal ? "Enviadas" : "Concluídas";
+  const nonCompletedLabel = isFiscal ? "Não Enviadas" : "Não Concluídas";
+  const completedValue = isFiscal ? sentCompanies : completedCompanies;
+  const nonCompletedValue = isFiscal ? notSentCompanies : nonCompletedCompanies;
+
   const completedVsNonCompletedData = {
-    labels: ["Concluídas", "Não Concluídas"],
+    labels: [completedLabel, nonCompletedLabel],
     datasets: [
       {
         label: "Empresas",
-        data: [completedCompanies, nonCompletedCompanies],
+        data: [completedValue, nonCompletedValue],
         backgroundColor: ["rgba(34, 197, 94, 0.8)", "rgba(245, 158, 11, 0.8)"],
         borderColor: ["rgb(34, 197, 94)", "rgb(245, 158, 11)"],
         borderWidth: 2,
@@ -175,14 +184,14 @@ const DashboardContent = ({ data, viewMode }) => {
           colorClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
         />
         <StatCard
-          title="Concluídas"
-          value={completedCompanies}
+          title={completedLabel}
+          value={completedValue}
           icon={FiCheckCircle}
           colorClass="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
         />
         <StatCard
-          title="Não Concluídas"
-          value={nonCompletedCompanies}
+          title={nonCompletedLabel}
+          value={nonCompletedValue}
           icon={FiAlertCircle}
           colorClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
         />
@@ -198,7 +207,7 @@ const DashboardContent = ({ data, viewMode }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card h-80 flex flex-col">
           <h3 className="text-sm font-semibold text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider mb-4">
-            Concluídas vs Não Concluídas
+            {completedLabel} vs {nonCompletedLabel}
           </h3>
           <div className="relative flex-1">
             <Pie data={completedVsNonCompletedData} options={chartOptions} />
@@ -229,8 +238,8 @@ const DashboardContent = ({ data, viewMode }) => {
                     <th className="table-header">Última Atualização</th>
                     <th className="table-header">Usuário</th>
                     <th className="table-header">Total Designado</th>
-                    <th className="table-header">Concluídas</th>
-                    <th className="table-header">Não Concluídas</th>
+                    <th className="table-header">{completedLabel}</th>
+                    <th className="table-header">{nonCompletedLabel}</th>
                     <th className="table-header">Zeradas</th>
                   </tr>
                 </thead>

@@ -10,6 +10,8 @@ import {
   FiAlertCircle,
   FiCheckCircle,
   FiCheck,
+  FiClipboard,
+  FiTrash2,
 } from "react-icons/fi";
 import api from "../utils/api";
 import AddContactModeModal from "./AddContactModeModal";
@@ -133,12 +135,74 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   const [contactModes, setContactModes] = useState([]);
   const [showAddContactModeModal, setShowAddContactModeModal] = useState(false);
 
+  // ── Obrigações Acessórias ────────────────────────────────────────────────
+  const [companyObligations, setCompanyObligations] = useState([]);
+  const [excludedObligations, setExcludedObligations] = useState([]);
+  const [allObligations, setAllObligations] = useState([]);
+  const [obligationsLoading, setObligationsLoading] = useState(false);
+  const [addOblSelect, setAddOblSelect] = useState("");
+
+  // ── Impostos ─────────────────────────────────────────────────────────────
+  const [companyTaxes, setCompanyTaxes] = useState([]);
+  const [excludedTaxes, setExcludedTaxes] = useState([]);
+  const [allTaxes, setAllTaxes] = useState([]);
+  const [taxesLoading, setTaxesLoading] = useState(false);
+  const [addTaxSelect, setAddTaxSelect] = useState("");
+
+  const fetchCompanyObligations = async () => {
+    if (!data?.id) return;
+    setObligationsLoading(true);
+    try {
+      const res = await api.get(`/obligation/company/${data.id}`);
+      setCompanyObligations(res.data.filter((o) => !o.isManuallyExcluded));
+      setExcludedObligations(res.data.filter((o) => o.isManuallyExcluded));
+    } catch {
+      // silencioso
+    } finally {
+      setObligationsLoading(false);
+    }
+  };
+
+  const fetchAllObligations = async () => {
+    try {
+      const res = await api.get("/obligation/all");
+      setAllObligations(res.data);
+    } catch {}
+  };
+
+  const fetchCompanyTaxes = async () => {
+    if (!data?.id) return;
+    setTaxesLoading(true);
+    try {
+      const res = await api.get(`/tax/company/${data.id}`);
+      setCompanyTaxes(res.data.filter((t) => !t.isManuallyExcluded && t.statusId));
+      setExcludedTaxes(res.data.filter((t) => t.isManuallyExcluded));
+    } catch {
+      // silencioso
+    } finally {
+      setTaxesLoading(false);
+    }
+  };
+
+  const fetchAllTaxes = async () => {
+    try {
+      const res = await api.get("/tax/all");
+      setAllTaxes(res.data);
+    } catch {}
+  };
+
   useEffect(() => {
     fetchContactModes();
     if (type === "edit") {
       fetchUsersByDepartment("Fiscal",  setFiscalUsers);
       fetchUsersByDepartment("Contábil", setContabilUsers);
       fetchUsersByDepartment("Pessoal", setDpUsers);
+      fetchCompanyObligations();
+      fetchCompanyTaxes();
+      if (user?.role === "admin") {
+        fetchAllObligations();
+        fetchAllTaxes();
+      }
     }
   }, [type]);
 
@@ -270,6 +334,38 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       obs:            formData.obs            || "",
       branchNumber:   formData.branchNumber   || null,
     });
+  };
+
+  // ── Handler toggle obrigação manual ────────────────────────────────────────
+  const handleToggleObligation = async (obligationId, action) => {
+    try {
+      await api.post(`/obligation/company/${data.id}/toggle`, { obligationId, action });
+      await fetchCompanyObligations();
+    } catch (err) {
+      console.error("Erro ao alternar obrigação:", err);
+    }
+  };
+
+  const handleAddObligation = async () => {
+    if (!addOblSelect) return;
+    await handleToggleObligation(parseInt(addOblSelect, 10), "add");
+    setAddOblSelect("");
+  };
+
+  // ── Handler toggle imposto manual ───────────────────────────────────────────
+  const handleToggleTax = async (taxId, action) => {
+    try {
+      await api.post(`/tax/company/${data.id}/toggle`, { taxId, action });
+      await fetchCompanyTaxes();
+    } catch (err) {
+      console.error("Erro ao alternar imposto:", err);
+    }
+  };
+
+  const handleAddTax = async () => {
+    if (!addTaxSelect) return;
+    await handleToggleTax(parseInt(addTaxSelect, 10), "add");
+    setAddTaxSelect("");
   };
 
   return (
@@ -605,7 +701,236 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         )}
 
         {/* ─────────────────────────────────────────────────────────────────
-            Seção 6 · Observações
+            Seção 6 · Obrigações Acessórias (somente edição)
+        ───────────────────────────────────────────────────────────────── */}
+        {type === "edit" && (
+          <>
+            <SectionDivider label="Obrigações Acessórias" />
+            {obligationsLoading ? (
+              <p className="text-xs text-gray-400 mb-4">Carregando obrigações...</p>
+            ) : companyObligations.length === 0 ? (
+              <p className="text-xs text-gray-400 mb-4">
+                Nenhuma obrigação aplicável a esta empresa no período atual.
+              </p>
+            ) : (
+              <div className="mb-4 space-y-1.5">
+                {companyObligations.map((obl) => (
+                  <div
+                    key={obl.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FiClipboard size={13} className="text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-800 dark:text-dark-text truncate">{obl.name}</span>
+                      {obl.isManuallyAssigned && (
+                        <span className="badge badge-amber text-[10px]">Manual</span>
+                      )}
+                      {obl.status === "disabled" && (
+                        <span className="badge badge-gray text-[10px]">Desabilitada</span>
+                      )}
+                      {obl.status === "completed" && (
+                        <span className="badge badge-green text-[10px]">Concluída</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {obl.deadlineFormatted && (
+                        <span className="text-[11px] text-gray-400">até {obl.deadlineFormatted}</span>
+                      )}
+                      {user?.role === "admin" && obl.isManuallyAssigned && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleObligation(obl.id, "remove")}
+                          className="btn-ghost !p-1 text-red-400 hover:text-red-600"
+                          title="Remover obrigação manual"
+                        >
+                          <FiTrash2 size={12} />
+                        </button>
+                      )}
+                      {user?.role === "admin" && !obl.isManuallyAssigned && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleObligation(obl.id, "exclude")}
+                          className="btn-ghost !p-1 text-orange-400 hover:text-orange-600"
+                          title="Excluir desta empresa (exceção)"
+                        >
+                          <FiTrash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {/* Obrigações excluídas manualmente — exibir apenas para admins */}
+                {user?.role === "admin" && excludedObligations.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-dashed border-gray-200 dark:border-dark-border">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1.5">Excluídas desta empresa</p>
+                    {excludedObligations.map((obl) => (
+                      <div
+                        key={`excl-${obl.id}`}
+                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card opacity-60"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FiClipboard size={13} className="text-gray-300 flex-shrink-0" />
+                          <span className="text-sm text-gray-400 dark:text-dark-text-secondary truncate line-through">{obl.name}</span>
+                          <span className="badge badge-gray text-[10px]">Excluída</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleObligation(obl.id, "include")}
+                          className="btn-ghost !p-1 !px-2 text-xs text-emerald-600 hover:text-emerald-700"
+                          title="Re-incluir esta obrigação"
+                        >
+                          Incluir
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Adicionar obrigação manual (admin only) */}
+            {user?.role === "admin" && allObligations.length > 0 && (
+              <div className="flex gap-2 mb-4">
+                <select
+                  value={addOblSelect}
+                  onChange={(e) => setAddOblSelect(e.target.value)}
+                  className="input-base flex-1"
+                >
+                  <option value="">+ Adicionar obrigação manualmente...</option>
+                  {allObligations
+                    .filter((o) => !companyObligations.some((co) => co.id === o.id))
+                    .map((o) => (
+                      <option key={o.id} value={o.id}>
+                        [{o.department}] {o.name}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAddObligation}
+                  disabled={!addOblSelect}
+                  className="btn-primary disabled:opacity-40"
+                >
+                  <FiPlus size={14} />
+                  Adicionar
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 7 · Impostos (somente edição)
+        ───────────────────────────────────────────────────────────────── */}
+        {type === "edit" && (
+          <>
+            <SectionDivider label="Impostos" />
+            {taxesLoading ? (
+              <p className="text-xs text-gray-400 mb-4">Carregando impostos...</p>
+            ) : companyTaxes.length === 0 ? (
+              <p className="text-xs text-gray-400 mb-4">
+                Nenhum imposto aplicável a esta empresa no período atual.
+              </p>
+            ) : (
+              <div className="mb-4 space-y-1.5">
+                {companyTaxes.map((tax) => (
+                  <div
+                    key={tax.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm text-gray-800 dark:text-dark-text truncate">{tax.name}</span>
+                      {tax.isManuallyAssigned && (
+                        <span className="badge badge-amber text-[10px]">Manual</span>
+                      )}
+                      {tax.status === "completed" && (
+                        <span className="badge badge-green text-[10px]">Apurado</span>
+                      )}
+                    </div>
+                    {user?.role === "admin" && (
+                      <div className="flex-shrink-0">
+                        {tax.isManuallyAssigned ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTax(tax.id, "remove")}
+                            className="btn-ghost !p-1 text-red-400 hover:text-red-600"
+                            title="Remover imposto manual"
+                          >
+                            <FiTrash2 size={12} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTax(tax.id, "exclude")}
+                            className="btn-ghost !p-1 text-orange-400 hover:text-orange-600"
+                            title="Excluir desta empresa"
+                          >
+                            <FiTrash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {/* Impostos excluídos — admin only */}
+                {user?.role === "admin" && excludedTaxes.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-dashed border-gray-200 dark:border-dark-border">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1.5">Excluídos desta empresa</p>
+                    {excludedTaxes.map((tax) => (
+                      <div
+                        key={`excl-tax-${tax.id}`}
+                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card opacity-60"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm text-gray-400 dark:text-dark-text-secondary truncate line-through">{tax.name}</span>
+                          <span className="badge badge-gray text-[10px]">Excluído</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleTax(tax.id, "include")}
+                          className="btn-ghost !p-1 !px-2 text-xs text-emerald-600 hover:text-emerald-700"
+                          title="Re-incluir este imposto"
+                        >
+                          Incluir
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Adicionar imposto manual (admin only) */}
+            {user?.role === "admin" && allTaxes.length > 0 && (
+              <div className="flex gap-2 mb-4">
+                <select
+                  value={addTaxSelect}
+                  onChange={(e) => setAddTaxSelect(e.target.value)}
+                  className="input-base flex-1"
+                >
+                  <option value="">+ Adicionar imposto manualmente...</option>
+                  {allTaxes
+                    .filter((t) => !companyTaxes.some((ct) => ct.id === t.id))
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAddTax}
+                  disabled={!addTaxSelect}
+                  className="btn-primary disabled:opacity-40"
+                >
+                  <FiPlus size={14} />
+                  Adicionar
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────
+            Seção 8 · Observações
         ───────────────────────────────────────────────────────────────── */}
         <SectionDivider label="Observações" />
         <div className={`grid gap-3 mb-4 ${type === "add" ? "grid-cols-2" : "grid-cols-1"}`}>
