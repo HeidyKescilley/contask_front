@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { FiX, FiRefreshCw } from "react-icons/fi";
 import api from "../utils/api";
 import { toast } from "react-toastify";
+import LoadingSpinner from "./LoadingSpinner";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -107,7 +108,7 @@ const CompanyListModal = ({ type, item, period, onClose }) => {
 
         {/* Conteúdo */}
         {loading ? (
-          <div className="py-10 text-center text-sm text-gray-400">Carregando...</div>
+          <LoadingSpinner size="lg" />
         ) : currentList.length === 0 ? (
           <div className="py-10 text-center text-sm text-gray-400">
             Nenhuma empresa {STATUS_CONFIG[activeTab].label.toLowerCase()}.

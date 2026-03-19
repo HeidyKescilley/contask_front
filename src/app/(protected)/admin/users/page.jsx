@@ -8,9 +8,11 @@ import { toast } from "react-toastify";
 import { FiEdit, FiTrash2, FiKey } from "react-icons/fi";
 import ChangeRoleModal from "../../../../components/ChangeRoleModal";
 import ChangePasswordByAdminModal from "../../../../components/ChangePasswordByAdminModal";
+import LoadingSpinner from "../../../../components/LoadingSpinner";
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -25,6 +27,8 @@ const AdminUsersPage = () => {
       setUsers(sortedUsers);
     } catch (error) {
       toast.error("Erro ao buscar usuarios.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,6 +128,9 @@ const AdminUsersPage = () => {
 
   return (
     <ProtectedRoute requiredPermissions={{ roles: ["admin"] }}>
+      {loading ? (
+        <LoadingSpinner size="lg" />
+      ) : (
       <div className="card p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full table-fixed">
@@ -192,6 +199,7 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
+      )}
       {showChangeRoleModal && selectedUser && (
         <ChangeRoleModal
           user={selectedUser}

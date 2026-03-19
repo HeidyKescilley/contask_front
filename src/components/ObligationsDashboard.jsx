@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Bar } from "react-chartjs-2";
+import React, { useState, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
   Chart as ChartJS,
   Tooltip,
@@ -10,12 +10,17 @@ import {
   LinearScale,
   BarElement,
 } from "chart.js";
-import api from "../utils/api";
-import { toast } from "react-toastify";
+import { useCachedFetch } from "../hooks/useCachedFetch";
 import { FiFilter, FiRefreshCw, FiExternalLink } from "react-icons/fi";
 import CompanyListModal from "./CompanyListModal";
+import LoadingSpinner from "./LoadingSpinner";
 
 ChartJS.register(Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+
+const Bar = dynamic(() => import("react-chartjs-2").then((m) => m.Bar), {
+  ssr: false,
+  loading: () => <LoadingSpinner size="md" />,
+});
 
 const DEPARTMENTS = ["Fiscal", "Pessoal", "Contábil"];
 
@@ -26,7 +31,7 @@ const COLORS = {
 };
 
 // ── Barra de progresso inline ──────────────────────────────────────────────────
-const MiniBar = ({ completed, total, disabled = 0 }) => {
+const MiniBar = React.memo(({ completed, total, disabled = 0 }) => {
   const active = total - disabled;
   const pct = active === 0 ? 0 : Math.round((completed / active) * 100);
   return (
@@ -40,10 +45,11 @@ const MiniBar = ({ completed, total, disabled = 0 }) => {
       <span className="text-xs text-gray-500 dark:text-dark-text-secondary tabular-nums">{pct}%</span>
     </div>
   );
-};
+});
+MiniBar.displayName = "MiniBar";
 
 // ── Tabela de itens (obrigação ou imposto) ─────────────────────────────────────
-const ItemTable = ({ items, onRowClick, hasTaxView }) => (
+const ItemTable = React.memo(({ items, onRowClick, hasTaxView }) => (
   <div className="card p-0 overflow-hidden">
     <div className="overflow-x-auto">
       <table className="min-w-full">
@@ -88,10 +94,11 @@ const ItemTable = ({ items, onRowClick, hasTaxView }) => (
       </table>
     </div>
   </div>
-);
+));
+ItemTable.displayName = "ItemTable";
 
 // ── Tabela de usuários ─────────────────────────────────────────────────────────
-const UserTable = ({ users }) => {
+const UserTable = React.memo(({ users }) => {
   if (!users || users.length === 0) return null;
   return (
     <div className="card p-0 overflow-hidden">
@@ -133,7 +140,8 @@ const UserTable = ({ users }) => {
       </div>
     </div>
   );
-};
+});
+UserTable.displayName = "UserTable";
 
 // ── Bar chart ─────────────────────────────────────────────────────────────────
 const barOptions = {
@@ -146,7 +154,7 @@ const barOptions = {
 };
 
 // ── Filtro de dept + toggle obrigações/impostos ───────────────────────────────
-const DeptFilter = ({ department, onChange, view, onViewChange, period, onRefresh }) => (
+const DeptFilter = React.memo(({ department, onChange, view, onViewChange, period, onRefresh, refreshing, lastUpdated }) => (
   <div className="flex items-center gap-2 flex-wrap">
     <FiFilter size={14} className="text-gray-400" />
     <span className="text-xs text-gray-500 dark:text-dark-text-secondary font-medium mr-1">Setor:</span>
@@ -179,75 +187,97 @@ const DeptFilter = ({ department, onChange, view, onViewChange, period, onRefres
         </button>
       ))}
     </>
-    {period && <span className="ml-auto text-xs text-gray-400">Período: {period}</span>}
-    <button onClick={onRefresh} className="btn-ghost !p-1.5 text-gray-400 ml-1" title="Recarregar">
+    <span className="ml-auto flex items-center gap-1.5">
+      {period && <span className="text-xs text-gray-400">Período: {period}</span>}
+      {lastUpdated && (
+        <span className="text-xs text-gray-400 hidden sm:inline">
+          · Atualizado às {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+        </span>
+      )}
+    </span>
+    <button
+      onClick={onRefresh}
+      disabled={refreshing}
+      className={`btn-ghost !p-1.5 text-gray-400 ml-1 transition-transform ${refreshing ? "animate-spin" : ""}`}
+      title="Recarregar dados"
+    >
       <FiRefreshCw size={13} />
     </button>
   </div>
-);
+));
+DeptFilter.displayName = "DeptFilter";
 
 // ── Componente principal ──────────────────────────────────────────────────────
 const ObligationsDashboard = () => {
   const [department, setDepartment] = useState("Fiscal");
   const [view, setView] = useState("obligations"); // "obligations" | "taxes"
-  const [data, setData] = useState(null);
-  const [taxData, setTaxData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null); // { type, id, name, period }
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchData = async (dept = department) => {
-    setLoading(true);
-    try {
-      const [oblRes, taxRes] = await Promise.all([
-        api.get(`/obligation/dashboard?department=${encodeURIComponent(dept)}`),
-        api.get(`/tax/dashboard?department=${encodeURIComponent(dept)}`),
-      ]);
-      setData(oblRes.data);
-      setTaxData(taxRes.data);
-    } catch {
-      toast.error("Erro ao carregar dados.");
-      setData(null);
-      setTaxData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const oblEndpoint = `/obligation/dashboard?department=${encodeURIComponent(department)}`;
+  const taxEndpoint = `/tax/dashboard?department=${encodeURIComponent(department)}`;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData(department); }, [department]);
+  const { data, loading: oblLoading, refresh: refreshObl } = useCachedFetch(oblEndpoint);
+  const { data: taxData, loading: taxLoading, refresh: refreshTax } = useCachedFetch(taxEndpoint);
+
+  const loading = oblLoading || taxLoading;
+
+  const fetchData = useCallback(() => {
+    setRefreshing(true);
+    Promise.all([refreshObl(), refreshTax()]).finally(() => {
+      setLastUpdated(new Date());
+      setRefreshing(false);
+    });
+  }, [refreshObl, refreshTax]);
 
   const handleDeptChange = (dept) => {
     setDepartment(dept);
     if (dept !== "Fiscal") setView("obligations");
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <div className="w-10 h-10 rounded-full border-[3px] border-gray-200 dark:border-dark-border border-t-primary-500 animate-spin" />
-      </div>
-    );
-  }
-
   const { obligations = [], users: oblUsers = [], period } = data || {};
   const { taxes: taxList = [], users: taxUsers = [], period: taxPeriod } = taxData || {};
 
+  // Memoize computed values (must be before any conditional return)
+  const taxTotals = useMemo(() => ({
+    completed: taxList.reduce((s, t) => s + t.completed, 0),
+    pending: taxList.reduce((s, t) => s + t.pending, 0),
+  }), [taxList]);
+
+  const taxBarData = useMemo(() => ({
+    labels: taxList.map((t) => t.name),
+    datasets: [
+      { label: "Apurados",  data: taxList.map((t) => t.completed), backgroundColor: COLORS.completed, borderRadius: 4 },
+      { label: "Pendentes", data: taxList.map((t) => t.pending),   backgroundColor: COLORS.pending,   borderRadius: 4 },
+    ],
+  }), [taxList]);
+
+  const oblTotals = useMemo(() => ({
+    completed: obligations.reduce((s, o) => s + o.completed, 0),
+    pending: obligations.reduce((s, o) => s + o.pending, 0),
+    disabled: obligations.reduce((s, o) => s + o.disabled, 0),
+  }), [obligations]);
+
+  const oblBarData = useMemo(() => ({
+    labels: obligations.map((o) => o.name.length > 20 ? o.name.slice(0, 18) + "…" : o.name),
+    datasets: [
+      { label: "Concluídas",    data: obligations.map((o) => o.completed), backgroundColor: COLORS.completed, borderRadius: 4 },
+      { label: "Pendentes",     data: obligations.map((o) => o.pending),   backgroundColor: COLORS.pending,   borderRadius: 4 },
+      { label: "Desabilitadas", data: obligations.map((o) => o.disabled),  backgroundColor: COLORS.disabled,  borderRadius: 4 },
+    ],
+  }), [obligations]);
+
+  if (loading) {
+    return <LoadingSpinner size="lg" />;
+  }
+
   // ── Vista: Impostos (apenas Fiscal) ─────────────────────────────────────────
   if (view === "taxes") {
-    const taxCompleted = taxList.reduce((s, t) => s + t.completed, 0);
-    const taxPending   = taxList.reduce((s, t) => s + t.pending, 0);
-
-    const barData = {
-      labels: taxList.map((t) => t.name),
-      datasets: [
-        { label: "Apurados",  data: taxList.map((t) => t.completed), backgroundColor: COLORS.completed, borderRadius: 4 },
-        { label: "Pendentes", data: taxList.map((t) => t.pending),   backgroundColor: COLORS.pending,   borderRadius: 4 },
-      ],
-    };
 
     return (
       <div className="space-y-5">
-        <DeptFilter department={department} onChange={handleDeptChange} view={view} onViewChange={setView} period={taxPeriod} onRefresh={() => fetchData()} />
+        <DeptFilter department={department} onChange={handleDeptChange} view={view} onViewChange={setView} period={taxPeriod} onRefresh={fetchData} refreshing={refreshing} lastUpdated={lastUpdated} />
 
         {taxList.length === 0 ? (
           <p className="text-center text-gray-400 py-10">Nenhum imposto cadastrado.</p>
@@ -261,18 +291,18 @@ const ObligationsDashboard = () => {
               </div>
               <div className="card text-center py-3">
                 <p className="text-xs text-gray-400 mb-1">Instâncias apuradas</p>
-                <p className="text-2xl font-bold text-emerald-600">{taxCompleted}</p>
+                <p className="text-2xl font-bold text-emerald-600">{taxTotals.completed}</p>
               </div>
               <div className="card text-center py-3">
                 <p className="text-xs text-gray-400 mb-1">Instâncias pendentes</p>
-                <p className="text-2xl font-bold text-amber-500">{taxPending}</p>
+                <p className="text-2xl font-bold text-amber-500">{taxTotals.pending}</p>
               </div>
             </div>
 
             {/* Bar chart */}
             <div className="card">
               <p className="text-sm font-semibold text-gray-700 dark:text-dark-text mb-3">Por Imposto</p>
-              <Bar data={barData} options={barOptions} />
+              <Bar data={taxBarData} options={barOptions} />
             </div>
 
             {/* Tabela clicável */}
@@ -301,22 +331,10 @@ const ObligationsDashboard = () => {
   }
 
   // ── Vista: Obrigações ────────────────────────────────────────────────────────
-  const totalCompleted = obligations.reduce((s, o) => s + o.completed, 0);
-  const totalPending   = obligations.reduce((s, o) => s + o.pending, 0);
-  const totalDisabled  = obligations.reduce((s, o) => s + o.disabled, 0);
-
-  const barData = {
-    labels: obligations.map((o) => o.name.length > 20 ? o.name.slice(0, 18) + "…" : o.name),
-    datasets: [
-      { label: "Concluídas",    data: obligations.map((o) => o.completed), backgroundColor: COLORS.completed, borderRadius: 4 },
-      { label: "Pendentes",     data: obligations.map((o) => o.pending),   backgroundColor: COLORS.pending,   borderRadius: 4 },
-      { label: "Desabilitadas", data: obligations.map((o) => o.disabled),  backgroundColor: COLORS.disabled,  borderRadius: 4 },
-    ],
-  };
 
   return (
     <div className="space-y-5">
-      <DeptFilter department={department} onChange={handleDeptChange} view={view} onViewChange={setView} period={period} onRefresh={() => fetchData()} />
+      <DeptFilter department={department} onChange={handleDeptChange} view={view} onViewChange={setView} period={period} onRefresh={fetchData} refreshing={refreshing} lastUpdated={lastUpdated} />
 
       {obligations.length === 0 ? (
         <p className="text-center text-gray-400 dark:text-dark-text-secondary py-10">
@@ -332,22 +350,22 @@ const ObligationsDashboard = () => {
             </div>
             <div className="card text-center py-3">
               <p className="text-xs text-gray-400 mb-1">Instâncias concluídas</p>
-              <p className="text-2xl font-bold text-emerald-600">{totalCompleted}</p>
+              <p className="text-2xl font-bold text-emerald-600">{oblTotals.completed}</p>
             </div>
             <div className="card text-center py-3">
               <p className="text-xs text-gray-400 mb-1">Instâncias pendentes</p>
-              <p className="text-2xl font-bold text-amber-500">{totalPending}</p>
+              <p className="text-2xl font-bold text-amber-500">{oblTotals.pending}</p>
             </div>
             <div className="card text-center py-3">
               <p className="text-xs text-gray-400 mb-1">Desabilitadas</p>
-              <p className="text-2xl font-bold text-gray-400">{totalDisabled}</p>
+              <p className="text-2xl font-bold text-gray-400">{oblTotals.disabled}</p>
             </div>
           </div>
 
           {/* Bar chart */}
           <div className="card">
             <p className="text-sm font-semibold text-gray-700 dark:text-dark-text mb-3">Por Obrigação</p>
-            <Bar data={barData} options={barOptions} />
+            <Bar data={oblBarData} options={barOptions} />
           </div>
 
           {/* Tabela clicável */}
@@ -375,4 +393,4 @@ const ObligationsDashboard = () => {
   );
 };
 
-export default ObligationsDashboard;
+export default React.memo(ObligationsDashboard);

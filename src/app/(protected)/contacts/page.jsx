@@ -5,9 +5,11 @@ import { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/ProtectedRoute";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import LoadingSpinner from "../../../components/LoadingSpinner";
 
 const ContactsPage = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchUsers();
@@ -24,11 +26,16 @@ const ContactsPage = () => {
       toast.error(
         error.response?.data?.message || "Erro ao buscar os usuários."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <ProtectedRoute>
+      {loading ? (
+        <LoadingSpinner size="lg" />
+      ) : (
       <div className="flex justify-center">
         <div className="card p-0 overflow-hidden w-full max-w-3xl">
           <div className="overflow-x-auto">
@@ -55,6 +62,7 @@ const ContactsPage = () => {
           </div>
         </div>
       </div>
+      )}
     </ProtectedRoute>
   );
 };

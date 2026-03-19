@@ -68,6 +68,7 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
     periodicity: "monthly",
     deadline: "",
     deadlineType: "calendar_day",
+    deadlineMonth: "",
     sendWhenZeroed: true,
     applicableRegimes: [],
     applicableClassificacoes: [],
@@ -84,6 +85,7 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
         periodicity: editData.periodicity || "monthly",
         deadline: editData.deadline ?? "",
         deadlineType: editData.deadlineType || "calendar_day",
+        deadlineMonth: editData.deadlineMonth ?? "",
         sendWhenZeroed: editData.sendWhenZeroed !== false,
         applicableRegimes: editData.applicableRegimes || [],
         applicableClassificacoes: editData.applicableClassificacoes || [],
@@ -97,14 +99,20 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.deadline) {
+    const needsDeadline = form.deadlineType !== "last_business_day";
+    if (!form.name || (needsDeadline && !form.deadline)) {
       toast.error("Nome e prazo são obrigatórios.");
+      return;
+    }
+    if (form.periodicity === "annual" && !form.deadlineMonth) {
+      toast.error("Selecione o mês de vencimento para obrigações anuais.");
       return;
     }
 
     const payload = {
       ...form,
-      deadline: parseInt(form.deadline, 10),
+      deadline: needsDeadline ? parseInt(form.deadline, 10) : 0,
+      deadlineMonth: form.periodicity === "annual" ? parseInt(form.deadlineMonth, 10) : null,
       applicableRegimes: form.applicableRegimes.length > 0 ? form.applicableRegimes : null,
       applicableClassificacoes: form.applicableClassificacoes.length > 0 ? form.applicableClassificacoes : null,
       applicableUFs: form.applicableUFs.length > 0 ? form.applicableUFs : null,
@@ -132,7 +140,13 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
   const deadlineTypeLabels = {
     calendar_day: "Dia do mês (1–31)",
     business_days: "Dias úteis após início do período",
+    last_business_day: "Último dia útil do mês",
   };
+
+  const MONTH_NAMES = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+  ];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -187,7 +201,7 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
           </div>
 
           {/* Periodicidade + Prazo */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="label-base">Periodicidade *</label>
               <select value={form.periodicity} onChange={setField("periodicity")} className="input-base">
@@ -196,6 +210,17 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
                 ))}
               </select>
             </div>
+            {form.periodicity === "annual" && (
+              <div>
+                <label className="label-base">Mês de vencimento *</label>
+                <select value={form.deadlineMonth} onChange={setField("deadlineMonth")} className="input-base" required>
+                  <option value="">Selecione...</option>
+                  {MONTH_NAMES.map((name, i) => (
+                    <option key={i + 1} value={i + 1}>{name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="label-base">Tipo de prazo *</label>
               <select value={form.deadlineType} onChange={setField("deadlineType")} className="input-base">
@@ -204,26 +229,34 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="label-base">
-                {form.deadlineType === "calendar_day" ? "Dia do mês *" : "Nº de dias úteis *"}
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={form.deadlineType === "calendar_day" ? 31 : 60}
-                value={form.deadline}
-                onChange={setField("deadline")}
-                className="input-base"
-                required
-              />
-            </div>
+            {form.deadlineType !== "last_business_day" && (
+              <div>
+                <label className="label-base">
+                  {form.deadlineType === "calendar_day" ? "Dia do mês *" : "Nº de dias úteis *"}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={form.deadlineType === "calendar_day" ? 31 : 60}
+                  value={form.deadline}
+                  onChange={setField("deadline")}
+                  className="input-base"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {form.deadlineType === "business_days" && (
             <p className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 -mt-2">
               <FiInfo size={12} />
               Os dias úteis são calculados automaticamente excluindo finais de semana e feriados nacionais (via BrasilAPI).
+            </p>
+          )}
+          {form.deadlineType === "last_business_day" && (
+            <p className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 -mt-2">
+              <FiInfo size={12} />
+              O prazo será automaticamente o último dia útil do mês, excluindo finais de semana e feriados nacionais.
             </p>
           )}
 

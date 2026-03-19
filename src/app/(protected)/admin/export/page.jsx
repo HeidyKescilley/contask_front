@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { formatDate } from "../../../../utils/utils";
 import { FiDownload } from "react-icons/fi";
+import LoadingSpinner from "../../../../components/LoadingSpinner";
 
 const COLUMN_MAP = [
   { key: "num", label: "Numero" },
@@ -346,9 +347,7 @@ const ExportPage = () => {
       <div className="card">
         <h2 className="text-base font-semibold mb-4">Colunas</h2>
         {loading ? (
-          <p className="text-light-text-secondary dark:text-dark-text-secondary">
-            Carregando...
-          </p>
+          <LoadingSpinner size="md" />
         ) : (
           <>
             <div className="mb-4 pb-3 border-b border-gray-100 dark:border-dark-border">

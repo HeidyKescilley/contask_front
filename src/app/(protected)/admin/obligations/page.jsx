@@ -9,6 +9,7 @@ import {
   FiFilter, FiCheck,
 } from "react-icons/fi";
 import ObligationFormModal from "../../../../components/ObligationFormModal";
+import LoadingSpinner from "../../../../components/LoadingSpinner";
 
 const DEPT_COLORS = {
   Fiscal:   "badge-blue",
@@ -114,7 +115,7 @@ const ObligationsAdminPage = () => {
         {/* Tabela */}
         <div className="card p-0 overflow-hidden">
           {loading ? (
-            <div className="py-12 text-center text-sm text-gray-400">Carregando...</div>
+            <LoadingSpinner size="lg" />
           ) : displayed.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-400">
               Nenhuma obrigação cadastrada ainda.{" "}
@@ -156,10 +157,21 @@ const ObligationsAdminPage = () => {
                       </td>
                       <td className="table-cell text-sm">{PERIODICITY_LABELS[obl.periodicity]}</td>
                       <td className="table-cell text-sm whitespace-nowrap">
-                        {obl.deadline}{" "}
-                        <span className="text-gray-400 text-xs">
-                          {obl.deadlineType === "calendar_day" ? "do mês" : "dias úteis"}
-                        </span>
+                        {obl.deadlineType === "last_business_day" ? (
+                          <span className="text-gray-600 dark:text-dark-text-secondary text-xs">Último dia útil</span>
+                        ) : (
+                          <>
+                            {obl.deadline}{" "}
+                            <span className="text-gray-400 text-xs">
+                              {obl.deadlineType === "calendar_day" ? "do mês" : "dias úteis"}
+                            </span>
+                          </>
+                        )}
+                        {obl.periodicity === "annual" && obl.deadlineMonth && (
+                          <span className="text-gray-400 text-xs ml-1">
+                            ({["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][obl.deadlineMonth - 1]})
+                          </span>
+                        )}
                       </td>
                       <td className="table-cell text-center">
                         {obl.sendWhenZeroed ? (

@@ -13,6 +13,7 @@ import {
   FiClock,
 } from "react-icons/fi";
 import SuspensionModal from "../../../../components/SuspensionModal";
+import LoadingSpinner from "../../../../components/LoadingSpinner";
 
 // Returns today's date as YYYY-MM-DD
 function todayISO() {
@@ -160,9 +161,7 @@ const SuspensionsAdminPage = () => {
         {/* Table */}
         <div className="card p-0 overflow-hidden">
           {loading ? (
-            <div className="py-12 text-center text-sm text-gray-400">
-              Carregando...
-            </div>
+            <LoadingSpinner size="lg" />
           ) : suspensions.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-400">
               Nenhuma paralisação encontrada.{" "}

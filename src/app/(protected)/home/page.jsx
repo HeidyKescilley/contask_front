@@ -8,6 +8,7 @@ import { formatDate } from "../../../utils/utils";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
 import CompanyModal from "../../../components/CompanyModal";
 import { toast } from "react-toastify";
+import LoadingSpinner from "../../../components/LoadingSpinner";
 import {
   FiEdit,
   FiAlertTriangle,
@@ -19,6 +20,7 @@ const HomePage = () => {
   const [recentStatusChanges, setRecentStatusChanges] = useState([]);
   const [recentActiveCompanies, setRecentActiveCompanies] = useState([]);
   const [recentCompanies, setRecentCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const {
     showModal,
@@ -31,9 +33,11 @@ const HomePage = () => {
   } = useContext(CompanyModalContext);
 
   useEffect(() => {
-    fetchRecentStatusChanges();
-    fetchRecentActiveCompanies();
-    fetchRecentCompanies();
+    Promise.all([
+      fetchRecentStatusChanges(),
+      fetchRecentActiveCompanies(),
+      fetchRecentCompanies(),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const fetchRecentStatusChanges = async () => {
@@ -112,6 +116,14 @@ const HomePage = () => {
       </span>
     );
   };
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <LoadingSpinner size="lg" />
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>

@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import DashboardContent from "../../../components/DashboardContent";
 import ObligationsDashboard from "../../../components/ObligationsDashboard";
 import Loading from "../../../components/Loading";
+import LoadingSpinner from "../../../components/LoadingSpinner";
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ const DashboardPage = () => {
     // A aba de Obrigações gerencia seus próprios dados internamente
     if (viewMode === "obligations") { setLoading(false); return; }
     setLoading(true);
+    setDashboardData(null); // evita renderizar dados obsoletos de outra aba
     let endpoint = "";
     switch (viewMode) {
       case "fiscal_general":
@@ -148,9 +150,7 @@ const DashboardPage = () => {
       ) : (
         <div className="card">
           {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <div className="w-10 h-10 rounded-full border-[3px] border-gray-200 dark:border-dark-border border-t-primary-500 animate-spin" />
-            </div>
+            <LoadingSpinner size="lg" />
           ) : dashboardData ? (
             <DashboardContent data={dashboardData} viewMode={viewMode} />
           ) : (

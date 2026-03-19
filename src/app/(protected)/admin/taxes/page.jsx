@@ -6,6 +6,7 @@ import api from "../../../../utils/api";
 import { toast } from "react-toastify";
 import { FiPlus, FiEdit2, FiTrash2, FiDollarSign } from "react-icons/fi";
 import TaxFormModal from "../../../../components/TaxFormModal";
+import LoadingSpinner from "../../../../components/LoadingSpinner";
 
 const DEPT_FILTER = ["Todos", "Fiscal", "Pessoal", "Contábil"];
 
@@ -108,7 +109,7 @@ const TaxesAdminPage = () => {
         {/* Tabela */}
         <div className="card p-0 overflow-hidden">
           {loading ? (
-            <div className="py-12 text-center text-sm text-gray-400">Carregando...</div>
+            <LoadingSpinner size="lg" />
           ) : filteredTaxes.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-400">
               Nenhum imposto cadastrado ainda.{" "}

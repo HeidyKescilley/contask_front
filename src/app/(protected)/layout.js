@@ -43,7 +43,7 @@ export default function ProtectedLayout({ children }) {
       <main
         className={`flex-1 bg-light-bg dark:bg-dark-bg min-h-screen
           transition-[margin] duration-300 ease-in-out
-          ${isExpanded ? "ml-56" : "ml-[60px]"}`}
+          ${isExpanded ? "ml-64" : "ml-[60px]"}`}
       >
         {/* Inner scroll container for content */}
         <div className="p-4 md:p-5 min-w-0">

@@ -1,7 +1,8 @@
 // src/components/DashboardContent.jsx
 "use client";
 
-import { Pie } from "react-chartjs-2";
+import React, { useMemo } from "react";
+import dynamic from "next/dynamic";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +14,7 @@ import {
 } from "chart.js";
 import { formatDate } from "../utils/utils";
 import { FiUsers, FiCheckCircle, FiAlertCircle, FiMinusCircle } from "react-icons/fi";
+import LoadingSpinner from "./LoadingSpinner";
 
 ChartJS.register(
   CategoryScale,
@@ -23,7 +25,12 @@ ChartJS.register(
   Legend
 );
 
-const StatCard = ({ title, value, icon: Icon, colorClass }) => (
+const Pie = dynamic(() => import("react-chartjs-2").then((m) => m.Pie), {
+  ssr: false,
+  loading: () => <LoadingSpinner size="md" />,
+});
+
+const StatCard = React.memo(({ title, value, icon: Icon, colorClass }) => (
   <div className="card flex items-center gap-4">
     <div className={`p-3 rounded-xl ${colorClass}`}>
       <Icon size={22} />
@@ -35,7 +42,8 @@ const StatCard = ({ title, value, icon: Icon, colorClass }) => (
       <p className="text-2xl font-bold">{value}</p>
     </div>
   </div>
-);
+));
+StatCard.displayName = "StatCard";
 
 const DashboardContent = ({ data, viewMode }) => {
   if (!data) {
@@ -101,7 +109,7 @@ const DashboardContent = ({ data, viewMode }) => {
   const completedValue = isFiscal ? sentCompanies : completedCompanies;
   const nonCompletedValue = isFiscal ? notSentCompanies : nonCompletedCompanies;
 
-  const completedVsNonCompletedData = {
+  const completedVsNonCompletedData = useMemo(() => ({
     labels: [completedLabel, nonCompletedLabel],
     datasets: [
       {
@@ -112,9 +120,9 @@ const DashboardContent = ({ data, viewMode }) => {
         borderWidth: 2,
       },
     ],
-  };
+  }), [completedLabel, nonCompletedLabel, completedValue, nonCompletedValue]);
 
-  const zeroedVsNonZeroedData = {
+  const zeroedVsNonZeroedData = useMemo(() => ({
     labels: ["Zeradas", "Não Zeradas"],
     datasets: [
       {
@@ -125,13 +133,13 @@ const DashboardContent = ({ data, viewMode }) => {
         borderWidth: 2,
       },
     ],
-  };
+  }), [zeroedCompanies, nonZeroedCompaniesForChart]);
 
   const isDark =
     typeof document !== "undefined" &&
     document.documentElement.classList.contains("dark");
 
-  const chartOptions = {
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -171,7 +179,7 @@ const DashboardContent = ({ data, viewMode }) => {
         },
       },
     },
-  };
+  }), [isDark]);
 
   return (
     <div className="space-y-6">
@@ -312,4 +320,4 @@ const DashboardContent = ({ data, viewMode }) => {
   );
 };
 
-export default DashboardContent;
+export default React.memo(DashboardContent);
