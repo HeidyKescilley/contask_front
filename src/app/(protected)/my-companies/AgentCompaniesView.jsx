@@ -330,7 +330,7 @@ const AgentCompaniesView = ({
     (obligationStatuses[companyId] || []).find((o) => o.obligationId === obligationId);
 
   const getCompanyTaxStats = (companyId) => {
-    const txs = taxStatuses[companyId] || [];
+    const txs = (taxStatuses[companyId] || []).filter((t) => t.status !== "disabled");
     return { total: txs.length, completed: txs.filter((t) => t.status === "completed").length };
   };
 
@@ -556,6 +556,7 @@ const AgentCompaniesView = ({
                           const taxSt = getTaxStatus(company.id, tax.id);
                           const status = taxSt?.status;
                           const statusId = taxSt?.statusId;
+                          const isDisabled = status === "disabled";
                           const isCompleted = status === "completed";
                           return (
                             <td key={`tax-${tax.id}`} className="table-cell text-center border-l border-gray-100 dark:border-dark-border !px-1">
@@ -564,16 +565,18 @@ const AgentCompaniesView = ({
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => !isReadOnly && canEditFiscal && handleTaxToggle(statusId, status)}
-                                  disabled={isReadOnly || !canEditFiscal}
+                                  onClick={() => !isDisabled && !isReadOnly && canEditFiscal && handleTaxToggle(statusId, status)}
+                                  disabled={isDisabled || isReadOnly || !canEditFiscal}
                                   title={tax.name}
                                   className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
-                                    isCompleted
+                                    isDisabled
+                                      ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
+                                      : isCompleted
                                       ? "bg-emerald-500 text-white hover:bg-emerald-600"
                                       : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
                                   }`}
                                 >
-                                  {isCompleted && <FiCheck size={10} strokeWidth={3} />}
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
                                 </button>
                               )}
                             </td>

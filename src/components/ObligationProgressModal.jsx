@@ -35,30 +35,36 @@ const ProgressBar = ({ completed, total }) => {
 // ── Item de imposto ────────────────────────────────────────────────────────────
 const TaxItem = ({ tax, onToggle, updating }) => {
   const isCompleted = tax.status === "completed";
-  const isLoading = updating === tax.statusId;
+  const isDisabled  = tax.status === "disabled";
+  const isLoading   = updating === tax.statusId;
   return (
     <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-      isCompleted
+      isDisabled
+        ? "border-gray-100 dark:border-dark-border bg-gray-50/50 dark:bg-dark-surface/50 opacity-60"
+        : isCompleted
         ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/10"
         : "border-gray-100 dark:border-dark-border bg-white dark:bg-dark-card hover:border-amber-200"
     }`}>
       <button
         type="button"
-        onClick={() => onToggle(tax)}
-        disabled={isLoading}
+        onClick={() => !isDisabled && onToggle(tax)}
+        disabled={isDisabled || isLoading}
         className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-          isCompleted
+          isDisabled
+            ? "border-gray-200 dark:border-dark-border bg-gray-100 dark:bg-dark-surface cursor-not-allowed"
+            : isCompleted
             ? "bg-emerald-500 border-emerald-500 text-white"
             : "border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
         }`}
       >
         {isLoading
           ? <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+          : isDisabled ? <FiSlash size={10} className="text-gray-400" />
           : isCompleted ? <FiCheck size={11} strokeWidth={3} /> : null}
       </button>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm font-medium ${isCompleted ? "text-emerald-700 dark:text-emerald-400" : "text-gray-800 dark:text-dark-text"}`}>
+          <span className={`text-sm font-medium ${isDisabled ? "text-gray-400" : isCompleted ? "text-emerald-700 dark:text-emerald-400" : "text-gray-800 dark:text-dark-text"}`}>
             {tax.name}
           </span>
           <StatusBadge status={tax.status} />
@@ -133,9 +139,12 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
     finally { setUpdating(null); }
   };
 
-  const taxCompleted   = taxes.filter((t) => t.status === "completed").length;
-  const oblCompleted   = obligations.filter((o) => o.status === "completed").length;
-  const oblTotal       = obligations.length;
+  const activeTaxes    = taxes.filter((t) => t.status !== "disabled");
+  const taxCompleted   = activeTaxes.filter((t) => t.status === "completed").length;
+  const taxTotal       = activeTaxes.length;
+  const activeObls     = obligations.filter((o) => o.status !== "disabled");
+  const oblCompleted   = activeObls.filter((o) => o.status === "completed").length;
+  const oblTotal       = activeObls.length;
 
   const periodLabel = (() => {
     if (!currentPeriod) return "";
@@ -185,10 +194,10 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Impostos Apurados</p>
-                  <span className="text-xs text-gray-500">{taxCompleted}/{taxes.length}</span>
+                  <span className="text-xs text-gray-500">{taxCompleted}/{taxTotal}</span>
                 </div>
                 <div className="mb-2">
-                  <ProgressBar completed={taxCompleted} total={taxes.length} />
+                  <ProgressBar completed={taxCompleted} total={taxTotal} />
                 </div>
                 <div className="space-y-1.5">
                   {taxes.map((tax) => (
@@ -199,7 +208,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
             )}
 
             {/* ── Obrigações ── */}
-            {oblTotal > 0 && (
+            {obligations.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Obrigações Acessórias</p>
@@ -275,7 +284,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
               </div>
             )}
 
-            {taxes.length === 0 && oblTotal === 0 && (
+            {taxes.length === 0 && obligations.length === 0 && (
               <p className="py-6 text-center text-sm text-gray-400">
                 Nenhum imposto ou obrigação aplicável a esta empresa.
               </p>
