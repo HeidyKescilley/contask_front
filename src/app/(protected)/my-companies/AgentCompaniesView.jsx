@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import useCachedFetch from "../../../hooks/useCachedFetch";
 import {
   FiSearch, FiX, FiCheck, FiMinus, FiList, FiGrid,
-  FiExternalLink,
+  FiExternalLink, FiLoader,
 } from "react-icons/fi";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
@@ -111,12 +111,11 @@ const AgentCompaniesView = ({
   const showContabilColumns = activeDepartment === "Contábil";
 
   // ── Obrigações e Impostos (Fiscal) via cache 5 min ────────────────────────
-  // Não há re-fetch ao alterar checkboxes de empresa — apenas atualização local otimista
-  const { data: oblData, loading: obligationsLoading } = useCachedFetch(
+  const { data: oblData, loading: obligationsLoading, refresh: refreshOblData } = useCachedFetch(
     "/obligation/period-summary?department=Fiscal",
     { enabled: showFiscalColumns }
   );
-  const { data: taxData, loading: taxesLoading } = useCachedFetch(
+  const { data: taxData, loading: taxesLoading, refresh: refreshTaxData } = useCachedFetch(
     "/tax/period-summary",
     { enabled: showFiscalColumns }
   );
@@ -130,7 +129,15 @@ const AgentCompaniesView = ({
   const [obligationStatuses, setObligationStatuses] = useState({});
   const [taxStatuses, setTaxStatuses] = useState({});
 
-  const [fiscalViewMode, setFiscalViewMode] = useState("compact"); // "compact" | "table"
+  const [fiscalViewMode, setFiscalViewMode] = useState(() => {
+    if (typeof window === "undefined") return "compact";
+    return localStorage.getItem("contask_fiscal_view_mode") || "compact";
+  });
+
+  const handleSetFiscalViewMode = useCallback((mode) => {
+    setFiscalViewMode(mode);
+    if (typeof window !== "undefined") localStorage.setItem("contask_fiscal_view_mode", mode);
+  }, []);
   const [obligationModal, setObligationModal] = useState(null); // company object or null
 
   const canEditFiscal   = !isReadOnly && user?.department === "Fiscal";
@@ -176,10 +183,16 @@ const AgentCompaniesView = ({
       await api.patch(`/company/update-agent-data/${companyId}`, { [field]: newValue });
       toast.success("Dados atualizados!");
       fetchCompanies();
+      // Quando zerado é alterado, refreshar dados de impostos e obrigações
+      // para que os status disabled/pending sejam atualizados na tela
+      if (field === "isZeroedFiscal") {
+        refreshOblData();
+        refreshTaxData();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Erro ao atualizar.");
     }
-  }, [fetchCompanies, isReadOnly]);
+  }, [fetchCompanies, isReadOnly, refreshOblData, refreshTaxData]);
 
   const handleValueChange = useCallback((companyId, field, value) => {
     if (isReadOnly) return;
@@ -351,7 +364,7 @@ const AgentCompaniesView = ({
               <div className="flex border border-gray-200 dark:border-dark-border rounded-xl overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => setFiscalViewMode("compact")}
+                  onClick={() => handleSetFiscalViewMode("compact")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
                     fiscalViewMode === "compact"
                       ? "bg-primary-500 text-white"
@@ -362,7 +375,7 @@ const AgentCompaniesView = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFiscalViewMode("table")}
+                  onClick={() => handleSetFiscalViewMode("table")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-l border-gray-200 dark:border-dark-border transition-colors ${
                     fiscalViewMode === "table"
                       ? "bg-primary-500 text-white"
@@ -413,6 +426,14 @@ const AgentCompaniesView = ({
           </FilterGroup>
         </div>
       </div>
+
+      {/* ── Indicador de carregamento de impostos/obrigações ─────────────── */}
+      {showFiscalColumns && (obligationsLoading || taxesLoading) && (
+        <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 mb-2 px-1">
+          <FiLoader size={12} className="animate-spin" />
+          <span>Carregando {taxesLoading && obligationsLoading ? "impostos e obrigações" : taxesLoading ? "impostos" : "obrigações"}…</span>
+        </div>
+      )}
 
       {/* ── Tabela ──────────────────────────────────────────────────────────── */}
       <div className="card p-0 overflow-hidden">
@@ -514,18 +535,26 @@ const AgentCompaniesView = ({
                           }
                         </td>
                         <td className="table-cell border-l border-gray-100 dark:border-dark-border">
-                          <ObligationBar
-                            completed={taxCompleted}
-                            total={taxTotal}
-                            onOpen={() => setObligationModal(company)}
-                          />
+                          {taxesLoading ? (
+                            <div className="h-1.5 w-24 bg-gray-200 dark:bg-dark-border rounded-full animate-pulse" />
+                          ) : (
+                            <ObligationBar
+                              completed={taxCompleted}
+                              total={taxTotal}
+                              onOpen={() => setObligationModal(company)}
+                            />
+                          )}
                         </td>
                         <td className="table-cell border-l border-gray-100 dark:border-dark-border">
-                          <ObligationBar
-                            completed={oblCompleted}
-                            total={oblTotal}
-                            onOpen={() => setObligationModal(company)}
-                          />
+                          {obligationsLoading ? (
+                            <div className="h-1.5 w-24 bg-gray-200 dark:bg-dark-border rounded-full animate-pulse" />
+                          ) : (
+                            <ObligationBar
+                              completed={oblCompleted}
+                              total={oblTotal}
+                              onOpen={() => setObligationModal(company)}
+                            />
+                          )}
                         </td>
                         <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
                           {company.fiscalCompletedAt ? formatDate(company.fiscalCompletedAt) : "–"}

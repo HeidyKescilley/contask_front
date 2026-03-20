@@ -7,6 +7,7 @@ import CompanyFilters from "../../../components/CompanyFilters";
 import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
+import BatchTaxObligationModal from "../../../components/BatchTaxObligationModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -18,7 +19,16 @@ import {
   FiCheckCircle,
   FiAlertTriangle,
   FiClock,
+  FiLoader,
+  FiSliders,
 } from "react-icons/fi";
+
+const StatValue = ({ loading, value }) =>
+  loading ? (
+    <span className="inline-block h-5 w-8 bg-gray-200 dark:bg-dark-border rounded animate-pulse" />
+  ) : (
+    <p className="text-lg font-bold">{value}</p>
+  );
 
 // Verifica se uma empresa está 100% concluída para o departamento do agente
 const isCompanyComplete = (company, department) => {
@@ -47,7 +57,7 @@ const isCompanyComplete = (company, department) => {
 
 const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
-  const { data: companiesData, refresh: fetchCompanies } = useCachedFetch("/company/my-companies");
+  const { data: companiesData, loading: companiesLoading, refresh: fetchCompanies } = useCachedFetch("/company/my-companies");
   const companies = useMemo(() => companiesData || [], [companiesData]);
   const [viewMode, setViewMode] = useState("standard"); // Novo estado para o modo de visualização
   const [isAgentViewAvailable, setIsAgentViewAvailable] = useState(false); // Novo estado para controlar a disponibilidade do modo Agente
@@ -66,8 +76,8 @@ const MyCompaniesPageContent = () => {
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
   const [selectedStatusCompany, setSelectedStatusCompany] = useState(null);
   const [showAutomationModal, setShowAutomationModal] = useState(false);
-  const [selectedAutomationCompany, setSelectedAutomationCompany] =
-    useState(null);
+  const [selectedAutomationCompany, setSelectedAutomationCompany] = useState(null);
+  const [showBatchModal, setShowBatchModal] = useState(false);
 
   const {
     setShowModal,
@@ -252,7 +262,7 @@ const MyCompaniesPageContent = () => {
     <>
       {/* Toggle padrao/agente — sempre no topo quando disponível */}
       {isAgentViewAvailable && (
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-5 flex-wrap">
           <span className={`text-sm font-medium ${viewMode === "standard" ? "text-light-text dark:text-dark-text" : "text-light-text-secondary dark:text-dark-text-secondary"}`}>
             Padrao
           </span>
@@ -270,6 +280,15 @@ const MyCompaniesPageContent = () => {
           <span className={`text-sm font-medium ${viewMode === "agent" ? "text-light-text dark:text-dark-text" : "text-light-text-secondary dark:text-dark-text-secondary"}`}>
             Agente
           </span>
+          {viewMode === "agent" && (
+            <button
+              type="button"
+              onClick={() => setShowBatchModal(true)}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:border-primary-400 hover:text-primary-600 transition-colors"
+            >
+              <FiSliders size={13} /> Gerenciar em Lote
+            </button>
+          )}
         </div>
       )}
 
@@ -282,7 +301,7 @@ const MyCompaniesPageContent = () => {
             </div>
             <div>
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Total</p>
-              <p className="text-lg font-bold">{totalCompanies}</p>
+              <StatValue loading={companiesLoading} value={totalCompanies} />
             </div>
           </div>
           <div className="card flex items-center gap-3">
@@ -291,7 +310,7 @@ const MyCompaniesPageContent = () => {
             </div>
             <div>
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Ativas</p>
-              <p className="text-lg font-bold">{activeCompanies}</p>
+              <StatValue loading={companiesLoading} value={activeCompanies} />
             </div>
           </div>
           <div className="card flex items-center gap-3">
@@ -300,7 +319,7 @@ const MyCompaniesPageContent = () => {
             </div>
             <div>
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Inativas</p>
-              <p className="text-lg font-bold">{inactiveCompanies}</p>
+              <StatValue loading={companiesLoading} value={inactiveCompanies} />
             </div>
           </div>
         </div>
@@ -314,7 +333,7 @@ const MyCompaniesPageContent = () => {
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
                 Total de Empresas
               </p>
-              <p className="text-lg font-bold">{agentStats.total}</p>
+              <StatValue loading={companiesLoading} value={agentStats.total} />
             </div>
           </div>
           <div className="card flex items-center gap-3">
@@ -325,7 +344,7 @@ const MyCompaniesPageContent = () => {
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
                 100% Concluídas
               </p>
-              <p className="text-lg font-bold">{agentStats.concluidas}</p>
+              <StatValue loading={companiesLoading} value={agentStats.concluidas} />
             </div>
           </div>
           <div className="card flex items-center gap-3">
@@ -336,7 +355,7 @@ const MyCompaniesPageContent = () => {
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
                 Pendentes
               </p>
-              <p className="text-lg font-bold">{agentStats.pendentes}</p>
+              <StatValue loading={companiesLoading} value={agentStats.pendentes} />
             </div>
           </div>
         </div>
@@ -393,6 +412,13 @@ const MyCompaniesPageContent = () => {
         <AutomationModal
           company={selectedAutomationCompany}
           onClose={() => setShowAutomationModal(false)}
+        />
+      )}
+      {showBatchModal && (
+        <BatchTaxObligationModal
+          companies={filteredCompanies}
+          onClose={() => setShowBatchModal(false)}
+          onSuccess={fetchCompanies}
         />
       )}
     </>

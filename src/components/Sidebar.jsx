@@ -23,6 +23,7 @@ import {
   FiZoomIn,
   FiZoomOut,
   FiPauseCircle,
+  FiDatabase,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -84,6 +85,7 @@ const Sidebar = () => {
         { name: "Impostos", path: "/admin/taxes", icon: <FiDollarSign size={18} /> },
         { name: "Paralisações", path: "/admin/suspensions", icon: <FiPauseCircle size={18} /> },
         { name: "Exportar Dados", path: "/admin/export", icon: <FiDownload size={18} /> },
+        { name: "Verificação DB", path: "/admin/db-verify", icon: <FiDatabase size={18} /> },
       ],
     });
   }
