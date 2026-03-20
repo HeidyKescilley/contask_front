@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
 import { useAuth } from "../../../hooks/useAuth";
 import AgentCompaniesView from "./AgentCompaniesView";
+import useCachedFetch from "../../../hooks/useCachedFetch";
 import {
   FiLayers,
   FiCheckCircle,
@@ -23,13 +24,7 @@ import {
 const isCompanyComplete = (company, department) => {
   if (department === "Fiscal") {
     if (company.isZeroedFiscal) return true;
-    return (
-      company.sentToClientFiscal === true &&
-      (company.declarationsCompletedFiscal === true ||
-        company.hasNoFiscalObligations === true) &&
-      company.bonusValue !== null &&
-      company.bonusValue !== undefined
-    );
+    return company.fiscalCompletedAt != null;
   }
   if (department === "Pessoal") {
     if (company.isZeroedDp) return true;
@@ -52,7 +47,8 @@ const isCompanyComplete = (company, department) => {
 
 const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
-  const [companies, setCompanies] = useState([]);
+  const { data: companiesData, refresh: fetchCompanies } = useCachedFetch("/company/my-companies");
+  const companies = useMemo(() => companiesData || [], [companiesData]);
   const [viewMode, setViewMode] = useState("standard"); // Novo estado para o modo de visualização
   const [isAgentViewAvailable, setIsAgentViewAvailable] = useState(false); // Novo estado para controlar a disponibilidade do modo Agente
 
@@ -95,20 +91,7 @@ const MyCompaniesPageContent = () => {
     }
   }, [user]); // Dependência do usuário
 
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const res = await api.get("/company/my-companies");
-      setCompanies(res.data);
-    } catch (error) {
-      toast.error("Erro ao buscar suas empresas.");
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
-
-  // Re-busca ao salvar empresa via modal do layout
+  // Re-busca ao salvar empresa via modal do layout (refresh já invalida o cache)
   useEffect(() => {
     if (refreshTrigger > 0) fetchCompanies();
   }, [refreshTrigger, fetchCompanies]);

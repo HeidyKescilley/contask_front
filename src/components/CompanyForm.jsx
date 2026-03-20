@@ -204,6 +204,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         fetchAllTaxes();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
   const fetchContactModes = async () => {

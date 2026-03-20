@@ -11,9 +11,11 @@ import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
 import { useRouter, useSearchParams } from "next/navigation";
+import useCachedFetch from "../../../hooks/useCachedFetch";
 
 const CompaniesPageContent = () => {
-  const [companies, setCompanies] = useState([]);
+  const { data: companiesData, refresh: fetchCompanies } = useCachedFetch("/company/all");
+  const companies = useMemo(() => companiesData || [], [companiesData]);
   const [filters, setFilters] = useState({
     searchColumn: "name",
     searchTerm: "",
@@ -43,21 +45,7 @@ const CompaniesPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const res = await api.get("/company/all");
-      setCompanies(res.data); // armazena todas, inclusive arquivadas
-    } catch (error) {
-      toast.error("Erro ao buscar empresas.");
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCompanies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Re-busca ao salvar empresa via modal do layout
+  // Re-busca ao salvar empresa via modal do layout (refresh já invalida o cache)
   useEffect(() => {
     if (refreshTrigger > 0) fetchCompanies();
   }, [refreshTrigger, fetchCompanies]);
@@ -155,15 +143,6 @@ const CompaniesPageContent = () => {
           statusData
         );
         toast.success("Status da empresa atualizado com sucesso!");
-
-        setCompanies((prev) =>
-          prev.map((c) =>
-            c.id === selectedStatusCompany.id
-              ? { ...c, status: statusData.newStatus }
-              : c
-          )
-        );
-
         fetchCompanies();
         setShowStatusChangeModal(false);
       } catch (error) {
@@ -215,9 +194,7 @@ const CompaniesPageContent = () => {
         toast.success(
           `Empresa "${companyToArchive.name}" arquivada com sucesso.`
         );
-        setCompanies((prevCompanies) =>
-          prevCompanies.filter((company) => company.id !== companyToArchive.id)
-        );
+        fetchCompanies();
       } catch (error) {
         toast.error(
           `Erro ao arquivar a empresa: ${
@@ -226,7 +203,7 @@ const CompaniesPageContent = () => {
         );
       }
     }
-  }, []);
+  }, [fetchCompanies]);
 
   return (
     <>

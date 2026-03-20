@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import useCachedFetch from "../../../hooks/useCachedFetch";
 import {
   FiSearch, FiX, FiCheck, FiMinus, FiList, FiGrid,
   FiExternalLink,
@@ -103,23 +104,34 @@ const AgentCompaniesView = ({
     sentToClient: null, isZeroed: null, regime: [], classi: [],
   });
 
-  // ── Obrigações (Fiscal) ────────────────────────────────────────────────────
-  const [obligations, setObligations] = useState([]);
-  const [obligationStatuses, setObligationStatuses] = useState({});
-  const [obligationsLoading, setObligationsLoading] = useState(false);
-  // ── Impostos (Fiscal) ─────────────────────────────────────────────────────
-  const [taxes, setTaxes] = useState([]);
-  const [taxStatuses, setTaxStatuses] = useState({});
-  const [taxesLoading, setTaxesLoading] = useState(false);
-
-  const [fiscalViewMode, setFiscalViewMode] = useState("compact"); // "compact" | "table"
-  const [obligationModal, setObligationModal] = useState(null); // company object or null
-  const [currentPeriod, setCurrentPeriod] = useState(null);
-
+  // ── Colunas ativas por departamento ───────────────────────────────────────
   const activeDepartment = viewDepartment || user?.department;
   const showFiscalColumns  = activeDepartment === "Fiscal";
   const showDpColumns      = activeDepartment === "Pessoal";
   const showContabilColumns = activeDepartment === "Contábil";
+
+  // ── Obrigações e Impostos (Fiscal) via cache 5 min ────────────────────────
+  // Não há re-fetch ao alterar checkboxes de empresa — apenas atualização local otimista
+  const { data: oblData, loading: obligationsLoading } = useCachedFetch(
+    "/obligation/period-summary?department=Fiscal",
+    { enabled: showFiscalColumns }
+  );
+  const { data: taxData, loading: taxesLoading } = useCachedFetch(
+    "/tax/period-summary",
+    { enabled: showFiscalColumns }
+  );
+
+  // Dados derivados do cache (memoizados)
+  const obligations = useMemo(() => oblData?.obligations || [], [oblData]);
+  const currentPeriod = useMemo(() => oblData?.period || null, [oblData]);
+  const taxes = useMemo(() => taxData?.taxes || [], [taxData]);
+
+  // Estado local para atualizações otimistas — inicializado a partir do cache
+  const [obligationStatuses, setObligationStatuses] = useState({});
+  const [taxStatuses, setTaxStatuses] = useState({});
+
+  const [fiscalViewMode, setFiscalViewMode] = useState("compact"); // "compact" | "table"
+  const [obligationModal, setObligationModal] = useState(null); // company object or null
 
   const canEditFiscal   = !isReadOnly && user?.department === "Fiscal";
   const canEditDp       = !isReadOnly && user?.department === "Pessoal";
@@ -140,40 +152,21 @@ const AgentCompaniesView = ({
     setTempValues(initial);
   }, [companies]);
 
-  // Carrega obrigações e impostos quando o modo Fiscal está ativo
+  // Popula obrigações locais quando dados do cache chegam/atualizam
   useEffect(() => {
-    if (!showFiscalColumns) return;
+    if (!oblData?.companies) return;
+    const map = {};
+    oblData.companies.forEach((c) => { map[c.companyId] = c.obligations; });
+    setObligationStatuses(map);
+  }, [oblData]);
 
-    const fetchObligations = async () => {
-      setObligationsLoading(true);
-      try {
-        const res = await api.get("/obligation/period-summary?department=Fiscal");
-        setObligations(res.data.obligations || []);
-        setCurrentPeriod(res.data.period || null);
-        const map = {};
-        (res.data.companies || []).forEach((c) => { map[c.companyId] = c.obligations; });
-        setObligationStatuses(map);
-      } catch {} finally {
-        setObligationsLoading(false);
-      }
-    };
-
-    const fetchTaxes = async () => {
-      setTaxesLoading(true);
-      try {
-        const res = await api.get("/tax/period-summary");
-        setTaxes(res.data.taxes || []);
-        const map = {};
-        (res.data.companies || []).forEach((c) => { map[c.companyId] = c.taxes; });
-        setTaxStatuses(map);
-      } catch {} finally {
-        setTaxesLoading(false);
-      }
-    };
-
-    fetchObligations();
-    fetchTaxes();
-  }, [showFiscalColumns, companies]);
+  // Popula impostos locais quando dados do cache chegam/atualizam
+  useEffect(() => {
+    if (!taxData?.companies) return;
+    const map = {};
+    taxData.companies.forEach((c) => { map[c.companyId] = c.taxes; });
+    setTaxStatuses(map);
+  }, [taxData]);
 
   // ── Handlers de checkbox (Fiscal: envio/zerado) e DP/Contábil ──────────────
   const handleCheckboxChange = useCallback(async (companyId, field, currentValue) => {

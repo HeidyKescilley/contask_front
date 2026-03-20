@@ -46,59 +46,15 @@ const StatCard = React.memo(({ title, value, icon: Icon, colorClass }) => (
 StatCard.displayName = "StatCard";
 
 const DashboardContent = ({ data, viewMode }) => {
-  if (!data) {
-    return (
-      <p className="text-center text-gray-500 dark:text-dark-text-secondary py-12">
-        Nenhum dado disponível para o dashboard.
-      </p>
-    );
-  }
-
-  // Dashboard Contábil simplificado
-  if (viewMode === "contabil_general") {
-    return (
-      <div className="card mt-6">
-        <h2 className="text-lg font-semibold mb-4">
-          Análise por Usuário
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="table-header">Usuário</th>
-                <th className="table-header">Total Designado</th>
-                <th className="table-header">Total de Meses Contabilizados</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.usersData
-                .filter((user) => user.totalCompaniesAssigned > 0)
-                .map((userData) => (
-                  <tr key={userData.id} className="table-row">
-                    <td className="table-cell font-medium">{userData.name}</td>
-                    <td className="table-cell">
-                      {userData.totalCompaniesAssigned}
-                    </td>
-                    <td className="table-cell font-semibold">
-                      {userData.totalAccountingMonths}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  const isFiscal = !!data.isFiscal;
-  const totalForCards = viewMode.includes("general")
-    ? data.absoluteTotalForDept
-    : data.totalCompanies;
-  const totalForCalculations = data.totalCompanies || 0;
-  const zeroedCompanies = data.zeroedCompanies || 0;
-  const completedCompanies = data.completedCompanies || 0;
-  const sentCompanies = data.sentCompanies ?? completedCompanies;
+  // ── Derived values (optional chaining handles null data before early returns) ──
+  const isFiscal = !!data?.isFiscal;
+  const totalForCards = viewMode?.includes("general")
+    ? data?.absoluteTotalForDept
+    : data?.totalCompanies;
+  const totalForCalculations = data?.totalCompanies || 0;
+  const zeroedCompanies = data?.zeroedCompanies || 0;
+  const completedCompanies = data?.completedCompanies || 0;
+  const sentCompanies = data?.sentCompanies ?? completedCompanies;
   const nonCompletedCompanies = totalForCalculations - completedCompanies;
   const notSentCompanies = totalForCalculations - sentCompanies;
   const nonZeroedCompaniesForChart = totalForCalculations - zeroedCompanies;
@@ -109,6 +65,7 @@ const DashboardContent = ({ data, viewMode }) => {
   const completedValue = isFiscal ? sentCompanies : completedCompanies;
   const nonCompletedValue = isFiscal ? notSentCompanies : nonCompletedCompanies;
 
+  // ── useMemo hooks MUST be before any early returns (Rules of Hooks) ──────────
   const completedVsNonCompletedData = useMemo(() => ({
     labels: [completedLabel, nonCompletedLabel],
     datasets: [
@@ -180,6 +137,52 @@ const DashboardContent = ({ data, viewMode }) => {
       },
     },
   }), [isDark]);
+
+  // ── Early returns after all hooks ─────────────────────────────────────────
+  if (!data) {
+    return (
+      <p className="text-center text-gray-500 dark:text-dark-text-secondary py-12">
+        Nenhum dado disponível para o dashboard.
+      </p>
+    );
+  }
+
+  // Dashboard Contábil simplificado
+  if (viewMode === "contabil_general") {
+    return (
+      <div className="card mt-6">
+        <h2 className="text-lg font-semibold mb-4">
+          Análise por Usuário
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="table-header">Usuário</th>
+                <th className="table-header">Total Designado</th>
+                <th className="table-header">Total de Meses Contabilizados</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.usersData
+                .filter((user) => user.totalCompaniesAssigned > 0)
+                .map((userData) => (
+                  <tr key={userData.id} className="table-row">
+                    <td className="table-cell font-medium">{userData.name}</td>
+                    <td className="table-cell">
+                      {userData.totalCompaniesAssigned}
+                    </td>
+                    <td className="table-cell font-semibold">
+                      {userData.totalAccountingMonths}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
