@@ -306,7 +306,7 @@ const DbVerifyPageContent = () => {
             Verificação de integridade
           </p>
           <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary max-w-sm">
-            Clique em "Iniciar Verificação" para analisar CNPJ, e-mails, telefones e duplicatas nos registros de empresas.
+            Clique em &quot;Iniciar Verificação&quot; para analisar CNPJ, e-mails, telefones e duplicatas nos registros de empresas.
           </p>
         </div>
       )}
