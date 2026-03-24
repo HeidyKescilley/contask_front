@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiX, FiCheck, FiInfo } from "react-icons/fi";
+import { FiX, FiCheck, FiInfo, FiLoader, FiAlertTriangle } from "react-icons/fi";
 import api from "../utils/api";
 import { toast } from "react-toastify";
+import { invalidateCacheByPrefix } from "../hooks/useCachedFetch";
 
 const REGIMES = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
 const CLASSIFICACOES = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
@@ -73,8 +74,10 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
     applicableRegimes: [],
     applicableClassificacoes: [],
     applicableUFs: [],
+    baseReceiptsDir: "",
   });
   const [loading, setLoading] = useState(false);
+  const [reimplementarLoading, setReimplementarLoading] = useState(false);
 
   useEffect(() => {
     if (editData) {
@@ -90,6 +93,7 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
         applicableRegimes: editData.applicableRegimes || [],
         applicableClassificacoes: editData.applicableClassificacoes || [],
         applicableUFs: editData.applicableUFs || [],
+        baseReceiptsDir: editData.baseReceiptsDir || "",
       });
     }
   }, [editData]);
@@ -133,6 +137,26 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
       toast.error(err.response?.data?.message || "Erro ao salvar obrigação.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReimplementar = async () => {
+    if (!window.confirm(
+      "Isso irá re-aplicar os filtros da obrigação em TODAS as empresas ativas agora.\n\n" +
+      "Empresas que não atendem mais os filtros terão a obrigação removida do período atual.\n" +
+      "Deseja continuar?"
+    )) return;
+    setReimplementarLoading(true);
+    try {
+      const { data } = await api.post(`/obligation/${editData.id}/reimplementar`);
+      toast.success(`Reimplementado: ${data.added} adicionado(s), ${data.removed} removido(s).`);
+      invalidateCacheByPrefix("/tax/period-summary");
+      invalidateCacheByPrefix("/obligation/period-summary");
+      onSaved();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Erro ao reimplementar.");
+    } finally {
+      setReimplementarLoading(false);
     }
   };
 
@@ -197,6 +221,18 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
               rows={2}
               placeholder="Descrição opcional da obrigação..."
               className="input-base resize-none"
+            />
+          </div>
+
+          {/* Diretório base de comprovantes */}
+          <div>
+            <label className="label-base">Diretório base de comprovantes</label>
+            <input
+              type="text"
+              value={form.baseReceiptsDir}
+              onChange={setField("baseReceiptsDir")}
+              placeholder={`Ex: \\\\servidor\\fiscal\\sped`}
+              className="input-base"
             />
           </div>
 
@@ -312,14 +348,27 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
           />
 
           {/* Ações */}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="btn-ghost">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary">
-              <FiCheck size={15} />
-              {loading ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar obrigação"}
-            </button>
+          <div className="flex justify-between items-center gap-2 pt-2">
+            {isEdit && (
+              <button
+                type="button"
+                onClick={handleReimplementar}
+                disabled={reimplementarLoading || loading}
+                className="btn-ghost flex items-center gap-1.5 text-amber-600 hover:text-amber-700 dark:text-amber-400"
+              >
+                {reimplementarLoading ? <FiLoader size={14} className="animate-spin" /> : <FiAlertTriangle size={14} />}
+                {reimplementarLoading ? "Reimplementando..." : "Reimplementar"}
+              </button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <button type="button" onClick={onClose} className="btn-ghost">
+                Cancelar
+              </button>
+              <button type="submit" disabled={loading} className="btn-primary">
+                <FiCheck size={15} />
+                {loading ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar obrigação"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

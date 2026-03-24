@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiX, FiCheck } from "react-icons/fi";
+import { FiX, FiCheck, FiLoader, FiAlertTriangle } from "react-icons/fi";
 import api from "../utils/api";
 import { toast } from "react-toastify";
+import { invalidateCacheByPrefix } from "../hooks/useCachedFetch";
 
 const DEPARTMENTS = ["Fiscal", "Pessoal", "Contábil"];
 const REGIMES = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
@@ -70,6 +71,7 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
     applicableUFs: [],
   });
   const [loading, setLoading] = useState(false);
+  const [reimplementarLoading, setReimplementarLoading] = useState(false);
 
   useEffect(() => {
     if (editData) {
@@ -113,6 +115,26 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
       toast.error(err.response?.data?.message || "Erro ao salvar imposto.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReimplementar = async () => {
+    if (!window.confirm(
+      "Isso irá re-aplicar os filtros do imposto em TODAS as empresas ativas agora.\n\n" +
+      "Empresas que não atendem mais os filtros terão o imposto removido do mês atual.\n" +
+      "Deseja continuar?"
+    )) return;
+    setReimplementarLoading(true);
+    try {
+      const { data } = await api.post(`/tax/${editData.id}/reimplementar`);
+      toast.success(`Reimplementado: ${data.added} adicionado(s), ${data.removed} removido(s).`);
+      invalidateCacheByPrefix("/tax/period-summary");
+      invalidateCacheByPrefix("/obligation/period-summary");
+      onSaved();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Erro ao reimplementar.");
+    } finally {
+      setReimplementarLoading(false);
     }
   };
 
@@ -194,14 +216,27 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
           />
 
           {/* Ações */}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="btn-ghost">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary">
-              <FiCheck size={15} />
-              {loading ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar imposto"}
-            </button>
+          <div className="flex justify-between items-center gap-2 pt-2">
+            {isEdit && (
+              <button
+                type="button"
+                onClick={handleReimplementar}
+                disabled={reimplementarLoading || loading}
+                className="btn-ghost flex items-center gap-1.5 text-amber-600 hover:text-amber-700 dark:text-amber-400"
+              >
+                {reimplementarLoading ? <FiLoader size={14} className="animate-spin" /> : <FiAlertTriangle size={14} />}
+                {reimplementarLoading ? "Reimplementando..." : "Reimplementar"}
+              </button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <button type="button" onClick={onClose} className="btn-ghost">
+                Cancelar
+              </button>
+              <button type="submit" disabled={loading} className="btn-primary">
+                <FiCheck size={15} />
+                {loading ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar imposto"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

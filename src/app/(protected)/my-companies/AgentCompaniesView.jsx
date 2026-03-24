@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import useCachedFetch from "../../../hooks/useCachedFetch";
 import {
   FiSearch, FiX, FiCheck, FiMinus, FiList, FiGrid,
-  FiExternalLink, FiLoader,
+  FiExternalLink, FiLoader, FiArrowUp, FiArrowDown,
 } from "react-icons/fi";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
@@ -47,16 +47,17 @@ const CheckItem = ({ checked, onChange, label }) => (
   </label>
 );
 
-const DeptHeader = ({ label, colSpan, color, minWidth, wrap }) => {
+const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap }) => {
   const colors = {
     blue:   "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
     green:  "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
     yellow: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
   };
+  const style = (minWidth || maxWidth) ? { ...(minWidth ? { minWidth } : {}), ...(maxWidth ? { width: maxWidth, maxWidth } : {}) } : undefined;
   return (
     <th
       colSpan={colSpan}
-      style={minWidth ? { minWidth } : undefined}
+      style={style}
       className={`table-header text-center border-l border-gray-200 dark:border-dark-border ${colors[color]} ${wrap ? "whitespace-normal leading-tight" : ""}`}
     >
       {label}
@@ -103,6 +104,8 @@ const AgentCompaniesView = ({
   const [filters, setFilters] = useState({
     sentToClient: null, isZeroed: null, regime: [], classi: [],
   });
+  const [sortField, setSortField] = useState("name");
+  const [sortDir, setSortDir]     = useState("asc");
 
   // ── Colunas ativas por departamento ───────────────────────────────────────
   const activeDepartment = viewDepartment || user?.department;
@@ -147,13 +150,14 @@ const AgentCompaniesView = ({
   const regimes        = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
 
-  // Inicializa valores dos inputs (DP/Contábil)
+  // Inicializa valores dos inputs (DP/Contábil/Fiscal)
   useEffect(() => {
     const initial = {};
     companies.forEach((c) => {
       initial[c.id] = {
         employeesCount:       c.employeesCount       ?? "",
         accountingMonthsCount: c.accountingMonthsCount ?? "",
+        bonusValue:            c.bonusValue           ?? "",
       };
     });
     setTempValues(initial);
@@ -214,6 +218,13 @@ const AgentCompaniesView = ({
       const v = parseInt(valueToSave, 10);
       if (isNaN(v) || v < 0) { toast.error("Valor inválido."); return; }
     } else if (field === "accountingMonthsCount") {
+      const v = parseInt(valueToSave, 10);
+      if (isNaN(v) || v < 0) {
+        toast.error("Valor inválido.");
+        setTempValues((prev) => ({ ...prev, [companyId]: { ...prev[companyId], [field]: company[field] ?? "" } }));
+        return;
+      }
+    } else if (field === "bonusValue") {
       const v = parseInt(valueToSave, 10);
       if (isNaN(v) || v < 0) {
         toast.error("Valor inválido.");
@@ -289,6 +300,11 @@ const AgentCompaniesView = ({
     setFilters({ sentToClient: null, isZeroed: null, regime: [], classi: [] });
   }, []);
 
+  const handleSort = useCallback((field) => {
+    setSortDir((prev) => sortField === field && prev === "asc" ? "desc" : "asc");
+    setSortField(field);
+  }, [sortField]);
+
   const activeFilterCount = [
     filters.sentToClient !== null ? 1 : 0,
     filters.isZeroed !== null ? 1 : 0,
@@ -320,8 +336,12 @@ const AgentCompaniesView = ({
     }
     if (filters.regime.length > 0) result = result.filter((c) => filters.regime.includes(c.rule));
     if (filters.classi.length  > 0) result = result.filter((c) => filters.classi.includes(c.classi));
-    return result.sort((a, b) => a.name.localeCompare(b.name));
-  }, [companies, searchTerm, filters, showFiscalColumns, showDpColumns]);
+    return result.sort((a, b) => {
+      const va = String(a[sortField] ?? ""); const vb = String(b[sortField] ?? "");
+      const cmp = va.localeCompare(vb, "pt-BR");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [companies, searchTerm, filters, showFiscalColumns, showDpColumns, sortField, sortDir]);
 
   // ── Obrigações por empresa (lookup rápido) ─────────────────────────────────
   const getCompanyOblStats = (companyId) => {
@@ -342,6 +362,23 @@ const AgentCompaniesView = ({
 
   const getTaxStatus = (companyId, taxId) =>
     (taxStatuses[companyId] || []).find((t) => t.taxId === taxId);
+
+  // ── Colunas visíveis no modo tabela (só impostos/obrigações que o usuário possui) ──
+  const visibleTaxes = useMemo(() => {
+    if (!showFiscalColumns || fiscalViewMode !== "table") return taxes;
+    if (taxesLoading || Object.keys(taxStatuses).length === 0) return taxes;
+    return taxes.filter((tax) =>
+      companies.some((c) => (taxStatuses[c.id] || []).some((t) => t.taxId === tax.id))
+    );
+  }, [taxes, taxStatuses, companies, showFiscalColumns, fiscalViewMode, taxesLoading]);
+
+  const visibleObligations = useMemo(() => {
+    if (!showFiscalColumns || fiscalViewMode !== "table") return obligations;
+    if (obligationsLoading || Object.keys(obligationStatuses).length === 0) return obligations;
+    return obligations.filter((obl) =>
+      companies.some((c) => (obligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
+    );
+  }, [obligations, obligationStatuses, companies, showFiscalColumns, fiscalViewMode, obligationsLoading]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -441,11 +478,19 @@ const AgentCompaniesView = ({
           <table className="min-w-full">
             <thead>
               <tr>
-                <th className="table-header w-12">Nº</th>
-                <th className="table-header" style={{ minWidth: "180px" }}>Razão Social</th>
+                <th className="table-header w-12 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" onClick={() => handleSort("num")}>
+                  <span className="inline-flex items-center">Nº{sortField === "num" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
+                </th>
+                <th className="table-header cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" style={{ minWidth: "180px" }} onClick={() => handleSort("name")}>
+                  <span className="inline-flex items-center">Razão Social{sortField === "name" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
+                </th>
                 <th className="table-header w-12 text-center">Filial</th>
-                <th className="table-header w-20">Regime</th>
-                <th className="table-header w-10 text-center">UF</th>
+                <th className="table-header w-20 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" onClick={() => handleSort("rule")}>
+                  <span className="inline-flex items-center">Regime{sortField === "rule" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
+                </th>
+                <th className="table-header w-10 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" onClick={() => handleSort("uf")}>
+                  <span className="inline-flex items-center">UF{sortField === "uf" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
+                </th>
                 {viewDepartment && viewDepartment !== "all" && (
                   <th className="table-header w-28">Responsável</th>
                 )}
@@ -458,6 +503,7 @@ const AgentCompaniesView = ({
                     <DeptHeader label="Impostos"    colSpan={1} color="blue" minWidth="150px" />
                     <DeptHeader label="Obrigações"  colSpan={1} color="blue" minWidth="150px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="blue" />
+                    <DeptHeader label="Nota"        colSpan={1} color="blue" maxWidth="56px" />
                   </>
                 )}
 
@@ -465,14 +511,15 @@ const AgentCompaniesView = ({
                 {showFiscalColumns && fiscalViewMode === "table" && (
                   <>
                     <DeptHeader label="Zerado" colSpan={1} color="blue" />
-                    {taxes.map((tax) => (
+                    {visibleTaxes.map((tax) => (
                       <DeptHeader key={`tax-${tax.id}`} label={tax.name} colSpan={1} color="blue" minWidth="64px" wrap />
                     ))}
                     {taxesLoading && <DeptHeader label="…" colSpan={1} color="blue" />}
-                    {obligations.map((obl) => (
+                    {visibleObligations.map((obl) => (
                       <DeptHeader key={`obl-${obl.id}`} label={obl.name} colSpan={1} color="blue" minWidth="72px" wrap />
                     ))}
                     {obligationsLoading && <DeptHeader label="…" colSpan={1} color="blue" />}
+                    <DeptHeader label="Nota" colSpan={1} color="blue" />
                   </>
                 )}
 
@@ -559,6 +606,13 @@ const AgentCompaniesView = ({
                         <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
                           {company.fiscalCompletedAt ? formatDate(company.fiscalCompletedAt) : "–"}
                         </td>
+                        <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1" style={{ width: "56px", minWidth: "56px", maxWidth: "56px" }}>
+                          <input type="number" min={0} value={tempValues[company.id]?.bonusValue ?? ""}
+                            onChange={(e) => handleValueChange(company.id, "bonusValue", e.target.value)}
+                            onBlur={() => handleSaveOnBlur(company.id, "bonusValue")}
+                            disabled={isReadOnly || !canEditFiscal}
+                            className="input-base text-center !py-1 !text-xs disabled:opacity-40" />
+                        </td>
                       </>
                     )}
 
@@ -574,7 +628,7 @@ const AgentCompaniesView = ({
                           }
                         </td>
                         {/* Colunas de Impostos */}
-                        {taxes.map((tax) => {
+                        {visibleTaxes.map((tax) => {
                           const taxSt = getTaxStatus(company.id, tax.id);
                           const status = taxSt?.status;
                           const statusId = taxSt?.statusId;
@@ -605,7 +659,7 @@ const AgentCompaniesView = ({
                           );
                         })}
                         {/* Colunas de Obrigações */}
-                        {obligations.map((obl) => {
+                        {visibleObligations.map((obl) => {
                           const oblStatus = getOblStatus(company.id, obl.id);
                           const status = oblStatus?.status;
                           const statusId = oblStatus?.statusId;
@@ -635,6 +689,13 @@ const AgentCompaniesView = ({
                             </td>
                           );
                         })}
+                        <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1" style={{ width: "56px", minWidth: "56px", maxWidth: "56px" }}>
+                          <input type="number" min={0} value={tempValues[company.id]?.bonusValue ?? ""}
+                            onChange={(e) => handleValueChange(company.id, "bonusValue", e.target.value)}
+                            onBlur={() => handleSaveOnBlur(company.id, "bonusValue")}
+                            disabled={isReadOnly || !canEditFiscal}
+                            className="input-base text-center !py-1 !text-xs disabled:opacity-40" />
+                        </td>
                       </>
                     )}
 
