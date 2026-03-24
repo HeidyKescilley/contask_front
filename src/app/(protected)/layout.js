@@ -7,6 +7,7 @@ import PageHeader from "../../components/PageHeader";
 import { CompanyModalContext } from "../../context/CompanyModalContext";
 import CompanyModal from "../../components/CompanyModal";
 import BirthdayModal from "../../components/BirthdayModal";
+import AnnouncementModal from "../../components/AnnouncementModal";
 import api from "../../utils/api";
 import { toast } from "react-toastify";
 import { SidebarContext } from "../../context/SidebarContext";
@@ -16,6 +17,7 @@ export default function ProtectedLayout({ children }) {
   const { isExpanded } = useContext(SidebarContext);
   const { user } = useAuth();
   const [birthdayUsers, setBirthdayUsers] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -23,10 +25,21 @@ export default function ProtectedLayout({ children }) {
       .get("/birthday/today")
       .then((res) => setBirthdayUsers(res.data.birthdayUsers || []))
       .catch(() => {});
+    api
+      .get("/announcements/pending")
+      .then((res) => setAnnouncements(res.data.announcements || []))
+      .catch(() => {});
   }, [user]);
 
   const handleDismissBirthday = (userId) => {
     setBirthdayUsers((prev) => prev.filter((u) => u.id !== userId));
+  };
+
+  const handleDismissAnnouncement = (id, permanent) => {
+    if (permanent) {
+      api.post(`/announcements/${id}/seen`).catch(() => {});
+    }
+    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
   };
 
   const { showModal, modalType, selectedCompany, closeModal, triggerRefresh } =
@@ -81,6 +94,13 @@ export default function ProtectedLayout({ children }) {
         <BirthdayModal
           birthdayUsers={birthdayUsers}
           onDismiss={handleDismissBirthday}
+        />
+      )}
+
+      {announcements.length > 0 && (
+        <AnnouncementModal
+          announcements={announcements}
+          onDismiss={handleDismissAnnouncement}
         />
       )}
     </div>
