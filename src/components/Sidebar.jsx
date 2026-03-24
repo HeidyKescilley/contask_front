@@ -23,6 +23,7 @@ import {
   FiZoomOut,
   FiPauseCircle,
   FiDatabase,
+  FiActivity,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -74,18 +75,19 @@ const Sidebar = () => {
   ];
 
   if (user && user.role === "admin") {
-    menuGroups.push({
-      label: "Administracao",
-      items: [
-        { name: "Gestao de Usuarios", path: "/admin/users", icon: <FiSettings size={18} /> },
-        { name: "Visao de Equipes", path: "/admin/team-view", icon: <FiGrid size={18} /> },
-        { name: "Calculo de Bonus", path: "/admin/bonus", icon: <FiAward size={18} /> },
-        { name: "Impostos / Obrigações", path: "/admin/taxes", icon: <FiDollarSign size={18} /> },
-        { name: "Paralisações", path: "/admin/suspensions", icon: <FiPauseCircle size={18} /> },
-        { name: "Exportar Dados", path: "/admin/export", icon: <FiDownload size={18} /> },
-        { name: "Verificação DB", path: "/admin/db-verify", icon: <FiDatabase size={18} /> },
-      ],
-    });
+    const adminItems = [
+      { name: "Gestao de Usuarios", path: "/admin/users", icon: <FiSettings size={18} /> },
+      { name: "Visao de Equipes", path: "/admin/team-view", icon: <FiGrid size={18} /> },
+      { name: "Calculo de Bonus", path: "/admin/bonus", icon: <FiAward size={18} /> },
+      { name: "Impostos / Obrigações", path: "/admin/taxes", icon: <FiDollarSign size={18} /> },
+      { name: "Paralisações", path: "/admin/suspensions", icon: <FiPauseCircle size={18} /> },
+      { name: "Exportar Dados", path: "/admin/export", icon: <FiDownload size={18} /> },
+      { name: "Verificação DB", path: "/admin/db-verify", icon: <FiDatabase size={18} /> },
+    ];
+    if ([1, 4].includes(user.id)) {
+      adminItems.push({ name: "Monitor de Atividade", path: "/admin/activity-monitor", icon: <FiActivity size={18} /> });
+    }
+    menuGroups.push({ label: "Administracao", items: adminItems });
   }
 
   const checkDisplayPermission = (item) => {

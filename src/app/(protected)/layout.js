@@ -1,17 +1,33 @@
 // src/app/(protected)/layout.js
 "use client";
 
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import PageHeader from "../../components/PageHeader";
 import { CompanyModalContext } from "../../context/CompanyModalContext";
 import CompanyModal from "../../components/CompanyModal";
+import BirthdayModal from "../../components/BirthdayModal";
 import api from "../../utils/api";
 import { toast } from "react-toastify";
 import { SidebarContext } from "../../context/SidebarContext";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function ProtectedLayout({ children }) {
   const { isExpanded } = useContext(SidebarContext);
+  const { user } = useAuth();
+  const [birthdayUsers, setBirthdayUsers] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    api
+      .get("/birthday/today")
+      .then((res) => setBirthdayUsers(res.data.birthdayUsers || []))
+      .catch(() => {});
+  }, [user]);
+
+  const handleDismissBirthday = (userId) => {
+    setBirthdayUsers((prev) => prev.filter((u) => u.id !== userId));
+  };
 
   const { showModal, modalType, selectedCompany, closeModal, triggerRefresh } =
     useContext(CompanyModalContext);
@@ -58,6 +74,13 @@ export default function ProtectedLayout({ children }) {
           company={selectedCompany}
           onClose={closeModal}
           onSave={handleSaveCompany}
+        />
+      )}
+
+      {birthdayUsers.length > 0 && (
+        <BirthdayModal
+          birthdayUsers={birthdayUsers}
+          onDismiss={handleDismissBirthday}
         />
       )}
     </div>
