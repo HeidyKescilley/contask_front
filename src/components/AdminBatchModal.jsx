@@ -143,7 +143,7 @@ export default function AdminBatchModal({ onClose, onSuccess, initialType = "tax
       invalidateCacheByPrefix("/tax/period-summary");
       invalidateCacheByPrefix("/obligation/period-summary");
       onSuccess?.();
-      onClose();
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error(err.response?.data?.message || "Erro ao aplicar ação em lote.");
     } finally {
