@@ -13,7 +13,7 @@ import { invalidateCacheByPrefix } from "../hooks/useCachedFetch";
  *   companies: array de empresas do usuário
  *   onSuccess: () => void — callback após aplicar ação com sucesso
  */
-export default function BatchTaxObligationModal({ onClose, companies = [], onSuccess }) {
+export default function BatchTaxObligationModal({ onClose, companies = [], onSuccess, userDepartment }) {
   const [action, setAction]           = useState("add");     // "add" | "remove"
   const [type, setType]               = useState("tax");     // "tax" | "obligation"
   const [itemId, setItemId]           = useState("");
@@ -23,11 +23,12 @@ export default function BatchTaxObligationModal({ onClose, companies = [], onSuc
   const [search, setSearch]           = useState("");
   const [loading, setLoading]         = useState(false);
 
-  // Buscar impostos e obrigações disponíveis
+  // Buscar impostos e obrigações filtrados pelo departamento do usuário
   useEffect(() => {
-    api.get("/tax/all").then((r) => setTaxes(r.data || [])).catch(() => {});
-    api.get("/obligation/all").then((r) => setObligations(r.data || [])).catch(() => {});
-  }, []);
+    const deptParam = userDepartment ? `?department=${encodeURIComponent(userDepartment)}` : "";
+    api.get(`/tax/all${deptParam}`).then((r) => setTaxes(r.data || [])).catch(() => {});
+    api.get(`/obligation/all${deptParam}`).then((r) => setObligations(r.data || [])).catch(() => {});
+  }, [userDepartment]);
 
   const items = type === "tax" ? taxes : obligations;
 

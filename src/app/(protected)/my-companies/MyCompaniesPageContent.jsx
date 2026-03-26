@@ -8,6 +8,7 @@ import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
 import BatchTaxObligationModal from "../../../components/BatchTaxObligationModal";
+import OrientationsModal from "../../../components/OrientationsModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -38,19 +39,11 @@ const isCompanyComplete = (company, department) => {
   }
   if (department === "Pessoal") {
     if (company.isZeroedDp) return true;
-    return (
-      company.sentToClientDp === true &&
-      (company.declarationsCompletedDp === true ||
-        company.hasNoDpObligations === true) &&
-      company.employeesCount !== null &&
-      company.employeesCount !== undefined
-    );
+    return !!company.dpCompletedAt;
   }
   if (department === "Contábil") {
-    return (
-      company.accountingMonthsCount !== null &&
-      company.accountingMonthsCount !== undefined
-    );
+    if (company.isZeroedContabil) return true;
+    return !!company.contabilCompletedAt;
   }
   return false;
 };
@@ -78,6 +71,7 @@ const MyCompaniesPageContent = () => {
   const [showAutomationModal, setShowAutomationModal] = useState(false);
   const [selectedAutomationCompany, setSelectedAutomationCompany] = useState(null);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [orientationModal, setOrientationModal] = useState(null);
 
   const {
     setShowModal,
@@ -385,6 +379,7 @@ const MyCompaniesPageContent = () => {
             onBlockCompany={handleBlockCompany}
             onViewHistory={handleViewHistory}
             onManageAutomations={handleManageAutomations}
+            onOpenOrientations={(company) => setOrientationModal(company)}
           />
         </>
       ) : (
@@ -419,6 +414,13 @@ const MyCompaniesPageContent = () => {
           companies={filteredCompanies}
           onClose={() => setShowBatchModal(false)}
           onSuccess={fetchCompanies}
+          userDepartment={user?.department}
+        />
+      )}
+      {orientationModal && (
+        <OrientationsModal
+          company={orientationModal}
+          onClose={() => setOrientationModal(null)}
         />
       )}
     </>

@@ -80,7 +80,7 @@ const TaxItem = ({ tax, onToggle, updating }) => {
 };
 
 // ── Modal principal ───────────────────────────────────────────────────────────
-const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
+const ObligationProgressModal = ({ company, onClose, currentPeriod, department = "Fiscal" }) => {
   const [obligations, setObligations] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,21 +90,24 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
     if (!company?.id) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ department: "Fiscal" });
+      const params = new URLSearchParams({ department });
       if (currentPeriod) params.set("period", currentPeriod);
+
+      const taxParams = new URLSearchParams({ department });
+      if (currentPeriod) taxParams.set("period", currentPeriod);
 
       const [oblRes, taxRes] = await Promise.all([
         api.get(`/obligation/company/${company.id}?${params}`),
-        api.get(`/tax/company/${company.id}${currentPeriod ? `?period=${currentPeriod}` : ""}`),
+        api.get(`/tax/company/${company.id}?${taxParams}`),
       ]);
       setObligations(oblRes.data.filter((o) => !o.isManuallyExcluded));
       setTaxes(taxRes.data.filter((t) => !t.isManuallyExcluded && t.statusId));
     } catch {
-      toast.error("Erro ao carregar dados fiscais.");
+      toast.error("Erro ao carregar dados.");
     } finally {
       setLoading(false);
     }
-  }, [company?.id, currentPeriod]);
+  }, [company?.id, currentPeriod, department]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -171,7 +174,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod }) => {
               {company?.name?.length > 40 ? company.name.slice(0, 40) + "…" : company?.name}
             </h2>
             <p className="text-xs text-gray-400 dark:text-dark-text-secondary mt-0.5">
-              Fiscal · {periodLabel}
+              {department} · {periodLabel}
             </p>
           </div>
           <div className="flex items-center gap-1.5">

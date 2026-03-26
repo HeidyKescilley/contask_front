@@ -9,6 +9,7 @@ import {
   FiCopy,
   FiZap,
   FiArchive,
+  FiBookOpen,
 } from "react-icons/fi";
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -49,7 +50,7 @@ ActionButton.displayName = "ActionButton";
 
 const CompanyRow = memo(({
   company, isAdmin,
-  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany
+  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany, onOpenOrientations
 }) => {
   const rowClass = `table-row${ROW_HIGHLIGHT[company.status] || ""}`;
 
@@ -58,13 +59,22 @@ const CompanyRow = memo(({
       <td className="table-cell font-mono text-xs">{company.num}</td>
       <td className="table-cell text-center">{company.branchNumber || "–"}</td>
       <td className="table-cell max-w-[160px]">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {onOpenOrientations && (
+            <button
+              onClick={() => onOpenOrientations(company)}
+              className="flex-shrink-0 text-purple-400 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-300 transition-colors"
+              title="Orientações da empresa"
+            >
+              <FiBookOpen size={12} />
+            </button>
+          )}
           <span
             className="block truncate text-xs"
             title={company.name}
           >
-            {company.name.length > 35
-              ? `${company.name.slice(0, 35)}…`
+            {company.name.length > 33
+              ? `${company.name.slice(0, 33)}…`
               : company.name}
           </span>
           <button
@@ -159,6 +169,7 @@ const CompanyTable = ({
   onViewHistory,
   onManageAutomations,
   onManualArchiveCompany,
+  onOpenOrientations,
 }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -194,6 +205,7 @@ const CompanyTable = ({
                 onViewHistory={onViewHistory}
                 onManageAutomations={onManageAutomations}
                 onManualArchiveCompany={onManualArchiveCompany}
+                onOpenOrientations={onOpenOrientations}
               />
             ))}
             {companies.length === 0 && (

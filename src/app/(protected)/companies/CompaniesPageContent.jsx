@@ -7,6 +7,7 @@ import CompanyFilters from "../../../components/CompanyFilters";
 import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
+import OrientationsModal from "../../../components/OrientationsModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -31,8 +32,8 @@ const CompaniesPageContent = () => {
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
   const [selectedStatusCompany, setSelectedStatusCompany] = useState(null);
   const [showAutomationModal, setShowAutomationModal] = useState(false);
-  const [selectedAutomationCompany, setSelectedAutomationCompany] =
-    useState(null);
+  const [selectedAutomationCompany, setSelectedAutomationCompany] = useState(null);
+  const [orientationModal, setOrientationModal] = useState(null);
 
   const {
     openAddCompanyModal,
@@ -230,6 +231,7 @@ const CompaniesPageContent = () => {
         onViewHistory={handleViewHistory}
         onManageAutomations={handleManageAutomations}
         onManualArchiveCompany={handleManualArchiveCompany}
+        onOpenOrientations={(company) => setOrientationModal(company)}
       />
       {showHistoryModal && (
         <HistoryModal
@@ -248,6 +250,12 @@ const CompaniesPageContent = () => {
         <AutomationModal
           company={selectedAutomationCompany}
           onClose={() => setShowAutomationModal(false)}
+        />
+      )}
+      {orientationModal && (
+        <OrientationsModal
+          company={orientationModal}
+          onClose={() => setOrientationModal(null)}
         />
       )}
     </>
