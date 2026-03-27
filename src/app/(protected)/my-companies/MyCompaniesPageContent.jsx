@@ -13,6 +13,7 @@ import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
 import { useAuth } from "../../../hooks/useAuth";
+import { useCompetencia } from "../../../hooks/useCompetencia";
 import AgentCompaniesView from "./AgentCompaniesView";
 import useCachedFetch from "../../../hooks/useCachedFetch";
 import {
@@ -50,6 +51,7 @@ const isCompanyComplete = (company, department) => {
 
 const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
+  const { selectedPeriod } = useCompetencia();
   const { data: companiesData, loading: companiesLoading, refresh: fetchCompanies } = useCachedFetch("/company/my-companies");
   const companies = useMemo(() => companiesData || [], [companiesData]);
   const VIEW_MODE_KEY = "contask_my_companies_view_mode";
@@ -156,24 +158,33 @@ const MyCompaniesPageContent = () => {
         filtered = filtered.filter((company) => !company.respDpId);
       }
     } else if (viewMode === "agent") {
-      // No modo agente, a filtragem padrão é:
-      // 1. Apenas empresas com status "ATIVA"
-      // 2. Empresas responsáveis pelo usuário logado (Fiscal ou Pessoal)
-      filtered = filtered.filter(
-        (company) =>
-          company.status === "ATIVA" &&
-          ((user?.department === "Fiscal" &&
-            company.respFiscalId === user?.id) ||
-            (user?.department === "Pessoal" && company.respDpId === user?.id) ||
-            (user?.department === "Contábil" &&
-              company.respContabilId === user?.id))
-      );
+      // No modo agente: empresas do usuário, ativas sempre + inativas até o mês do status
+      filtered = filtered.filter((company) => {
+        const isAssigned =
+          (user?.department === "Fiscal"   && company.respFiscalId   === user?.id) ||
+          (user?.department === "Pessoal"  && company.respDpId       === user?.id) ||
+          (user?.department === "Contábil" && company.respContabilId === user?.id);
+
+        if (!isAssigned) return false;
+        if (company.status === "ATIVA") return true;
+
+        // SUSPENSA / BAIXADA / DISTRATO: aparece até o mês do status (inclusive)
+        // Se statusUpdatedAt for nulo (empresa suspensa antes do campo existir), exibe sempre
+        if (["SUSPENSA", "BAIXADA", "DISTRATO"].includes(company.status)) {
+          const statusMonth = company.statusUpdatedAt
+            ? company.statusUpdatedAt.slice(0, 7)
+            : null;
+          return statusMonth ? selectedPeriod <= statusMonth : true;
+        }
+
+        return false;
+      });
     }
 
     filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     return filtered;
-  }, [companies, filters, viewMode, user]); // Adiciona viewMode e user como dependências
+  }, [companies, filters, viewMode, user, selectedPeriod]);
 
   const handleEditCompany = useCallback(
     (company) => {

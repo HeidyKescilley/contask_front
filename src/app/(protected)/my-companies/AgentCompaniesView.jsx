@@ -176,11 +176,44 @@ const AgentCompaniesView = ({
   const [obligationModal, setObligationModal] = useState(null); // { company, department }
   const [orientationModal, setOrientationModal] = useState(null); // company object or null
 
+  // ── Notas por período ─────────────────────────────────────────────────────
+  const [periodNotes, setPeriodNotes] = useState({}); // { [companyId]: string }
+  const [tempNotes, setTempNotes] = useState({});      // { [companyId]: string } — valor do input
+
+  useEffect(() => {
+    if (companies.length === 0) return;
+    const ids = companies.map((c) => c.id).join(",");
+    api.get(`/company/period-notes?period=${selectedPeriod}&companyIds=${ids}`)
+      .then(({ data }) => {
+        setPeriodNotes(data);
+        setTempNotes(
+          companies.reduce((acc, c) => ({ ...acc, [c.id]: data[c.id] ?? "" }), {})
+        );
+      })
+      .catch(() => {});
+  }, [companies, selectedPeriod]);
+
+  const handleNoteChange = useCallback((companyId, value) => {
+    if (isReadOnly) return;
+    setTempNotes((prev) => ({ ...prev, [companyId]: value }));
+  }, [isReadOnly]);
+
+  const handleNoteSave = useCallback(async (companyId) => {
+    if (isReadOnly) return;
+    const value = tempNotes[companyId] ?? "";
+    if (value === (periodNotes[companyId] ?? "")) return; // sem mudança
+    try {
+      await api.patch(`/company/period-note/${companyId}`, { period: selectedPeriod, note: value });
+      setPeriodNotes((prev) => ({ ...prev, [companyId]: value }));
+    } catch {
+      toast.error("Erro ao salvar nota.");
+    }
+  }, [isReadOnly, tempNotes, periodNotes, selectedPeriod]);
+
   // Permite edição no mês atual e no mês anterior (período de trabalho do contador)
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
-  const canEditFiscal   = !isReadOnly && user?.department === "Fiscal"   && selectedPeriod <= currentMonthStr;
-  const canEditDp       = !isReadOnly && user?.department === "Pessoal"  && selectedPeriod <= currentMonthStr;
-  const canEditContabil = !isReadOnly && user?.department === "Contábil" && selectedPeriod <= currentMonthStr;
+  const canEditFiscal   = !isReadOnly && user?.department === "Fiscal";
+  const canEditDp       = !isReadOnly && user?.department === "Pessoal";
+  const canEditContabil = !isReadOnly && user?.department === "Contábil";
 
   const regimes        = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
@@ -561,15 +594,11 @@ const AgentCompaniesView = ({
         </div>
       </div>
 
-      {/* ── Indicador de carregamento de impostos/obrigações ─────────────── */}
-      {(showFiscalColumns && (obligationsLoading || taxesLoading)) ||
-       (showDpColumns && (dpOblLoading || dpTaxLoading)) ||
-       (showContabilColumns && (contabilOblLoading || contabilTaxLoading)) ? (
-        <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 mb-2 px-1">
-          <FiLoader size={12} className="animate-spin" />
-          <span>Carregando impostos e obrigações…</span>
-        </div>
-      ) : null}
+      {/* ── Indicador de carregamento de impostos/obrigações (sempre invisível para evitar deformação do layout) ── */}
+      <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 mb-2 px-1 invisible">
+        <FiLoader size={12} className="animate-spin" />
+        <span>Carregando impostos e obrigações…</span>
+      </div>
 
       {/* ── Tabela ──────────────────────────────────────────────────────────── */}
       <div className="card p-0 overflow-hidden">
@@ -642,6 +671,11 @@ const AgentCompaniesView = ({
                     <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
                   </>
+                )}
+
+                {/* ── Coluna Obs (período) — todos os departamentos ── */}
+                {(showFiscalColumns || showDpColumns || showContabilColumns) && (
+                  <th className="table-header" style={{ minWidth: "120px" }}>Obs</th>
                 )}
               </tr>
             </thead>
@@ -920,6 +954,21 @@ const AgentCompaniesView = ({
                         </>
                       );
                     })()}
+
+                    {/* ── Obs (nota por período) ── */}
+                    {(showFiscalColumns || showDpColumns || showContabilColumns) && (
+                      <td className="table-cell !px-1" style={{ minWidth: "120px" }}>
+                        <input
+                          type="text"
+                          value={tempNotes[company.id] ?? ""}
+                          onChange={(e) => handleNoteChange(company.id, e.target.value)}
+                          onBlur={() => handleNoteSave(company.id)}
+                          disabled={isReadOnly}
+                          placeholder="—"
+                          className="input-base !py-1 !text-xs !w-full disabled:opacity-40"
+                        />
+                      </td>
+                    )}
                   </tr>
                 );
               })}

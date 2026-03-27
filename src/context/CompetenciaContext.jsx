@@ -77,7 +77,7 @@ export const CompetenciaProvider = ({ children }) => {
     });
   }, []);
 
-  const isCurrentMonth = selectedPeriod === getCurrentMonthString();
+  const isCurrentMonth = selectedPeriod === getPreviousMonthString();
   const canGoPrev = selectedPeriod > getPreviousMonthString();
   const canGoNext = selectedPeriod < getMaxPeriod();
 
