@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { formatDate } from "../../../utils/utils";
 import ObligationProgressModal from "../../../components/ObligationProgressModal";
 import OrientationsModal from "../../../components/OrientationsModal";
+import { useCompetencia } from "../../../hooks/useCompetencia";
 
 // ── Helpers de design ─────────────────────────────────────────────────────────
 const StatusDot = ({ checked, variant = "green" }) => {
@@ -108,6 +109,9 @@ const AgentCompaniesView = ({
   const [sortField, setSortField] = useState("name");
   const [sortDir, setSortDir]     = useState("asc");
 
+  // ── Competência selecionada ───────────────────────────────────────────────
+  const { selectedPeriod, isCurrentMonth } = useCompetencia();
+
   // ── Colunas ativas por departamento ───────────────────────────────────────
   const activeDepartment = viewDepartment || user?.department;
   const showFiscalColumns  = activeDepartment === "Fiscal";
@@ -116,31 +120,31 @@ const AgentCompaniesView = ({
 
   // ── Obrigações e Impostos (Fiscal) via cache 5 min ────────────────────────
   const { data: oblData, loading: obligationsLoading, refresh: refreshOblData } = useCachedFetch(
-    "/obligation/period-summary?department=Fiscal",
+    `/obligation/period-summary?department=Fiscal&period=${selectedPeriod}`,
     { enabled: showFiscalColumns }
   );
   const { data: taxData, loading: taxesLoading, refresh: refreshTaxData } = useCachedFetch(
-    "/tax/period-summary?department=Fiscal",
+    `/tax/period-summary?department=Fiscal&period=${selectedPeriod}`,
     { enabled: showFiscalColumns }
   );
 
   // ── Obrigações e Impostos (DP) ────────────────────────────────────────────
   const { data: dpOblData, loading: dpOblLoading, refresh: refreshDpOblData } = useCachedFetch(
-    "/obligation/period-summary?department=Pessoal",
+    `/obligation/period-summary?department=Pessoal&period=${selectedPeriod}`,
     { enabled: showDpColumns }
   );
   const { data: dpTaxData, loading: dpTaxLoading, refresh: refreshDpTaxData } = useCachedFetch(
-    "/tax/period-summary?department=Pessoal",
+    `/tax/period-summary?department=Pessoal&period=${selectedPeriod}`,
     { enabled: showDpColumns }
   );
 
   // ── Obrigações e Impostos (Contábil) ─────────────────────────────────────
   const { data: contabilOblData, loading: contabilOblLoading, refresh: refreshContabilOblData } = useCachedFetch(
-    "/obligation/period-summary?department=Contábil",
+    `/obligation/period-summary?department=Contábil&period=${selectedPeriod}`,
     { enabled: showContabilColumns }
   );
   const { data: contabilTaxData, loading: contabilTaxLoading, refresh: refreshContabilTaxData } = useCachedFetch(
-    "/tax/period-summary?department=Contábil",
+    `/tax/period-summary?department=Contábil&period=${selectedPeriod}`,
     { enabled: showContabilColumns }
   );
 
@@ -172,9 +176,11 @@ const AgentCompaniesView = ({
   const [obligationModal, setObligationModal] = useState(null); // { company, department }
   const [orientationModal, setOrientationModal] = useState(null); // company object or null
 
-  const canEditFiscal   = !isReadOnly && user?.department === "Fiscal";
-  const canEditDp       = !isReadOnly && user?.department === "Pessoal";
-  const canEditContabil = !isReadOnly && user?.department === "Contábil";
+  // Permite edição no mês atual e no mês anterior (período de trabalho do contador)
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const canEditFiscal   = !isReadOnly && user?.department === "Fiscal"   && selectedPeriod <= currentMonthStr;
+  const canEditDp       = !isReadOnly && user?.department === "Pessoal"  && selectedPeriod <= currentMonthStr;
+  const canEditContabil = !isReadOnly && user?.department === "Contábil" && selectedPeriod <= currentMonthStr;
 
   const regimes        = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
@@ -314,18 +320,26 @@ const AgentCompaniesView = ({
         });
         return next;
       });
+      refreshTaxData();
     } catch {
       toast.error("Erro ao atualizar imposto.");
     }
-  }, [isReadOnly, canEditFiscal]);
+  }, [isReadOnly, canEditFiscal, refreshTaxData]);
 
   // ── Atualizar status de obrigação (modo tabela Fiscal) ────────────────────
-  const handleObligationToggle = useCallback(async (statusId, currentStatus) => {
+  const handleObligationToggle = useCallback(async (statusId, currentStatus, isConditional) => {
     if (isReadOnly || !canEditFiscal) return;
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+    let newStatus;
+    if (isConditional) {
+      // Ciclo: pending → completed → not_applicable → pending
+      if (currentStatus === "pending") newStatus = "completed";
+      else if (currentStatus === "completed") newStatus = "not_applicable";
+      else newStatus = "pending";
+    } else {
+      newStatus = currentStatus === "completed" ? "pending" : "completed";
+    }
     try {
       await api.patch(`/obligation/status/${statusId}`, { status: newStatus });
-      // Atualiza localmente sem refetch completo
       setObligationStatuses((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((companyId) => {
@@ -335,10 +349,11 @@ const AgentCompaniesView = ({
         });
         return next;
       });
+      refreshOblData();
     } catch {
       toast.error("Erro ao atualizar obrigação.");
     }
-  }, [isReadOnly, canEditFiscal]);
+  }, [isReadOnly, canEditFiscal, refreshOblData]);
 
   // ── Filtros ────────────────────────────────────────────────────────────────
   const toggleBoolFilter = useCallback((cat, val) => {
@@ -762,7 +777,10 @@ const AgentCompaniesView = ({
                           const status = oblStatus?.status;
                           const statusId = oblStatus?.statusId;
                           const isDisabled = status === "disabled" || !obligationStatuses[company.id];
+                          const isNotApplicable = status === "not_applicable";
                           const isCompleted = status === "completed";
+                          // Condicional + not_applicable → clicável para restaurar
+                          const isInactive = isDisabled || (isNotApplicable && !obl.isConditional);
                           return (
                             <td key={`obl-${obl.id}`} className="table-cell text-center border-l border-gray-100 dark:border-dark-border !px-1">
                               {!oblStatus ? (
@@ -770,18 +788,26 @@ const AgentCompaniesView = ({
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => !isDisabled && !isReadOnly && canEditFiscal && handleObligationToggle(statusId, status)}
-                                  disabled={isDisabled || isReadOnly || !canEditFiscal}
-                                  title={obl.name}
+                                  onClick={() => !isInactive && !isReadOnly && canEditFiscal && handleObligationToggle(statusId, status, obl.isConditional)}
+                                  disabled={isInactive || isReadOnly || !canEditFiscal}
+                                  title={
+                                    isNotApplicable
+                                      ? `${obl.name} (Não se aplica — clique para restaurar)`
+                                      : obl.isConditional
+                                      ? `${obl.name} (Condicional)`
+                                      : obl.name
+                                  }
                                   className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
                                     isDisabled
                                       ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
+                                      : isNotApplicable
+                                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-400 hover:bg-amber-200 cursor-pointer"
                                       : isCompleted
                                       ? "bg-emerald-500 text-white hover:bg-emerald-600"
                                       : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
                                   }`}
                                 >
-                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-amber-400" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
                                 </button>
                               )}
                             </td>
@@ -915,7 +941,7 @@ const AgentCompaniesView = ({
         const isNew = obligationModal.company !== undefined;
         const modalCompany = isNew ? obligationModal.company : obligationModal;
         const modalDept = isNew ? obligationModal.department : "Fiscal";
-        const modalPeriod = modalDept === "Pessoal" ? dpCurrentPeriod : modalDept === "Contábil" ? contabilCurrentPeriod : currentPeriod;
+        const modalPeriod = selectedPeriod;
         return (
           <ObligationProgressModal
             company={modalCompany}

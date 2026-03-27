@@ -52,7 +52,11 @@ const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
   const { data: companiesData, loading: companiesLoading, refresh: fetchCompanies } = useCachedFetch("/company/my-companies");
   const companies = useMemo(() => companiesData || [], [companiesData]);
-  const [viewMode, setViewMode] = useState("standard"); // Novo estado para o modo de visualização
+  const VIEW_MODE_KEY = "contask_my_companies_view_mode";
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window === "undefined") return "standard";
+    return localStorage.getItem(VIEW_MODE_KEY) || "standard";
+  });
   const [isAgentViewAvailable, setIsAgentViewAvailable] = useState(false); // Novo estado para controlar a disponibilidade do modo Agente
 
   const [filters, setFilters] = useState({
@@ -91,7 +95,8 @@ const MyCompaniesPageContent = () => {
       setIsAgentViewAvailable(true);
     } else {
       setIsAgentViewAvailable(false);
-      setViewMode("standard"); // Se não for Fiscal/Pessoal, força para Padrão
+      setViewMode("standard");
+      localStorage.setItem("contask_my_companies_view_mode", "standard");
     }
   }, [user]); // Dependência do usuário
 
@@ -265,9 +270,11 @@ const MyCompaniesPageContent = () => {
               type="checkbox"
               className="sr-only peer"
               checked={viewMode === "agent"}
-              onChange={() =>
-                setViewMode(viewMode === "standard" ? "agent" : "standard")
-              }
+              onChange={() => {
+                const next = viewMode === "standard" ? "agent" : "standard";
+                setViewMode(next);
+                localStorage.setItem(VIEW_MODE_KEY, next);
+              }}
             />
             <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500" />
           </label>

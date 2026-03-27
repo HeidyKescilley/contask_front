@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiX, FiCheck, FiClock, FiSlash, FiRefreshCw } from "react-icons/fi";
+import { FiX, FiCheck, FiClock, FiSlash, FiRefreshCw, FiMinus } from "react-icons/fi";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
 // ── Badge de status ────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
-    completed: { label: "Concluída",   cls: "badge-green" },
-    pending:   { label: "Pendente",    cls: "badge-amber" },
-    disabled:  { label: "Desabilitada", cls: "badge-gray" },
+    completed:      { label: "Concluída",      cls: "badge-green" },
+    pending:        { label: "Pendente",       cls: "badge-amber" },
+    disabled:       { label: "Desabilitada",   cls: "badge-gray" },
+    not_applicable: { label: "Não se aplica",  cls: "badge-gray" },
   };
   const { label, cls } = map[status] || map.pending;
   return <span className={cls}>{label}</span>;
@@ -112,7 +113,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleObligationToggle = async (obl) => {
-    if (obl.status === "disabled") return;
+    if (obl.status === "disabled" || obl.status === "not_applicable") return;
     const newStatus = obl.status === "completed" ? "pending" : "completed";
     setUpdating(obl.statusId);
     try {
@@ -120,6 +121,21 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
       setObligations((prev) =>
         prev.map((o) => o.statusId === obl.statusId
           ? { ...o, status: newStatus, completedAt: newStatus === "completed" ? new Date().toISOString() : null }
+          : o
+        )
+      );
+    } catch { toast.error("Erro ao atualizar obrigação."); }
+    finally { setUpdating(null); }
+  };
+
+  const handleNotApplicableToggle = async (obl) => {
+    const newStatus = obl.status === "not_applicable" ? "pending" : "not_applicable";
+    setUpdating(`na_${obl.statusId}`);
+    try {
+      await api.patch(`/obligation/status/${obl.statusId}`, { status: newStatus });
+      setObligations((prev) =>
+        prev.map((o) => o.statusId === obl.statusId
+          ? { ...o, status: newStatus, completedAt: null }
           : o
         )
       );
@@ -145,7 +161,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
   const activeTaxes    = taxes.filter((t) => t.status !== "disabled");
   const taxCompleted   = activeTaxes.filter((t) => t.status === "completed").length;
   const taxTotal       = activeTaxes.length;
-  const activeObls     = obligations.filter((o) => o.status !== "disabled");
+  const activeObls     = obligations.filter((o) => o.status !== "disabled" && o.status !== "not_applicable");
   const oblCompleted   = activeObls.filter((o) => o.status === "completed").length;
   const oblTotal       = activeObls.length;
 
@@ -222,15 +238,20 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                 </div>
                 <div className="space-y-1.5">
                   {obligations.map((obl) => {
-                    const isDisabled = obl.status === "disabled";
-                    const isCompleted = obl.status === "completed";
-                    const isLoading = updating === obl.statusId;
+                    const isDisabled      = obl.status === "disabled";
+                    const isNotApplicable = obl.status === "not_applicable";
+                    const isCompleted     = obl.status === "completed";
+                    const isLoading       = updating === obl.statusId;
+                    const isNaLoading     = updating === `na_${obl.statusId}`;
+                    const isInactive      = isDisabled || isNotApplicable;
                     return (
                       <div
                         key={obl.statusId}
                         className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
                           isDisabled
                             ? "border-gray-100 dark:border-dark-border bg-gray-50/50 dark:bg-dark-surface/50 opacity-60"
+                            : isNotApplicable
+                            ? "border-amber-100 dark:border-amber-800/30 bg-amber-50/50 dark:bg-amber-900/10 opacity-75"
                             : isCompleted
                             ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/10"
                             : "border-gray-100 dark:border-dark-border bg-white dark:bg-dark-card hover:border-amber-200"
@@ -239,10 +260,12 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                         <button
                           type="button"
                           onClick={() => handleObligationToggle(obl)}
-                          disabled={isDisabled || isLoading}
+                          disabled={isInactive || isLoading}
                           className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded flex items-center justify-center border transition-colors ${
                             isDisabled
                               ? "border-gray-200 dark:border-dark-border bg-gray-100 dark:bg-dark-surface cursor-not-allowed"
+                              : isNotApplicable
+                              ? "border-amber-200 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/30 cursor-not-allowed"
                               : isCompleted
                               ? "bg-emerald-500 border-emerald-500 text-white"
                               : "border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
@@ -252,13 +275,15 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                             <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
                           ) : isDisabled ? (
                             <FiSlash size={10} className="text-gray-400" />
+                          ) : isNotApplicable ? (
+                            <FiMinus size={10} className="text-amber-500" />
                           ) : isCompleted ? (
                             <FiCheck size={11} strokeWidth={3} />
                           ) : null}
                         </button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-sm font-medium ${isDisabled ? "text-gray-400" : "text-gray-800 dark:text-dark-text"}`}>
+                            <span className={`text-sm font-medium ${isInactive ? "text-gray-400" : "text-gray-800 dark:text-dark-text"}`}>
                               {obl.name}
                             </span>
                             <StatusBadge status={obl.status} />
@@ -266,8 +291,8 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                           {obl.description && (
                             <p className="text-xs text-gray-400 dark:text-dark-text-secondary mt-0.5">{obl.description}</p>
                           )}
-                          <div className="flex items-center gap-3 mt-1">
-                            {obl.deadlineFormatted && (
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            {obl.deadlineFormatted && !isNotApplicable && (
                               <span className="flex items-center gap-1 text-xs text-gray-400">
                                 <FiClock size={10} />
                                 Prazo: {obl.deadlineFormatted}
@@ -277,6 +302,18 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                               <span className="text-xs text-emerald-600 dark:text-emerald-400">
                                 Concluída em {new Date(obl.completedAt).toLocaleDateString("pt-BR")}
                               </span>
+                            )}
+                            {obl.isConditional && !isDisabled && (
+                              <button
+                                type="button"
+                                onClick={() => handleNotApplicableToggle(obl)}
+                                disabled={isNaLoading}
+                                className="text-xs text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                              >
+                                {isNaLoading ? (
+                                  <div className="w-3 h-3 border border-amber-400 border-t-transparent rounded-full animate-spin" />
+                                ) : isNotApplicable ? "Restaurar" : "Não se aplica"}
+                              </button>
                             )}
                           </div>
                         </div>

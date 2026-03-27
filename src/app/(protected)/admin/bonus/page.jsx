@@ -5,15 +5,16 @@ import { useState, useEffect, useMemo } from "react";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import api from "../../../../utils/api";
 import { toast } from "react-toastify";
+import { useCompetencia } from "../../../../hooks/useCompetencia";
 import {
   FiRefreshCw,
   FiSave,
   FiDollarSign,
-  FiTrash2,
 } from "react-icons/fi";
 import Loading from "../../../../components/Loading";
 
 const BonusPage = () => {
+  const { selectedPeriod } = useCompetencia();
   const [view, setView] = useState("dp");
   const [factors, setFactors] = useState({
     dp_fator_1: "0.00",
@@ -24,8 +25,7 @@ const BonusPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
-  const [resetting, setResetting] = useState(false);
-  const [selectedDpUserId, setSelectedDpUserId] = useState("");
+const [selectedDpUserId, setSelectedDpUserId] = useState("");
   const [selectedFiscalUserId, setSelectedFiscalUserId] = useState("");
   const [selectedContabilUserId, setSelectedContabilUserId] = useState("");
 
@@ -34,7 +34,7 @@ const BonusPage = () => {
     try {
       const [factorsRes, resultsRes] = await Promise.all([
         api.get("/bonus/factors"),
-        api.get("/bonus/results"),
+        api.get(`/bonus/results?period=${selectedPeriod}`),
       ]);
       setFactors(factorsRes.data);
       setResults(resultsRes.data);
@@ -48,7 +48,7 @@ const BonusPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedPeriod]);
 
   const handleFactorChange = (e) => {
     const { name, value } = e.target;
@@ -73,7 +73,7 @@ const BonusPage = () => {
       return;
     setCalculating(true);
     try {
-      const res = await api.post("/bonus/calculate");
+      const res = await api.post("/bonus/calculate", { period: selectedPeriod });
       toast.success(res.data.message);
       await fetchData();
     } catch (error) {
@@ -86,7 +86,7 @@ const BonusPage = () => {
   const handleResetMonth = async () => {
     if (
       !confirm(
-        "ATENCAO: Esta acao e irreversivel!\n\nTem certeza que deseja zerar todos os dados de progresso mensal de TODOS os agentes?"
+        "ATENCAO: Esta acao e irreversivel!\n\nEsta acao zera os dados do mes ATUAL, independente da competencia selecionada.\n\nTem certeza que deseja zerar todos os dados de progresso mensal de TODOS os agentes?"
       )
     )
       return;
@@ -233,18 +233,6 @@ const BonusPage = () => {
       {/* Actions */}
       <div className="flex flex-wrap gap-3 mb-5">
         <button
-          onClick={handleResetMonth}
-          disabled={resetting || calculating}
-          className="btn-danger"
-        >
-          {resetting ? (
-            <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
-          ) : (
-            <FiTrash2 size={16} />
-          )}
-          {resetting ? "Zerando..." : "Zerar Mes"}
-        </button>
-        <button
           onClick={handleRecalculate}
           disabled={calculating}
           className="btn-primary"
@@ -346,12 +334,18 @@ const BonusPage = () => {
           ))}
         </div>
 
-        {view === "dp" &&
+        {results.length === 0 && (
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary py-4">
+            Nenhum calculo encontrado para {selectedPeriod}. Execute o recalculo ou selecione outro periodo.
+          </p>
+        )}
+
+        {results.length > 0 && view === "dp" &&
           renderDepartmentView(dpUsers, selectedDpUserId, setSelectedDpUserId, selectedDpResult, [
             { key: "employeesCount", label: "Funcionarios", align: "text-center" },
           ])}
 
-        {view === "fiscal" &&
+        {results.length > 0 && view === "fiscal" &&
           renderDepartmentView(
             fiscalUsers,
             selectedFiscalUserId,
@@ -360,7 +354,7 @@ const BonusPage = () => {
             [{ key: "bonusValue", label: "Nota Bonus", align: "text-center" }]
           )}
 
-        {view === "contabil" &&
+        {results.length > 0 && view === "contabil" &&
           renderDepartmentView(
             contabilUsers,
             selectedContabilUserId,
@@ -375,7 +369,7 @@ const BonusPage = () => {
             ]
           )}
 
-        {view === "geral" && (
+        {results.length > 0 && view === "geral" && (
           <div className="card p-0 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full">

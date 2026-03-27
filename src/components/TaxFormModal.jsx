@@ -7,6 +7,12 @@ import { toast } from "react-toastify";
 import { invalidateCacheByPrefix } from "../hooks/useCachedFetch";
 
 const DEPARTMENTS = ["Fiscal", "Pessoal", "Contábil"];
+const PERIODICITIES = [
+  { value: "mensal",      label: "Mensal" },
+  { value: "decendial",   label: "Decendial" },
+  { value: "quinzenal",   label: "Quinzenal" },
+  { value: "trimestral",  label: "Trimestral" },
+];
 const REGIMES = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
 const CLASSIFICACOES = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
 const STATES = [
@@ -66,6 +72,7 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
   const [form, setForm] = useState({
     name: "",
     department: "Fiscal",
+    periodicity: "mensal",
     applicableRegimes: [],
     applicableClassificacoes: [],
     applicableUFs: [],
@@ -78,6 +85,7 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
       setForm({
         name: editData.name || "",
         department: editData.department || "Fiscal",
+        periodicity: editData.periodicity || "mensal",
         applicableRegimes: editData.applicableRegimes || [],
         applicableClassificacoes: editData.applicableClassificacoes || [],
         applicableUFs: editData.applicableUFs || [],
@@ -96,6 +104,7 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
     const payload = {
       name: form.name.trim(),
       department: form.department,
+      periodicity: form.periodicity,
       applicableRegimes: form.applicableRegimes.length > 0 ? form.applicableRegimes : null,
       applicableClassificacoes: form.applicableClassificacoes.length > 0 ? form.applicableClassificacoes : null,
       applicableUFs: form.applicableUFs.length > 0 ? form.applicableUFs : null,
@@ -183,6 +192,26 @@ const TaxFormModal = ({ onClose, onSaved, editData = null }) => {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="label-base">Periodicidade *</label>
+            <div className="flex gap-2 mt-1">
+              {PERIODICITIES.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, periodicity: p.value }))}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    form.periodicity === p.value
+                      ? "bg-primary-500 text-white border-primary-500"
+                      : "border-gray-200 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary hover:border-primary-300"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
 

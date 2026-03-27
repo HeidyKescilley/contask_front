@@ -71,6 +71,7 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
     deadlineType: "calendar_day",
     deadlineMonth: "",
     sendWhenZeroed: true,
+    isConditional: false,
     applicableRegimes: [],
     applicableClassificacoes: [],
     applicableUFs: [],
@@ -90,6 +91,7 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
         deadlineType: editData.deadlineType || "calendar_day",
         deadlineMonth: editData.deadlineMonth ?? "",
         sendWhenZeroed: editData.sendWhenZeroed !== false,
+        isConditional: editData.isConditional === true,
         applicableRegimes: editData.applicableRegimes || [],
         applicableClassificacoes: editData.applicableClassificacoes || [],
         applicableUFs: editData.applicableUFs || [],
@@ -314,6 +316,28 @@ const ObligationFormModal = ({ onClose, onSaved, editData = null }) => {
             {!form.sendWhenZeroed && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 ml-12">
                 Empresa zerada → obrigação desabilitada automaticamente naquele mês.
+              </p>
+            )}
+          </div>
+
+          {/* Condicional */}
+          <div>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <div
+                onClick={() => set("isConditional")(!form.isConditional)}
+                className={`w-10 h-5 rounded-full transition-colors flex items-center ${
+                  form.isConditional ? "bg-amber-500" : "bg-gray-200 dark:bg-dark-border"
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mx-0.5 ${form.isConditional ? "translate-x-5" : "translate-x-0"}`} />
+              </div>
+              <span className="text-sm text-gray-700 dark:text-dark-text-secondary">
+                Obrigação condicional
+              </span>
+            </label>
+            {form.isConditional && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 ml-12">
+                O agente poderá dispensar esta obrigação para uma empresa em um período específico.
               </p>
             )}
           </div>

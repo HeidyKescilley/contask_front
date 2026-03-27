@@ -3,6 +3,10 @@
 
 import { usePathname } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
+import CompetenciaSelector from "./CompetenciaSelector";
+
+// Páginas que exibem o seletor de competência
+const COMPETENCIA_PAGES = new Set(["/my-companies", "/dashboard", "/admin/bonus"]);
 
 const PAGE_TITLES = {
   "/home": { title: "Home", subtitle: "Visao geral do sistema" },
@@ -43,14 +47,19 @@ const PageHeader = () => {
 
   if (!pageInfo) return null;
 
+  const showCompetencia = COMPETENCIA_PAGES.has(pathname);
+
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold text-light-text dark:text-dark-text">
-        {pageInfo.title}
-      </h1>
-      <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-0.5">
-        {pageInfo.subtitle}
-      </p>
+    <div className={`mb-6 ${showCompetencia ? "flex items-start justify-between flex-wrap gap-3" : ""}`}>
+      <div>
+        <h1 className="text-2xl font-bold text-light-text dark:text-dark-text">
+          {pageInfo.title}
+        </h1>
+        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-0.5">
+          {pageInfo.subtitle}
+        </p>
+      </div>
+      {showCompetencia && <CompetenciaSelector />}
     </div>
   );
 };

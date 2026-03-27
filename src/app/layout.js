@@ -5,6 +5,7 @@ import "../styles/globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "../context/AuthContext";
 import { CompanyModalProvider } from "../context/CompanyModalContext";
+import { CompetenciaProvider } from "../context/CompetenciaContext";
 import { SidebarProvider } from "../context/SidebarContext";
 import { ThemeProvider, ThemeContext } from "../context/ThemeContext";
 import { ZoomProvider } from "../context/ZoomContext";
@@ -24,6 +25,7 @@ function LayoutInner({ children }) {
         className={`${inter.className} bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text`}
       >
         <AuthProvider>
+          <CompetenciaProvider>
           <CompanyModalProvider>
             <SidebarProvider>
               <ToastContainer
@@ -41,6 +43,7 @@ function LayoutInner({ children }) {
               </div>
             </SidebarProvider>
           </CompanyModalProvider>
+          </CompetenciaProvider>
         </AuthProvider>
       </body>
     </html>

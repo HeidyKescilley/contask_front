@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useCompetencia } from "../hooks/useCompetencia";
 import {
   Chart as ChartJS,
   Tooltip,
@@ -215,8 +216,10 @@ const ObligationsDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const oblEndpoint = `/obligation/dashboard?department=${encodeURIComponent(department)}`;
-  const taxEndpoint = `/tax/dashboard?department=${encodeURIComponent(department)}`;
+  const { selectedPeriod } = useCompetencia();
+
+  const oblEndpoint = `/obligation/dashboard?department=${encodeURIComponent(department)}&period=${selectedPeriod}`;
+  const taxEndpoint = `/tax/dashboard?department=${encodeURIComponent(department)}&period=${selectedPeriod}`;
 
   const { data, loading: oblLoading, refresh: refreshObl } = useCachedFetch(oblEndpoint);
   const { data: taxData, loading: taxLoading, refresh: refreshTax } = useCachedFetch(taxEndpoint);
