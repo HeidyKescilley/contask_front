@@ -103,8 +103,9 @@ const AgentCompaniesView = ({
 }) => {
   const [tempValues, setTempValues] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: gruposData } = useCachedFetch("/company/grupos");
   const [filters, setFilters] = useState({
-    sentToClient: null, isZeroed: null, regime: [], classi: [],
+    sentToClient: null, isZeroed: null, regime: [], classi: [], grupo: [],
   });
   const [sortField, setSortField] = useState("name");
   const [sortDir, setSortDir]     = useState("asc");
@@ -200,39 +201,6 @@ const AgentCompaniesView = ({
   const [obligationModal, setObligationModal] = useState(null); // { company, department }
   const [orientationModal, setOrientationModal] = useState(null); // company object or null
 
-  // ── Notas por período ─────────────────────────────────────────────────────
-  const [periodNotes, setPeriodNotes] = useState({}); // { [companyId]: string }
-  const [tempNotes, setTempNotes] = useState({});      // { [companyId]: string } — valor do input
-
-  useEffect(() => {
-    if (companies.length === 0) return;
-    const ids = companies.map((c) => c.id).join(",");
-    api.get(`/company/period-notes?period=${selectedPeriod}&companyIds=${ids}`)
-      .then(({ data }) => {
-        setPeriodNotes(data);
-        setTempNotes(
-          companies.reduce((acc, c) => ({ ...acc, [c.id]: data[c.id] ?? "" }), {})
-        );
-      })
-      .catch(() => {});
-  }, [companies, selectedPeriod]);
-
-  const handleNoteChange = useCallback((companyId, value) => {
-    if (isReadOnly) return;
-    setTempNotes((prev) => ({ ...prev, [companyId]: value }));
-  }, [isReadOnly]);
-
-  const handleNoteSave = useCallback(async (companyId) => {
-    if (isReadOnly) return;
-    const value = tempNotes[companyId] ?? "";
-    if (value === (periodNotes[companyId] ?? "")) return; // sem mudança
-    try {
-      await api.patch(`/company/period-note/${companyId}`, { period: selectedPeriod, note: value });
-      setPeriodNotes((prev) => ({ ...prev, [companyId]: value }));
-    } catch {
-      toast.error("Erro ao salvar nota.");
-    }
-  }, [isReadOnly, tempNotes, periodNotes, selectedPeriod]);
 
   // Permite edição no mês atual e no mês anterior (período de trabalho do contador)
   const canEditFiscal   = !isReadOnly && user?.department === "Fiscal";
@@ -306,7 +274,14 @@ const AgentCompaniesView = ({
     if (isReadOnly) return;
     try {
       const newValue = !currentValue;
-      await api.patch(`/company/update-agent-data/${companyId}`, { [field]: newValue });
+      const payload = { [field]: newValue };
+      if (field === "isZeroedFiscal" && newValue === true) {
+        payload.bonusValue = 1;
+      }
+      await api.patch(`/company/update-agent-data/${companyId}`, payload);
+      if (field === "isZeroedFiscal" && newValue === true) {
+        setTempValues((prev) => ({ ...prev, [companyId]: { ...prev[companyId], bonusValue: 1 } }));
+      }
       toast.success("Dados atualizados!");
       fetchCompanies();
       // Quando zerado é alterado, refreshar dados de impostos e obrigações
@@ -524,7 +499,7 @@ const AgentCompaniesView = ({
 
   const clearFilters = useCallback(() => {
     setSearchTerm("");
-    setFilters({ sentToClient: null, isZeroed: null, regime: [], classi: [] });
+    setFilters({ sentToClient: null, isZeroed: null, regime: [], classi: [], grupo: [] });
   }, []);
 
   const handleSort = useCallback((field) => {
@@ -565,6 +540,7 @@ const AgentCompaniesView = ({
     }
     if (filters.regime.length > 0) result = result.filter((c) => filters.regime.includes(c.rule));
     if (filters.classi.length  > 0) result = result.filter((c) => filters.classi.includes(c.classi));
+    if (filters.grupo.length   > 0) result = result.filter((c) => filters.grupo.includes(String(c.grupoId)));
     return result.sort((a, b) => {
       const va = String(a[sortField] ?? ""); const vb = String(b[sortField] ?? "");
       const cmp = va.localeCompare(vb, "pt-BR");
@@ -814,6 +790,13 @@ const AgentCompaniesView = ({
               <CheckItem key={c} label={c} checked={filters.classi.includes(c)} onChange={() => toggleArrayFilter("classi", c)} />
             ))}
           </FilterGroup>
+          {(gruposData || []).length > 0 && (
+            <FilterGroup label="Grupo">
+              {(gruposData || []).map((g) => (
+                <CheckItem key={g.id} label={g.name} checked={filters.grupo.includes(String(g.id))} onChange={() => toggleArrayFilter("grupo", String(g.id))} />
+              ))}
+            </FilterGroup>
+          )}
         </div>
       </div>
 
@@ -865,11 +848,9 @@ const AgentCompaniesView = ({
                     {visibleTaxes.map((tax) => (
                       <DeptHeader key={`tax-${tax.id}`} label={tax.name} colSpan={1} color="blue" minWidth="64px" wrap />
                     ))}
-                    {taxesLoading && <DeptHeader label="…" colSpan={1} color="blue" />}
                     {visibleObligations.map((obl) => (
                       <DeptHeader key={`obl-${obl.id}`} label={obl.name} colSpan={1} color="blue" minWidth="72px" wrap />
                     ))}
-                    {obligationsLoading && <DeptHeader label="…" colSpan={1} color="blue" />}
                     <DeptHeader label="Nota" colSpan={1} color="blue" />
                   </>
                 )}
@@ -892,11 +873,9 @@ const AgentCompaniesView = ({
                     {visibleDpTaxes.map((tax) => (
                       <DeptHeader key={`dp-tax-${tax.id}`} label={tax.name} colSpan={1} color="green" minWidth="64px" wrap />
                     ))}
-                    {dpTaxLoading && <DeptHeader label="…" colSpan={1} color="green" />}
                     {visibleDpObligations.map((obl) => (
                       <DeptHeader key={`dp-obl-${obl.id}`} label={obl.name} colSpan={1} color="green" minWidth="72px" wrap />
                     ))}
-                    {dpOblLoading && <DeptHeader label="…" colSpan={1} color="green" />}
                     <DeptHeader label="Func."     colSpan={1} color="green" minWidth="60px" />
                     <DeptHeader label="Conclusão" colSpan={1} color="green" />
                   </>
@@ -920,20 +899,14 @@ const AgentCompaniesView = ({
                     {visibleContabilTaxes.map((tax) => (
                       <DeptHeader key={`cont-tax-${tax.id}`} label={tax.name} colSpan={1} color="yellow" minWidth="64px" wrap />
                     ))}
-                    {contabilTaxLoading && <DeptHeader label="…" colSpan={1} color="yellow" />}
                     {visibleContabilObls.map((obl) => (
                       <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" minWidth="72px" wrap />
                     ))}
-                    {contabilOblLoading && <DeptHeader label="…" colSpan={1} color="yellow" />}
                     <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
                   </>
                 )}
 
-                {/* ── Coluna Obs (período) — todos os departamentos ── */}
-                {(showFiscalColumns || showDpColumns || showContabilColumns) && (
-                  <th className="table-header" style={{ minWidth: "120px" }}>Obs</th>
-                )}
               </tr>
             </thead>
             <tbody>
@@ -1011,7 +984,7 @@ const AgentCompaniesView = ({
                           {company.fiscalCompletedAt ? formatDate(company.fiscalCompletedAt) : "–"}
                         </td>
                         <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1" style={{ width: "56px", minWidth: "56px", maxWidth: "56px" }}>
-                          <input type="number" min={0} value={tempValues[company.id]?.bonusValue ?? ""}
+                          <input type="text" inputMode="numeric" pattern="[0-9]*" value={tempValues[company.id]?.bonusValue ?? ""}
                             onChange={(e) => handleValueChange(company.id, "bonusValue", e.target.value)}
                             onBlur={() => handleSaveOnBlur(company.id, "bonusValue")}
                             disabled={isReadOnly || !canEditFiscal}
@@ -1105,7 +1078,7 @@ const AgentCompaniesView = ({
                           );
                         })}
                         <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1" style={{ width: "56px", minWidth: "56px", maxWidth: "56px" }}>
-                          <input type="number" min={0} value={tempValues[company.id]?.bonusValue ?? ""}
+                          <input type="text" inputMode="numeric" pattern="[0-9]*" value={tempValues[company.id]?.bonusValue ?? ""}
                             onChange={(e) => handleValueChange(company.id, "bonusValue", e.target.value)}
                             onBlur={() => handleSaveOnBlur(company.id, "bonusValue")}
                             disabled={isReadOnly || !canEditFiscal}
@@ -1265,7 +1238,7 @@ const AgentCompaniesView = ({
                             )}
                           </td>
                           <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1">
-                            <input type="number" value={tempValues[company.id]?.accountingMonthsCount ?? ""}
+                            <input type="text" inputMode="numeric" pattern="[0-9]*" value={tempValues[company.id]?.accountingMonthsCount ?? ""}
                               onChange={(e) => handleValueChange(company.id, "accountingMonthsCount", e.target.value)}
                               onBlur={() => handleSaveOnBlur(company.id, "accountingMonthsCount")}
                               disabled={isReadOnly || !canEditContabil}
@@ -1360,20 +1333,6 @@ const AgentCompaniesView = ({
                       </>
                     )}
 
-                    {/* ── Obs (nota por período) ── */}
-                    {(showFiscalColumns || showDpColumns || showContabilColumns) && (
-                      <td className="table-cell !px-1" style={{ minWidth: "120px" }}>
-                        <input
-                          type="text"
-                          value={tempNotes[company.id] ?? ""}
-                          onChange={(e) => handleNoteChange(company.id, e.target.value)}
-                          onBlur={() => handleNoteSave(company.id)}
-                          disabled={isReadOnly}
-                          placeholder="—"
-                          className="input-base !py-1 !text-xs !w-full disabled:opacity-40"
-                        />
-                      </td>
-                    )}
                   </tr>
                 );
               })}

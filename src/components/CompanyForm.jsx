@@ -15,6 +15,7 @@ import {
 } from "react-icons/fi";
 import api from "../utils/api";
 import AddContactModeModal from "./AddContactModeModal";
+import AddGrupoModal from "./AddGrupoModal";
 import { useAuth } from "../hooks/useAuth";
 import {
   applyDocumentMask,
@@ -97,6 +98,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     respContabilId:   data.respContabilId   || "",
     respDpId:         data.respDpId         || "",
     contactModeId:    data.contactModeId    || "",
+    grupoId:          data.grupoId          || "",
     branchNumber:     data.isHeadquarters ? "1" : (data.branchNumber || ""),
     isHeadquarters:   data.isHeadquarters   || false,
   });
@@ -134,6 +136,8 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   const [dpUsers, setDpUsers]           = useState([]);
   const [contactModes, setContactModes] = useState([]);
   const [showAddContactModeModal, setShowAddContactModeModal] = useState(false);
+  const [grupos, setGrupos] = useState([]);
+  const [showAddGrupoModal, setShowAddGrupoModal] = useState(false);
 
   // ── Obrigações Acessórias ────────────────────────────────────────────────
   const [companyObligations, setCompanyObligations] = useState([]);
@@ -193,6 +197,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
 
   useEffect(() => {
     fetchContactModes();
+    fetchGrupos();
     if (type === "edit") {
       fetchUsersByDepartment("Fiscal",  setFiscalUsers);
       fetchUsersByDepartment("Contábil", setContabilUsers);
@@ -249,6 +254,26 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       setShowAddContactModeModal(false);
     } catch (err) {
       console.error("Erro ao adicionar nova forma de envio:", err);
+    }
+  };
+
+  const fetchGrupos = async () => {
+    try {
+      const res = await api.get("/company/grupos");
+      setGrupos(res.data);
+    } catch (err) {
+      console.error("Erro ao buscar grupos:", err);
+    }
+  };
+
+  const handleAddGrupo = async (name) => {
+    try {
+      const res = await api.post("/company/grupos", { name });
+      fetchGrupos();
+      setFormData((prev) => ({ ...prev, grupoId: res.data.grupo.id }));
+      setShowAddGrupoModal(false);
+    } catch (err) {
+      console.error("Erro ao adicionar grupo:", err);
     }
   };
 
@@ -329,6 +354,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
       respContabilId: formData.respContabilId || null,
       respDpId:       formData.respDpId       || null,
       contactModeId:  formData.contactModeId  || null,
+      grupoId:        formData.grupoId        || null,
       contact:        formData.contact        || null,
       contractInit:   formData.contractInit   || null,
       important_info: formData.important_info || "",
@@ -649,6 +675,29 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
               </select>
             </div>
           )}
+          <div>
+            <label className="label-base flex items-center justify-between">
+              <span>Grupo</span>
+              <button
+                type="button"
+                onClick={() => setShowAddGrupoModal(true)}
+                className="text-[10px] text-primary-600 dark:text-primary-400 hover:underline font-normal normal-case tracking-normal"
+              >
+                + Novo grupo
+              </button>
+            </label>
+            <select
+              name="grupoId"
+              className="input-base"
+              value={formData.grupoId || ""}
+              onChange={handleChange}
+            >
+              <option value="">Sem grupo</option>
+              {grupos.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* ─────────────────────────────────────────────────────────────────
@@ -976,6 +1025,12 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         <AddContactModeModal
           onClose={() => setShowAddContactModeModal(false)}
           onSave={handleAddContactMode}
+        />
+      )}
+      {showAddGrupoModal && (
+        <AddGrupoModal
+          onClose={() => setShowAddGrupoModal(false)}
+          onSave={handleAddGrupo}
         />
       )}
     </>

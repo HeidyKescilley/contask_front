@@ -27,7 +27,7 @@ const CheckItem = ({ value, checked, onChange, label }) => (
   </label>
 );
 
-const CompanyFilters = ({ filters, setFilters, onClearFilters }) => {
+const CompanyFilters = ({ filters, setFilters, onClearFilters, grupos = [] }) => {
   const { openAddCompanyModal } = useContext(CompanyModalContext);
 
   const searchColumns = [
@@ -56,6 +56,7 @@ const CompanyFilters = ({ filters, setFilters, onClearFilters }) => {
     filters.regime.length,
     filters.situacao.length,
     filters.classificacao.length,
+    filters.grupo?.length ?? 0,
     filters.semFiscal ? 1 : 0,
     filters.semDp     ? 1 : 0,
     filters.showArchived ? 1 : 0,
@@ -166,6 +167,21 @@ const CompanyFilters = ({ filters, setFilters, onClearFilters }) => {
             label="Sem Resp. DP"
           />
         </FilterGroup>
+
+        {/* Grupo */}
+        {grupos.length > 0 && (
+          <FilterGroup label="Grupo">
+            {grupos.map((g) => (
+              <CheckItem
+                key={g.id}
+                value={String(g.id)}
+                checked={(filters.grupo ?? []).includes(String(g.id))}
+                onChange={() => toggle("grupo", String(g.id))}
+                label={g.name}
+              />
+            ))}
+          </FilterGroup>
+        )}
 
         {/* Visualização */}
         <FilterGroup label="Visualização">

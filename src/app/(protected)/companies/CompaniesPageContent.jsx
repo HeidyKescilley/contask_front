@@ -16,6 +16,7 @@ import useCachedFetch from "../../../hooks/useCachedFetch";
 
 const CompaniesPageContent = () => {
   const { data: companiesData, refresh: fetchCompanies } = useCachedFetch("/company/all");
+  const { data: gruposData } = useCachedFetch("/company/grupos");
   const companies = useMemo(() => companiesData || [], [companiesData]);
   const [filters, setFilters] = useState({
     searchColumn: "name",
@@ -23,6 +24,7 @@ const CompaniesPageContent = () => {
     regime: [],
     situacao: [],
     classificacao: [],
+    grupo: [],
     semFiscal: false,
     semDp: false,
     showArchived: false,
@@ -101,6 +103,10 @@ const CompaniesPageContent = () => {
       filtered = filtered.filter((company) =>
         filters.classificacao.includes(company.classi)
       );
+    }
+
+    if (filters.grupo.length > 0) {
+      filtered = filtered.filter((c) => filters.grupo.includes(String(c.grupoId)));
     }
 
     if (filters.semFiscal && filters.semDp) {
@@ -211,6 +217,7 @@ const CompaniesPageContent = () => {
       <CompanyFilters
         filters={filters}
         setFilters={setFilters}
+        grupos={gruposData || []}
         onClearFilters={() =>
           setFilters({
             searchColumn: "name",
@@ -218,6 +225,7 @@ const CompaniesPageContent = () => {
             regime: [],
             situacao: [],
             classificacao: [],
+            grupo: [],
             semFiscal: false,
             semDp: false,
             showArchived: false,
