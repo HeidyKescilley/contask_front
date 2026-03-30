@@ -153,6 +153,11 @@ const AgentCompaniesView = ({
   const currentPeriod = useMemo(() => oblData?.period || null, [oblData]);
   const taxes = useMemo(() => taxData?.taxes || [], [taxData]);
 
+  const dpTaxes       = useMemo(() => dpTaxData?.taxes        || [], [dpTaxData]);
+  const dpObligations = useMemo(() => dpOblData?.obligations   || [], [dpOblData]);
+  const contabilTaxes = useMemo(() => contabilTaxData?.taxes   || [], [contabilTaxData]);
+  const contabilObls  = useMemo(() => contabilOblData?.obligations || [], [contabilOblData]);
+
   const dpCurrentPeriod = useMemo(() => dpOblData?.period || dpTaxData?.period || null, [dpOblData, dpTaxData]);
   const contabilCurrentPeriod = useMemo(() => contabilOblData?.period || contabilTaxData?.period || null, [contabilOblData, contabilTaxData]);
 
@@ -173,6 +178,25 @@ const AgentCompaniesView = ({
     setFiscalViewMode(mode);
     if (typeof window !== "undefined") localStorage.setItem("contask_fiscal_view_mode", mode);
   }, []);
+
+  const [dpViewMode, setDpViewMode] = useState(() => {
+    if (typeof window === "undefined") return "compact";
+    return localStorage.getItem("contask_dp_view_mode") || "compact";
+  });
+  const handleSetDpViewMode = useCallback((mode) => {
+    setDpViewMode(mode);
+    if (typeof window !== "undefined") localStorage.setItem("contask_dp_view_mode", mode);
+  }, []);
+
+  const [contabilViewMode, setContabilViewMode] = useState(() => {
+    if (typeof window === "undefined") return "compact";
+    return localStorage.getItem("contask_contabil_view_mode") || "compact";
+  });
+  const handleSetContabilViewMode = useCallback((mode) => {
+    setContabilViewMode(mode);
+    if (typeof window !== "undefined") localStorage.setItem("contask_contabil_view_mode", mode);
+  }, []);
+
   const [obligationModal, setObligationModal] = useState(null); // { company, department }
   const [orientationModal, setOrientationModal] = useState(null); // company object or null
 
@@ -359,6 +383,104 @@ const AgentCompaniesView = ({
     }
   }, [isReadOnly, canEditFiscal, refreshTaxData]);
 
+  // ── Atualizar status de imposto (modo tabela DP) ─────────────────────────
+  const handleDpTaxToggle = useCallback(async (statusId, currentStatus) => {
+    if (isReadOnly || !canEditDp) return;
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+    try {
+      await api.patch(`/tax/status/${statusId}`, { status: newStatus });
+      setDpTaxStatuses((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((companyId) => {
+          next[companyId] = next[companyId].map((t) =>
+            t.statusId === statusId ? { ...t, status: newStatus } : t
+          );
+        });
+        return next;
+      });
+      refreshDpTaxData();
+    } catch {
+      toast.error("Erro ao atualizar imposto.");
+    }
+  }, [isReadOnly, canEditDp, refreshDpTaxData]);
+
+  // ── Atualizar status de obrigação (modo tabela DP) ────────────────────────
+  const handleDpObligationToggle = useCallback(async (statusId, currentStatus, isConditional) => {
+    if (isReadOnly || !canEditDp) return;
+    let newStatus;
+    if (isConditional) {
+      if (currentStatus === "pending") newStatus = "completed";
+      else if (currentStatus === "completed") newStatus = "not_applicable";
+      else newStatus = "pending";
+    } else {
+      newStatus = currentStatus === "completed" ? "pending" : "completed";
+    }
+    try {
+      await api.patch(`/obligation/status/${statusId}`, { status: newStatus });
+      setDpObligationStatuses((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((companyId) => {
+          next[companyId] = next[companyId].map((o) =>
+            o.statusId === statusId ? { ...o, status: newStatus } : o
+          );
+        });
+        return next;
+      });
+      refreshDpOblData();
+    } catch {
+      toast.error("Erro ao atualizar obrigação.");
+    }
+  }, [isReadOnly, canEditDp, refreshDpOblData]);
+
+  // ── Atualizar status de imposto (modo tabela Contábil) ────────────────────
+  const handleContabilTaxToggle = useCallback(async (statusId, currentStatus) => {
+    if (isReadOnly || !canEditContabil) return;
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+    try {
+      await api.patch(`/tax/status/${statusId}`, { status: newStatus });
+      setContabilTaxStatuses((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((companyId) => {
+          next[companyId] = next[companyId].map((t) =>
+            t.statusId === statusId ? { ...t, status: newStatus } : t
+          );
+        });
+        return next;
+      });
+      refreshContabilTaxData();
+    } catch {
+      toast.error("Erro ao atualizar imposto.");
+    }
+  }, [isReadOnly, canEditContabil, refreshContabilTaxData]);
+
+  // ── Atualizar status de obrigação (modo tabela Contábil) ──────────────────
+  const handleContabilObligationToggle = useCallback(async (statusId, currentStatus, isConditional) => {
+    if (isReadOnly || !canEditContabil) return;
+    let newStatus;
+    if (isConditional) {
+      if (currentStatus === "pending") newStatus = "completed";
+      else if (currentStatus === "completed") newStatus = "not_applicable";
+      else newStatus = "pending";
+    } else {
+      newStatus = currentStatus === "completed" ? "pending" : "completed";
+    }
+    try {
+      await api.patch(`/obligation/status/${statusId}`, { status: newStatus });
+      setContabilObligationStatuses((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((companyId) => {
+          next[companyId] = next[companyId].map((o) =>
+            o.statusId === statusId ? { ...o, status: newStatus } : o
+          );
+        });
+        return next;
+      });
+      refreshContabilOblData();
+    } catch {
+      toast.error("Erro ao atualizar obrigação.");
+    }
+  }, [isReadOnly, canEditContabil, refreshContabilOblData]);
+
   // ── Atualizar status de obrigação (modo tabela Fiscal) ────────────────────
   const handleObligationToggle = useCallback(async (statusId, currentStatus, isConditional) => {
     if (isReadOnly || !canEditFiscal) return;
@@ -470,6 +592,15 @@ const AgentCompaniesView = ({
   const getTaxStatus = (companyId, taxId) =>
     (taxStatuses[companyId] || []).find((t) => t.taxId === taxId);
 
+  const getDpTaxStatus = (companyId, taxId) =>
+    (dpTaxStatuses[companyId] || []).find((t) => t.taxId === taxId);
+  const getDpOblStatus = (companyId, oblId) =>
+    (dpObligationStatuses[companyId] || []).find((o) => o.obligationId === oblId);
+  const getContabilTaxStatus = (companyId, taxId) =>
+    (contabilTaxStatuses[companyId] || []).find((t) => t.taxId === taxId);
+  const getContabilOblStatus = (companyId, oblId) =>
+    (contabilObligationStatuses[companyId] || []).find((o) => o.obligationId === oblId);
+
   const getDpOblStats = (companyId) => {
     const obls = (dpObligationStatuses[companyId] || []).filter((o) => o.status !== "disabled");
     return { total: obls.length, completed: obls.filter((o) => o.status === "completed").length };
@@ -503,6 +634,38 @@ const AgentCompaniesView = ({
       companies.some((c) => (obligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
     );
   }, [obligations, obligationStatuses, companies, showFiscalColumns, fiscalViewMode, obligationsLoading]);
+
+  const visibleDpTaxes = useMemo(() => {
+    if (!showDpColumns || dpViewMode !== "table") return dpTaxes;
+    if (dpTaxLoading || Object.keys(dpTaxStatuses).length === 0) return dpTaxes;
+    return dpTaxes.filter((tax) =>
+      companies.some((c) => (dpTaxStatuses[c.id] || []).some((t) => t.taxId === tax.id))
+    );
+  }, [dpTaxes, dpTaxStatuses, companies, showDpColumns, dpViewMode, dpTaxLoading]);
+
+  const visibleDpObligations = useMemo(() => {
+    if (!showDpColumns || dpViewMode !== "table") return dpObligations;
+    if (dpOblLoading || Object.keys(dpObligationStatuses).length === 0) return dpObligations;
+    return dpObligations.filter((obl) =>
+      companies.some((c) => (dpObligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
+    );
+  }, [dpObligations, dpObligationStatuses, companies, showDpColumns, dpViewMode, dpOblLoading]);
+
+  const visibleContabilTaxes = useMemo(() => {
+    if (!showContabilColumns || contabilViewMode !== "table") return contabilTaxes;
+    if (contabilTaxLoading || Object.keys(contabilTaxStatuses).length === 0) return contabilTaxes;
+    return contabilTaxes.filter((tax) =>
+      companies.some((c) => (contabilTaxStatuses[c.id] || []).some((t) => t.taxId === tax.id))
+    );
+  }, [contabilTaxes, contabilTaxStatuses, companies, showContabilColumns, contabilViewMode, contabilTaxLoading]);
+
+  const visibleContabilObls = useMemo(() => {
+    if (!showContabilColumns || contabilViewMode !== "table") return contabilObls;
+    if (contabilOblLoading || Object.keys(contabilObligationStatuses).length === 0) return contabilObls;
+    return contabilObls.filter((obl) =>
+      companies.some((c) => (contabilObligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
+    );
+  }, [contabilObls, contabilObligationStatuses, companies, showContabilColumns, contabilViewMode, contabilOblLoading]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -539,6 +702,66 @@ const AgentCompaniesView = ({
                   onClick={() => handleSetFiscalViewMode("table")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-l border-gray-200 dark:border-dark-border transition-colors ${
                     fiscalViewMode === "table"
+                      ? "bg-primary-500 text-white"
+                      : "bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:bg-gray-50"
+                  }`}
+                >
+                  <FiGrid size={13} /> Tabela
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Toggle modo DP */}
+          {showDpColumns && (
+            <div className="flex flex-col gap-1">
+              <label className="label-base">Visualização</label>
+              <div className="flex border border-gray-200 dark:border-dark-border rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => handleSetDpViewMode("compact")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    dpViewMode === "compact"
+                      ? "bg-primary-500 text-white"
+                      : "bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:bg-gray-50"
+                  }`}
+                >
+                  <FiList size={13} /> Compacto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetDpViewMode("table")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-l border-gray-200 dark:border-dark-border transition-colors ${
+                    dpViewMode === "table"
+                      ? "bg-primary-500 text-white"
+                      : "bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:bg-gray-50"
+                  }`}
+                >
+                  <FiGrid size={13} /> Tabela
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Toggle modo Contábil */}
+          {showContabilColumns && (
+            <div className="flex flex-col gap-1">
+              <label className="label-base">Visualização</label>
+              <div className="flex border border-gray-200 dark:border-dark-border rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => handleSetContabilViewMode("compact")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    contabilViewMode === "compact"
+                      ? "bg-primary-500 text-white"
+                      : "bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:bg-gray-50"
+                  }`}
+                >
+                  <FiList size={13} /> Compacto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetContabilViewMode("table")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-l border-gray-200 dark:border-dark-border transition-colors ${
+                    contabilViewMode === "table"
                       ? "bg-primary-500 text-white"
                       : "bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:bg-gray-50"
                   }`}
@@ -651,8 +874,8 @@ const AgentCompaniesView = ({
                   </>
                 )}
 
-                {/* ── Colunas DP ── */}
-                {showDpColumns && (
+                {/* ── Colunas DP — Modo Compacto ── */}
+                {showDpColumns && dpViewMode === "compact" && (
                   <>
                     <DeptHeader label="Zerado"     colSpan={1} color="green" />
                     <DeptHeader label="Impostos"   colSpan={1} color="green" minWidth="150px" />
@@ -662,12 +885,46 @@ const AgentCompaniesView = ({
                   </>
                 )}
 
-                {/* ── Colunas Contábil ── */}
-                {showContabilColumns && (
+                {/* ── Colunas DP — Modo Tabela ── */}
+                {showDpColumns && dpViewMode === "table" && (
+                  <>
+                    <DeptHeader label="Zerado" colSpan={1} color="green" />
+                    {visibleDpTaxes.map((tax) => (
+                      <DeptHeader key={`dp-tax-${tax.id}`} label={tax.name} colSpan={1} color="green" minWidth="64px" wrap />
+                    ))}
+                    {dpTaxLoading && <DeptHeader label="…" colSpan={1} color="green" />}
+                    {visibleDpObligations.map((obl) => (
+                      <DeptHeader key={`dp-obl-${obl.id}`} label={obl.name} colSpan={1} color="green" minWidth="72px" wrap />
+                    ))}
+                    {dpOblLoading && <DeptHeader label="…" colSpan={1} color="green" />}
+                    <DeptHeader label="Func."     colSpan={1} color="green" minWidth="60px" />
+                    <DeptHeader label="Conclusão" colSpan={1} color="green" />
+                  </>
+                )}
+
+                {/* ── Colunas Contábil — Modo Compacto ── */}
+                {showContabilColumns && contabilViewMode === "compact" && (
                   <>
                     <DeptHeader label="Zerado"      colSpan={1} color="yellow" />
                     <DeptHeader label="Impostos"    colSpan={1} color="yellow" minWidth="150px" />
                     <DeptHeader label="Obrigações"  colSpan={1} color="yellow" minWidth="150px" />
+                    <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
+                    <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
+                  </>
+                )}
+
+                {/* ── Colunas Contábil — Modo Tabela ── */}
+                {showContabilColumns && contabilViewMode === "table" && (
+                  <>
+                    <DeptHeader label="Zerado" colSpan={1} color="yellow" />
+                    {visibleContabilTaxes.map((tax) => (
+                      <DeptHeader key={`cont-tax-${tax.id}`} label={tax.name} colSpan={1} color="yellow" minWidth="64px" wrap />
+                    ))}
+                    {contabilTaxLoading && <DeptHeader label="…" colSpan={1} color="yellow" />}
+                    {visibleContabilObls.map((obl) => (
+                      <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" minWidth="72px" wrap />
+                    ))}
+                    {contabilOblLoading && <DeptHeader label="…" colSpan={1} color="yellow" />}
                     <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
                   </>
@@ -857,8 +1114,8 @@ const AgentCompaniesView = ({
                       </>
                     )}
 
-                    {/* ── DP ──────────────────────────────────────────────────── */}
-                    {showDpColumns && (() => {
+                    {/* ── DP Compacto ─────────────────────────────────────────── */}
+                    {showDpColumns && dpViewMode === "compact" && (() => {
                       const { completed: dpTaxComp, total: dpTaxTot } = getDpTaxStats(company.id);
                       const { completed: dpOblComp, total: dpOblTot } = getDpOblStats(company.id);
                       return (
@@ -874,29 +1131,21 @@ const AgentCompaniesView = ({
                             {dpTaxLoading ? (
                               <div className="h-1.5 w-24 bg-gray-200 dark:bg-dark-border rounded-full animate-pulse" />
                             ) : (
-                              <ObligationBar
-                                completed={dpTaxComp}
-                                total={dpTaxTot}
-                                onOpen={() => setObligationModal({ company, department: "Pessoal" })}
-                              />
+                              <ObligationBar completed={dpTaxComp} total={dpTaxTot} onOpen={() => setObligationModal({ company, department: "Pessoal" })} />
                             )}
                           </td>
                           <td className="table-cell border-l border-gray-100 dark:border-dark-border">
                             {dpOblLoading ? (
                               <div className="h-1.5 w-24 bg-gray-200 dark:bg-dark-border rounded-full animate-pulse" />
                             ) : (
-                              <ObligationBar
-                                completed={dpOblComp}
-                                total={dpOblTot}
-                                onOpen={() => setObligationModal({ company, department: "Pessoal" })}
-                              />
+                              <ObligationBar completed={dpOblComp} total={dpOblTot} onOpen={() => setObligationModal({ company, department: "Pessoal" })} />
                             )}
                           </td>
                           <td className="table-cell overflow-hidden !px-1">
                             <input type="text" value={tempValues[company.id]?.employeesCount ?? ""}
                               onChange={(e) => handleValueChange(company.id, "employeesCount", e.target.value)}
                               onBlur={() => handleSaveOnBlur(company.id, "employeesCount")}
-                              disabled={isReadOnly || !canEditDp || !company.dpCompletedAt || company.isZeroedDp}
+                              disabled={isReadOnly || !canEditDp || company.isZeroedDp}
                               className="input-base text-center !py-1 !text-xs !w-full disabled:opacity-40" />
                           </td>
                           <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
@@ -906,8 +1155,90 @@ const AgentCompaniesView = ({
                       );
                     })()}
 
-                    {/* ── Contábil ────────────────────────────────────────────── */}
-                    {showContabilColumns && (() => {
+                    {/* ── DP Tabela ────────────────────────────────────────────── */}
+                    {showDpColumns && dpViewMode === "table" && (
+                      <>
+                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                          {isReadOnly ? <StatusDot checked={company.isZeroedDp} variant="purple" />
+                            : <AgentCheckbox checked={company.isZeroedDp}
+                                onChange={() => handleCheckboxChange(company.id, "isZeroedDp", company.isZeroedDp)}
+                                disabled={!canEditDp} variant="purple" />
+                          }
+                        </td>
+                        {visibleDpTaxes.map((tax) => {
+                          const taxSt = getDpTaxStatus(company.id, tax.id);
+                          const status = taxSt?.status;
+                          const statusId = taxSt?.statusId;
+                          const isDisabled = status === "disabled";
+                          const isCompleted = status === "completed";
+                          return (
+                            <td key={`dp-tax-${tax.id}`} className="table-cell text-center border-l border-gray-100 dark:border-dark-border !px-1">
+                              {!taxSt ? (
+                                <span className="text-gray-200 dark:text-gray-700 text-xs">–</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => !isDisabled && !isReadOnly && canEditDp && handleDpTaxToggle(statusId, status)}
+                                  disabled={isDisabled || isReadOnly || !canEditDp}
+                                  title={tax.name}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
+                                    isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
+                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                  }`}
+                                >
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                        {visibleDpObligations.map((obl) => {
+                          const oblStatus = getDpOblStatus(company.id, obl.id);
+                          const status = oblStatus?.status;
+                          const statusId = oblStatus?.statusId;
+                          const isDisabled = status === "disabled" || !dpObligationStatuses[company.id];
+                          const isNotApplicable = status === "not_applicable";
+                          const isCompleted = status === "completed";
+                          const isInactive = isDisabled || (isNotApplicable && !obl.isConditional);
+                          return (
+                            <td key={`dp-obl-${obl.id}`} className="table-cell text-center border-l border-gray-100 dark:border-dark-border !px-1">
+                              {!oblStatus ? (
+                                <span className="text-gray-200 dark:text-gray-700 text-xs">–</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => !isInactive && !isReadOnly && canEditDp && handleDpObligationToggle(statusId, status, obl.isConditional)}
+                                  disabled={isInactive || isReadOnly || !canEditDp}
+                                  title={isNotApplicable ? `${obl.name} (Não se aplica)` : obl.name}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
+                                    isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
+                                    : isNotApplicable ? "bg-amber-100 dark:bg-amber-900/30 text-amber-400 hover:bg-amber-200 cursor-pointer"
+                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                  }`}
+                                >
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-amber-400" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="table-cell overflow-hidden !px-1">
+                          <input type="text" value={tempValues[company.id]?.employeesCount ?? ""}
+                            onChange={(e) => handleValueChange(company.id, "employeesCount", e.target.value)}
+                            onBlur={() => handleSaveOnBlur(company.id, "employeesCount")}
+                            disabled={isReadOnly || !canEditDp || company.isZeroedDp}
+                            className="input-base text-center !py-1 !text-xs !w-full disabled:opacity-40" />
+                        </td>
+                        <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
+                          {company.dpCompletedAt ? formatDate(company.dpCompletedAt) : "–"}
+                        </td>
+                      </>
+                    )}
+
+                    {/* ── Contábil Compacto ────────────────────────────────────── */}
+                    {showContabilColumns && contabilViewMode === "compact" && (() => {
                       const { completed: cTaxComp, total: cTaxTot } = getContabilTaxStats(company.id);
                       const { completed: cOblComp, total: cOblTot } = getContabilOblStats(company.id);
                       return (
@@ -923,22 +1254,14 @@ const AgentCompaniesView = ({
                             {contabilTaxLoading ? (
                               <div className="h-1.5 w-24 bg-gray-200 dark:bg-dark-border rounded-full animate-pulse" />
                             ) : (
-                              <ObligationBar
-                                completed={cTaxComp}
-                                total={cTaxTot}
-                                onOpen={() => setObligationModal({ company, department: "Contábil" })}
-                              />
+                              <ObligationBar completed={cTaxComp} total={cTaxTot} onOpen={() => setObligationModal({ company, department: "Contábil" })} />
                             )}
                           </td>
                           <td className="table-cell border-l border-gray-100 dark:border-dark-border">
                             {contabilOblLoading ? (
                               <div className="h-1.5 w-24 bg-gray-200 dark:bg-dark-border rounded-full animate-pulse" />
                             ) : (
-                              <ObligationBar
-                                completed={cOblComp}
-                                total={cOblTot}
-                                onOpen={() => setObligationModal({ company, department: "Contábil" })}
-                              />
+                              <ObligationBar completed={cOblComp} total={cOblTot} onOpen={() => setObligationModal({ company, department: "Contábil" })} />
                             )}
                           </td>
                           <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1">
@@ -954,6 +1277,88 @@ const AgentCompaniesView = ({
                         </>
                       );
                     })()}
+
+                    {/* ── Contábil Tabela ──────────────────────────────────────── */}
+                    {showContabilColumns && contabilViewMode === "table" && (
+                      <>
+                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                          {isReadOnly ? <StatusDot checked={company.isZeroedContabil} variant="purple" />
+                            : <AgentCheckbox checked={company.isZeroedContabil}
+                                onChange={() => handleCheckboxChange(company.id, "isZeroedContabil", company.isZeroedContabil)}
+                                disabled={!canEditContabil} variant="purple" />
+                          }
+                        </td>
+                        {visibleContabilTaxes.map((tax) => {
+                          const taxSt = getContabilTaxStatus(company.id, tax.id);
+                          const status = taxSt?.status;
+                          const statusId = taxSt?.statusId;
+                          const isDisabled = status === "disabled";
+                          const isCompleted = status === "completed";
+                          return (
+                            <td key={`cont-tax-${tax.id}`} className="table-cell text-center border-l border-gray-100 dark:border-dark-border !px-1">
+                              {!taxSt ? (
+                                <span className="text-gray-200 dark:text-gray-700 text-xs">–</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => !isDisabled && !isReadOnly && canEditContabil && handleContabilTaxToggle(statusId, status)}
+                                  disabled={isDisabled || isReadOnly || !canEditContabil}
+                                  title={tax.name}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
+                                    isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
+                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                  }`}
+                                >
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                        {visibleContabilObls.map((obl) => {
+                          const oblStatus = getContabilOblStatus(company.id, obl.id);
+                          const status = oblStatus?.status;
+                          const statusId = oblStatus?.statusId;
+                          const isDisabled = status === "disabled" || !contabilObligationStatuses[company.id];
+                          const isNotApplicable = status === "not_applicable";
+                          const isCompleted = status === "completed";
+                          const isInactive = isDisabled || (isNotApplicable && !obl.isConditional);
+                          return (
+                            <td key={`cont-obl-${obl.id}`} className="table-cell text-center border-l border-gray-100 dark:border-dark-border !px-1">
+                              {!oblStatus ? (
+                                <span className="text-gray-200 dark:text-gray-700 text-xs">–</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => !isInactive && !isReadOnly && canEditContabil && handleContabilObligationToggle(statusId, status, obl.isConditional)}
+                                  disabled={isInactive || isReadOnly || !canEditContabil}
+                                  title={isNotApplicable ? `${obl.name} (Não se aplica)` : obl.name}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
+                                    isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
+                                    : isNotApplicable ? "bg-amber-100 dark:bg-amber-900/30 text-amber-400 hover:bg-amber-200 cursor-pointer"
+                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                  }`}
+                                >
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-amber-400" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1">
+                          <input type="number" value={tempValues[company.id]?.accountingMonthsCount ?? ""}
+                            onChange={(e) => handleValueChange(company.id, "accountingMonthsCount", e.target.value)}
+                            onBlur={() => handleSaveOnBlur(company.id, "accountingMonthsCount")}
+                            disabled={isReadOnly || !canEditContabil}
+                            className="input-base text-center !py-1 !text-xs disabled:opacity-40" />
+                        </td>
+                        <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
+                          {company.contabilCompletedAt ? formatDate(company.contabilCompletedAt) : "–"}
+                        </td>
+                      </>
+                    )}
 
                     {/* ── Obs (nota por período) ── */}
                     {(showFiscalColumns || showDpColumns || showContabilColumns) && (

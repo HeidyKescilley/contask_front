@@ -828,7 +828,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
             <SectionDivider label="Impostos" />
             {taxesLoading ? (
               <p className="text-xs text-gray-400 mb-4">Carregando impostos...</p>
-            ) : companyTaxes.length === 0 ? (
+            ) : companyTaxes.length === 0 && excludedTaxes.length === 0 ? (
               <p className="text-xs text-gray-400 mb-4">
                 Nenhum imposto aplicável a esta empresa no período atual.
               </p>

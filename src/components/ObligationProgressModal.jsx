@@ -83,7 +83,9 @@ const TaxItem = ({ tax, onToggle, updating }) => {
 // ── Modal principal ───────────────────────────────────────────────────────────
 const ObligationProgressModal = ({ company, onClose, currentPeriod, department = "Fiscal" }) => {
   const [obligations, setObligations] = useState([]);
+  const [excludedObligations, setExcludedObligations] = useState([]);
   const [taxes, setTaxes] = useState([]);
+  const [excludedTaxes, setExcludedTaxes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null); // statusId being updated
 
@@ -102,7 +104,9 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
         api.get(`/tax/company/${company.id}?${taxParams}`),
       ]);
       setObligations(oblRes.data.filter((o) => !o.isManuallyExcluded));
+      setExcludedObligations(oblRes.data.filter((o) => o.isManuallyExcluded));
       setTaxes(taxRes.data.filter((t) => !t.isManuallyExcluded && t.statusId));
+      setExcludedTaxes(taxRes.data.filter((t) => t.isManuallyExcluded));
     } catch {
       toast.error("Erro ao carregar dados.");
     } finally {
@@ -324,10 +328,33 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
               </div>
             )}
 
-            {taxes.length === 0 && obligations.length === 0 && (
+            {taxes.length === 0 && obligations.length === 0 && excludedTaxes.length === 0 && excludedObligations.length === 0 && (
               <p className="py-6 text-center text-sm text-gray-400">
                 Nenhum imposto ou obrigação aplicável a esta empresa.
               </p>
+            )}
+
+            {/* ── Excluídos desta empresa ── */}
+            {(excludedTaxes.length > 0 || excludedObligations.length > 0) && (
+              <div className="border-t border-dashed border-gray-200 dark:border-dark-border pt-3">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Excluídos desta empresa</p>
+                <div className="space-y-1">
+                  {excludedTaxes.map((tax) => (
+                    <div key={`excl-tax-${tax.id}`} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-dark-border opacity-60">
+                      <FiSlash size={11} className="text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-400 line-through truncate">{tax.name}</span>
+                      <span className="ml-auto text-[10px] badge-gray">Imposto excluído</span>
+                    </div>
+                  ))}
+                  {excludedObligations.map((obl) => (
+                    <div key={`excl-obl-${obl.id}`} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-dark-border opacity-60">
+                      <FiSlash size={11} className="text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-400 line-through truncate">{obl.name}</span>
+                      <span className="ml-auto text-[10px] badge-gray">Obrigação excluída</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}

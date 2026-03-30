@@ -14,12 +14,14 @@ function getCurrentMonthString(date = new Date()) {
 
 function getPreviousMonthString() {
   const d = new Date();
+  d.setDate(1); // evita overflow em dias 29-31 (ex: 30/mar → 30/fev = 2/mar)
   d.setMonth(d.getMonth() - 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function getMaxPeriod() {
   const d = new Date();
+  d.setDate(1); // evita overflow em dias 29-31
   d.setMonth(d.getMonth() + MAX_FUTURE_MONTHS);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
