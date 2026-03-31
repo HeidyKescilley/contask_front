@@ -49,12 +49,25 @@ const CheckItem = ({ checked, onChange, label }) => (
   </label>
 );
 
-const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap }) => {
+const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap, vertical }) => {
   const colors = {
     blue:   "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
     green:  "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
     yellow: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
   };
+  if (vertical) {
+    return (
+      <th
+        colSpan={colSpan}
+        style={{ width: "32px", maxWidth: "32px", minWidth: "32px" }}
+        className={`table-header text-center border-l border-gray-200 dark:border-dark-border ${colors[color]}`}
+      >
+        <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", whiteSpace: "nowrap" }}>
+          {label}
+        </div>
+      </th>
+    );
+  }
   const style = (minWidth || maxWidth) ? { ...(minWidth ? { minWidth } : {}), ...(maxWidth ? { width: maxWidth, maxWidth } : {}) } : undefined;
   return (
     <th
@@ -597,51 +610,51 @@ const AgentCompaniesView = ({
   // ── Colunas visíveis no modo tabela (só impostos/obrigações que o usuário possui) ──
   const visibleTaxes = useMemo(() => {
     if (!showFiscalColumns || fiscalViewMode !== "table") return taxes;
-    if (taxesLoading || Object.keys(taxStatuses).length === 0) return taxes;
+    if (Object.keys(taxStatuses).length === 0) return taxes;
     return taxes.filter((tax) =>
       companies.some((c) => (taxStatuses[c.id] || []).some((t) => t.taxId === tax.id))
     );
-  }, [taxes, taxStatuses, companies, showFiscalColumns, fiscalViewMode, taxesLoading]);
+  }, [taxes, taxStatuses, companies, showFiscalColumns, fiscalViewMode]);
 
   const visibleObligations = useMemo(() => {
     if (!showFiscalColumns || fiscalViewMode !== "table") return obligations;
-    if (obligationsLoading || Object.keys(obligationStatuses).length === 0) return obligations;
+    if (Object.keys(obligationStatuses).length === 0) return obligations;
     return obligations.filter((obl) =>
       companies.some((c) => (obligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
     );
-  }, [obligations, obligationStatuses, companies, showFiscalColumns, fiscalViewMode, obligationsLoading]);
+  }, [obligations, obligationStatuses, companies, showFiscalColumns, fiscalViewMode]);
 
   const visibleDpTaxes = useMemo(() => {
     if (!showDpColumns || dpViewMode !== "table") return dpTaxes;
-    if (dpTaxLoading || Object.keys(dpTaxStatuses).length === 0) return dpTaxes;
+    if (Object.keys(dpTaxStatuses).length === 0) return dpTaxes;
     return dpTaxes.filter((tax) =>
       companies.some((c) => (dpTaxStatuses[c.id] || []).some((t) => t.taxId === tax.id))
     );
-  }, [dpTaxes, dpTaxStatuses, companies, showDpColumns, dpViewMode, dpTaxLoading]);
+  }, [dpTaxes, dpTaxStatuses, companies, showDpColumns, dpViewMode]);
 
   const visibleDpObligations = useMemo(() => {
     if (!showDpColumns || dpViewMode !== "table") return dpObligations;
-    if (dpOblLoading || Object.keys(dpObligationStatuses).length === 0) return dpObligations;
+    if (Object.keys(dpObligationStatuses).length === 0) return dpObligations;
     return dpObligations.filter((obl) =>
       companies.some((c) => (dpObligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
     );
-  }, [dpObligations, dpObligationStatuses, companies, showDpColumns, dpViewMode, dpOblLoading]);
+  }, [dpObligations, dpObligationStatuses, companies, showDpColumns, dpViewMode]);
 
   const visibleContabilTaxes = useMemo(() => {
     if (!showContabilColumns || contabilViewMode !== "table") return contabilTaxes;
-    if (contabilTaxLoading || Object.keys(contabilTaxStatuses).length === 0) return contabilTaxes;
+    if (Object.keys(contabilTaxStatuses).length === 0) return contabilTaxes;
     return contabilTaxes.filter((tax) =>
       companies.some((c) => (contabilTaxStatuses[c.id] || []).some((t) => t.taxId === tax.id))
     );
-  }, [contabilTaxes, contabilTaxStatuses, companies, showContabilColumns, contabilViewMode, contabilTaxLoading]);
+  }, [contabilTaxes, contabilTaxStatuses, companies, showContabilColumns, contabilViewMode]);
 
   const visibleContabilObls = useMemo(() => {
     if (!showContabilColumns || contabilViewMode !== "table") return contabilObls;
-    if (contabilOblLoading || Object.keys(contabilObligationStatuses).length === 0) return contabilObls;
+    if (Object.keys(contabilObligationStatuses).length === 0) return contabilObls;
     return contabilObls.filter((obl) =>
       companies.some((c) => (contabilObligationStatuses[c.id] || []).some((o) => o.obligationId === obl.id))
     );
-  }, [contabilObls, contabilObligationStatuses, companies, showContabilColumns, contabilViewMode, contabilOblLoading]);
+  }, [contabilObls, contabilObligationStatuses, companies, showContabilColumns, contabilViewMode]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -846,10 +859,10 @@ const AgentCompaniesView = ({
                   <>
                     <DeptHeader label="Zerado" colSpan={1} color="blue" />
                     {visibleTaxes.map((tax) => (
-                      <DeptHeader key={`tax-${tax.id}`} label={tax.name} colSpan={1} color="blue" minWidth="64px" wrap />
+                      <DeptHeader key={`tax-${tax.id}`} label={tax.name} colSpan={1} color="blue" vertical />
                     ))}
                     {visibleObligations.map((obl) => (
-                      <DeptHeader key={`obl-${obl.id}`} label={obl.name} colSpan={1} color="blue" minWidth="72px" wrap />
+                      <DeptHeader key={`obl-${obl.id}`} label={obl.name} colSpan={1} color="blue" vertical />
                     ))}
                     <DeptHeader label="Nota" colSpan={1} color="blue" />
                   </>
@@ -871,10 +884,10 @@ const AgentCompaniesView = ({
                   <>
                     <DeptHeader label="Zerado" colSpan={1} color="green" />
                     {visibleDpTaxes.map((tax) => (
-                      <DeptHeader key={`dp-tax-${tax.id}`} label={tax.name} colSpan={1} color="green" minWidth="64px" wrap />
+                      <DeptHeader key={`dp-tax-${tax.id}`} label={tax.name} colSpan={1} color="green" vertical />
                     ))}
                     {visibleDpObligations.map((obl) => (
-                      <DeptHeader key={`dp-obl-${obl.id}`} label={obl.name} colSpan={1} color="green" minWidth="72px" wrap />
+                      <DeptHeader key={`dp-obl-${obl.id}`} label={obl.name} colSpan={1} color="green" vertical />
                     ))}
                     <DeptHeader label="Func."     colSpan={1} color="green" minWidth="60px" />
                     <DeptHeader label="Conclusão" colSpan={1} color="green" />
@@ -897,10 +910,10 @@ const AgentCompaniesView = ({
                   <>
                     <DeptHeader label="Zerado" colSpan={1} color="yellow" />
                     {visibleContabilTaxes.map((tax) => (
-                      <DeptHeader key={`cont-tax-${tax.id}`} label={tax.name} colSpan={1} color="yellow" minWidth="64px" wrap />
+                      <DeptHeader key={`cont-tax-${tax.id}`} label={tax.name} colSpan={1} color="yellow" vertical />
                     ))}
                     {visibleContabilObls.map((obl) => (
-                      <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" minWidth="72px" wrap />
+                      <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" vertical />
                     ))}
                     <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />

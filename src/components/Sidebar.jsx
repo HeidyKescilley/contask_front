@@ -25,6 +25,7 @@ import {
   FiDatabase,
   FiActivity,
   FiMessageSquare,
+  FiRefreshCw,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -80,6 +81,7 @@ const Sidebar = () => {
       { name: "Gestao de Usuarios", path: "/admin/users", icon: <FiSettings size={18} /> },
       { name: "Avisos", path: "/admin/announcements", icon: <FiMessageSquare size={18} /> },
       { name: "Visao de Equipes", path: "/admin/team-view", icon: <FiGrid size={18} /> },
+      { name: "Troca de Responsáveis", path: "/admin/reassign", icon: <FiRefreshCw size={18} /> },
       { name: "Calculo de Bonus", path: "/admin/bonus", icon: <FiAward size={18} /> },
       { name: "Impostos / Obrigações", path: "/admin/taxes", icon: <FiDollarSign size={18} /> },
       { name: "Paralisações", path: "/admin/suspensions", icon: <FiPauseCircle size={18} /> },
