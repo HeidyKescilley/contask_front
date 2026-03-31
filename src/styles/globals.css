@@ -212,3 +212,22 @@
   .input-base   { @apply py-1.5 text-xs; }
   .modal-box    { @apply p-4; }
 }
+
+/* ===== CABEÇALHOS DE IMPOSTOS/OBRIGAÇÕES RESPONSIVOS ===== */
+/* Horizontal em telas grandes, vertical em telas pequenas */
+.tax-col-header .header-label {
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+}
+
+@media (max-width: 1366px) {
+  .tax-col-header {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+  }
+  .tax-col-header .header-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+}

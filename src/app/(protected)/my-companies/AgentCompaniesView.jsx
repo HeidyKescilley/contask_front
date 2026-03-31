@@ -49,12 +49,22 @@ const CheckItem = ({ checked, onChange, label }) => (
   </label>
 );
 
-const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap, vertical }) => {
+const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap, vertical, responsive }) => {
   const colors = {
     blue:   "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
     green:  "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
     yellow: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
   };
+  if (responsive) {
+    return (
+      <th
+        colSpan={colSpan}
+        className={`table-header tax-col-header text-center border-l border-gray-200 dark:border-dark-border ${colors[color]}`}
+      >
+        <div className="header-label">{label}</div>
+      </th>
+    );
+  }
   if (vertical) {
     return (
       <th
@@ -828,10 +838,10 @@ const AgentCompaniesView = ({
                 <th className="table-header w-12 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" onClick={() => handleSort("num")}>
                   <span className="inline-flex items-center">Nº{sortField === "num" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
                 </th>
+                <th className="table-header w-12 text-center">Filial</th>
                 <th className="table-header cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" style={{ minWidth: "180px" }} onClick={() => handleSort("name")}>
                   <span className="inline-flex items-center">Razão Social{sortField === "name" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
                 </th>
-                <th className="table-header w-12 text-center">Filial</th>
                 <th className="table-header w-20 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" onClick={() => handleSort("rule")}>
                   <span className="inline-flex items-center">Regime{sortField === "rule" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>
                 </th>
@@ -846,7 +856,7 @@ const AgentCompaniesView = ({
                 {/* ── Colunas Fiscal — Modo Compacto ── */}
                 {showFiscalColumns && fiscalViewMode === "compact" && (
                   <>
-                    <DeptHeader label="Zerado"      colSpan={1} color="blue" />
+                    <DeptHeader label="Zerado"      colSpan={1} color="blue" minWidth="60px" maxWidth="60px" />
                     <DeptHeader label="Impostos"    colSpan={1} color="blue" minWidth="150px" />
                     <DeptHeader label="Obrigações"  colSpan={1} color="blue" minWidth="150px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="blue" />
@@ -857,12 +867,12 @@ const AgentCompaniesView = ({
                 {/* ── Colunas Fiscal — Modo Tabela (imposto/obrigação por coluna) ── */}
                 {showFiscalColumns && fiscalViewMode === "table" && (
                   <>
-                    <DeptHeader label="Zerado" colSpan={1} color="blue" />
+                    <DeptHeader label="Zerado" colSpan={1} color="blue" minWidth="60px" maxWidth="60px" />
                     {visibleTaxes.map((tax) => (
-                      <DeptHeader key={`tax-${tax.id}`} label={tax.name} colSpan={1} color="blue" vertical />
+                      <DeptHeader key={`tax-${tax.id}`} label={tax.name} colSpan={1} color="blue" responsive />
                     ))}
                     {visibleObligations.map((obl) => (
-                      <DeptHeader key={`obl-${obl.id}`} label={obl.name} colSpan={1} color="blue" vertical />
+                      <DeptHeader key={`obl-${obl.id}`} label={obl.name} colSpan={1} color="blue" responsive />
                     ))}
                     <DeptHeader label="Nota" colSpan={1} color="blue" />
                   </>
@@ -871,7 +881,7 @@ const AgentCompaniesView = ({
                 {/* ── Colunas DP — Modo Compacto ── */}
                 {showDpColumns && dpViewMode === "compact" && (
                   <>
-                    <DeptHeader label="Zerado"     colSpan={1} color="green" />
+                    <DeptHeader label="Zerado"     colSpan={1} color="green" minWidth="60px" maxWidth="60px" />
                     <DeptHeader label="Impostos"   colSpan={1} color="green" minWidth="150px" />
                     <DeptHeader label="Obrigações" colSpan={1} color="green" minWidth="150px" />
                     <DeptHeader label="Func."      colSpan={1} color="green" minWidth="60px" />
@@ -882,12 +892,12 @@ const AgentCompaniesView = ({
                 {/* ── Colunas DP — Modo Tabela ── */}
                 {showDpColumns && dpViewMode === "table" && (
                   <>
-                    <DeptHeader label="Zerado" colSpan={1} color="green" />
+                    <DeptHeader label="Zerado" colSpan={1} color="green" minWidth="60px" maxWidth="60px" />
                     {visibleDpTaxes.map((tax) => (
-                      <DeptHeader key={`dp-tax-${tax.id}`} label={tax.name} colSpan={1} color="green" vertical />
+                      <DeptHeader key={`dp-tax-${tax.id}`} label={tax.name} colSpan={1} color="green" responsive />
                     ))}
                     {visibleDpObligations.map((obl) => (
-                      <DeptHeader key={`dp-obl-${obl.id}`} label={obl.name} colSpan={1} color="green" vertical />
+                      <DeptHeader key={`dp-obl-${obl.id}`} label={obl.name} colSpan={1} color="green" responsive />
                     ))}
                     <DeptHeader label="Func."     colSpan={1} color="green" minWidth="60px" />
                     <DeptHeader label="Conclusão" colSpan={1} color="green" />
@@ -897,7 +907,7 @@ const AgentCompaniesView = ({
                 {/* ── Colunas Contábil — Modo Compacto ── */}
                 {showContabilColumns && contabilViewMode === "compact" && (
                   <>
-                    <DeptHeader label="Zerado"      colSpan={1} color="yellow" />
+                    <DeptHeader label="Zerado"      colSpan={1} color="yellow" minWidth="60px" maxWidth="60px" />
                     <DeptHeader label="Impostos"    colSpan={1} color="yellow" minWidth="150px" />
                     <DeptHeader label="Obrigações"  colSpan={1} color="yellow" minWidth="150px" />
                     <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
@@ -908,12 +918,12 @@ const AgentCompaniesView = ({
                 {/* ── Colunas Contábil — Modo Tabela ── */}
                 {showContabilColumns && contabilViewMode === "table" && (
                   <>
-                    <DeptHeader label="Zerado" colSpan={1} color="yellow" />
+                    <DeptHeader label="Zerado" colSpan={1} color="yellow" minWidth="60px" maxWidth="60px" />
                     {visibleContabilTaxes.map((tax) => (
-                      <DeptHeader key={`cont-tax-${tax.id}`} label={tax.name} colSpan={1} color="yellow" vertical />
+                      <DeptHeader key={`cont-tax-${tax.id}`} label={tax.name} colSpan={1} color="yellow" responsive />
                     ))}
                     {visibleContabilObls.map((obl) => (
-                      <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" vertical />
+                      <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" responsive />
                     ))}
                     <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
@@ -929,6 +939,7 @@ const AgentCompaniesView = ({
                 return (
                   <tr key={company.id} className="table-row">
                     <td className="table-cell font-mono text-xs">{company.num}</td>
+                    <td className="table-cell text-center text-xs">{company.branchNumber || "–"}</td>
                     <td className="table-cell max-w-[200px]">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <button
@@ -943,7 +954,6 @@ const AgentCompaniesView = ({
                         </span>
                       </div>
                     </td>
-                    <td className="table-cell text-center text-xs">{company.branchNumber || "–"}</td>
                     <td className="table-cell text-xs">{company.rule}</td>
                     <td className="table-cell text-center text-xs">{company.uf || "–"}</td>
                     {viewDepartment && viewDepartment !== "all" && (
@@ -963,7 +973,7 @@ const AgentCompaniesView = ({
                     {/* ── Fiscal Compacto ─────────────────────────────────────── */}
                     {showFiscalColumns && fiscalViewMode === "compact" && (
                       <>
-                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border" style={{ width: "60px", minWidth: "60px", maxWidth: "60px" }}>
                           {isReadOnly
                             ? <StatusDot checked={company.isZeroedFiscal} variant="purple" />
                             : <AgentCheckbox checked={company.isZeroedFiscal}
@@ -1009,7 +1019,7 @@ const AgentCompaniesView = ({
                     {/* ── Fiscal Tabela ────────────────────────────────────────── */}
                     {showFiscalColumns && fiscalViewMode === "table" && (
                       <>
-                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border" style={{ width: "60px", minWidth: "60px", maxWidth: "60px" }}>
                           {isReadOnly
                             ? <StatusDot checked={company.isZeroedFiscal} variant="purple" />
                             : <AgentCheckbox checked={company.isZeroedFiscal}
@@ -1106,7 +1116,7 @@ const AgentCompaniesView = ({
                       const { completed: dpOblComp, total: dpOblTot } = getDpOblStats(company.id);
                       return (
                         <>
-                          <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                          <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border" style={{ width: "60px", minWidth: "60px", maxWidth: "60px" }}>
                             {isReadOnly ? <StatusDot checked={company.isZeroedDp} variant="purple" />
                               : <AgentCheckbox checked={company.isZeroedDp}
                                   onChange={() => handleCheckboxChange(company.id, "isZeroedDp", company.isZeroedDp)}
@@ -1144,7 +1154,7 @@ const AgentCompaniesView = ({
                     {/* ── DP Tabela ────────────────────────────────────────────── */}
                     {showDpColumns && dpViewMode === "table" && (
                       <>
-                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border" style={{ width: "60px", minWidth: "60px", maxWidth: "60px" }}>
                           {isReadOnly ? <StatusDot checked={company.isZeroedDp} variant="purple" />
                             : <AgentCheckbox checked={company.isZeroedDp}
                                 onChange={() => handleCheckboxChange(company.id, "isZeroedDp", company.isZeroedDp)}
@@ -1229,7 +1239,7 @@ const AgentCompaniesView = ({
                       const { completed: cOblComp, total: cOblTot } = getContabilOblStats(company.id);
                       return (
                         <>
-                          <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                          <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border" style={{ width: "60px", minWidth: "60px", maxWidth: "60px" }}>
                             {isReadOnly ? <StatusDot checked={company.isZeroedContabil} variant="purple" />
                               : <AgentCheckbox checked={company.isZeroedContabil}
                                   onChange={() => handleCheckboxChange(company.id, "isZeroedContabil", company.isZeroedContabil)}
@@ -1267,7 +1277,7 @@ const AgentCompaniesView = ({
                     {/* ── Contábil Tabela ──────────────────────────────────────── */}
                     {showContabilColumns && contabilViewMode === "table" && (
                       <>
-                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border">
+                        <td className="table-cell text-center border-l border-gray-100 dark:border-dark-border" style={{ width: "60px", minWidth: "60px", maxWidth: "60px" }}>
                           {isReadOnly ? <StatusDot checked={company.isZeroedContabil} variant="purple" />
                             : <AgentCheckbox checked={company.isZeroedContabil}
                                 onChange={() => handleCheckboxChange(company.id, "isZeroedContabil", company.isZeroedContabil)}

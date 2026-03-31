@@ -35,7 +35,7 @@ const ReassignPage = () => {
           api.get("/users"),
           api.get("/company/all"),
         ]);
-        setAllUsers(usersRes.data || []);
+        setAllUsers(usersRes.data.users || []);
         setAllCompanies(companiesRes.data || []);
       } catch {
         toast.error("Erro ao carregar dados.");
