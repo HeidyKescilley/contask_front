@@ -12,7 +12,6 @@ import { ZoomProvider } from "../context/ZoomContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useContext } from "react";
-import ThemeToggle from "../components/ThemeToggle";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,9 +37,6 @@ function LayoutInner({ children }) {
                 toastClassName="!rounded-xl !shadow-card"
               />
               {children}
-              <div className="fixed bottom-5 right-5 z-50">
-                <ThemeToggle />
-              </div>
             </SidebarProvider>
           </CompanyModalProvider>
           </CompetenciaProvider>

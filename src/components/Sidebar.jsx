@@ -26,17 +26,21 @@ import {
   FiActivity,
   FiMessageSquare,
   FiRefreshCw,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
 import { SidebarContext } from "../context/SidebarContext";
 import { ZoomContext } from "../context/ZoomContext";
+import { ThemeContext } from "../context/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const { isExpanded, toggleSidebar } = useContext(SidebarContext);
   const { zoom, zoomIn, zoomOut, canZoomIn, canZoomOut } = useContext(ZoomContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const pathname = usePathname();
   const router = useRouter();
   const { openAddCompanyModal } = useContext(CompanyModalContext);
@@ -227,6 +231,35 @@ const Sidebar = () => {
             transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <FiZoomIn size={14} />
+        </button>
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="flex-shrink-0 border-t border-white/8 px-1.5 py-1.5">
+        <button
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl
+            transition-all duration-150 group relative
+            ${isExpanded ? "" : "justify-center"}
+            text-gray-400 hover:bg-sidebar-hover hover:text-gray-100`}
+        >
+          <div className="min-w-[20px] flex justify-center flex-shrink-0">
+            {theme === "dark" ? <FiSun size={18} /> : <FiMoon size={18} />}
+          </div>
+          {isExpanded && (
+            <span className="text-sm font-medium leading-none">
+              {theme === "dark" ? "Modo claro" : "Modo escuro"}
+            </span>
+          )}
+          {!isExpanded && (
+            <div className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-gray-900 text-white text-xs
+              rounded-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100
+              group-hover:visible transition-all duration-150 z-[60] pointer-events-none
+              shadow-lg border border-white/10">
+              {theme === "dark" ? "Modo claro" : "Modo escuro"}
+            </div>
+          )}
         </button>
       </div>
 

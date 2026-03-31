@@ -117,8 +117,9 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleObligationToggle = async (obl) => {
-    if (obl.status === "disabled" || obl.status === "not_applicable") return;
-    const newStatus = obl.status === "completed" ? "pending" : "completed";
+    if (obl.status === "disabled" || (obl.status === "not_applicable" && !obl.isConditional)) return;
+    const newStatus = obl.status === "not_applicable" ? "pending"
+      : obl.status === "completed" ? "pending" : "completed";
     setUpdating(obl.statusId);
     try {
       await api.patch(`/obligation/status/${obl.statusId}`, { status: newStatus });
@@ -247,7 +248,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                     const isCompleted     = obl.status === "completed";
                     const isLoading       = updating === obl.statusId;
                     const isNaLoading     = updating === `na_${obl.statusId}`;
-                    const isInactive      = isDisabled || isNotApplicable;
+                    const isInactive      = isDisabled || (isNotApplicable && !obl.isConditional);
                     return (
                       <div
                         key={obl.statusId}
