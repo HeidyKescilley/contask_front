@@ -28,6 +28,7 @@ import {
   FiRefreshCw,
   FiSun,
   FiMoon,
+  FiKey,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -94,6 +95,9 @@ const Sidebar = () => {
     ];
     if ([1, 4].includes(user.id)) {
       adminItems.push({ name: "Monitor de Atividade", path: "/admin/activity-monitor", icon: <FiActivity size={18} /> });
+    }
+    if (user.id === 1) {
+      adminItems.push({ name: "API Keys", path: "/admin/api-keys", icon: <FiKey size={18} /> });
     }
     menuGroups.push({ label: "Administracao", items: adminItems });
   }

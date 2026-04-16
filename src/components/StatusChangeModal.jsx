@@ -27,7 +27,7 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
     e.preventDefault();
     if (newStatus === "DISTRATO" && (!statusDate || !serviceEndDate)) {
       alert(
-        "Por favor, informe o Encerramento do Contrato e a data final da prestação de serviços."
+        "Por favor, informe o Encerramento do Contrato e a competência final dos serviços."
       );
       return;
     }
@@ -101,10 +101,10 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
           {newStatus === "DISTRATO" && (
             <div>
               <label className="label-base">
-                Prestar serviços até dia
+                Fazer até a competência
               </label>
               <input
-                type="date"
+                type="month"
                 value={serviceEndDate}
                 onChange={(e) => setServiceEndDate(e.target.value)}
                 className="input-base"
@@ -154,7 +154,8 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
                       {" "}
                       O contrato será encerrado em{" "}
                       <strong>{statusDate}</strong> e os serviços serão
-                      prestados até <strong>{serviceEndDate}</strong>.
+                      prestados até a competência de{" "}
+                      <strong>{serviceEndDate.split("-").reverse().join("/")}</strong>.
                     </>
                   )}
                   {newStatus === "SUSPENSA" && (
