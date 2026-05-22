@@ -178,7 +178,7 @@ const CompanyTable = ({
     <div className="card p-0 overflow-hidden mt-3">
       <div className="overflow-x-auto">
         <table className="min-w-full table-fixed">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr>
               <th className="table-header w-12">Nº</th>
               <th className="table-header w-12 text-center">Filial</th>

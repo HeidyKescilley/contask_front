@@ -833,7 +833,7 @@ const AgentCompaniesView = ({
       <div className="card p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr>
                 <th className="table-header w-12 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface select-none" onClick={() => handleSort("num")}>
                   <span className="inline-flex items-center">Nº{sortField === "num" ? (sortDir === "asc" ? <FiArrowUp size={11} className="ml-1 text-primary-500" /> : <FiArrowDown size={11} className="ml-1 text-primary-500" />) : <FiArrowUp size={11} className="ml-1 opacity-30" />}</span>

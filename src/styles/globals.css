@@ -111,10 +111,10 @@
   /* --- Tabelas --- */
   .table-header {
     @apply px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider
-      text-gray-500 bg-gray-50/80 whitespace-nowrap;
+      text-gray-500 bg-gray-50 whitespace-nowrap;
   }
   .dark .table-header {
-    @apply text-dark-text-secondary bg-dark-surface/80;
+    @apply text-dark-text-secondary bg-dark-surface;
   }
   .table-cell {
     @apply px-3 py-2.5 text-sm;
