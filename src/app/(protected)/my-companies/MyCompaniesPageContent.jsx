@@ -398,6 +398,7 @@ const MyCompaniesPageContent = () => {
             onViewHistory={handleViewHistory}
             onManageAutomations={handleManageAutomations}
             onOpenOrientations={(company) => setOrientationModal(company)}
+            tableMaxHeight="calc(100vh - 420px)"
           />
         </>
       ) : (

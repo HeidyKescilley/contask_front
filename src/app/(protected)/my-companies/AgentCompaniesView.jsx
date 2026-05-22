@@ -831,7 +831,7 @@ const AgentCompaniesView = ({
 
       {/* ── Tabela ──────────────────────────────────────────────────────────── */}
       <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "calc(100vh - 420px)" }}>
           <table className="min-w-full">
             <thead className="sticky top-0 z-10">
               <tr>

@@ -170,13 +170,14 @@ const CompanyTable = ({
   onManageAutomations,
   onManualArchiveCompany,
   onOpenOrientations,
+  tableMaxHeight = "calc(100vh - 280px)",
 }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
   return (
     <div className="card p-0 overflow-hidden mt-3">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: tableMaxHeight }}>
         <table className="min-w-full table-fixed">
           <thead className="sticky top-0 z-10">
             <tr>
