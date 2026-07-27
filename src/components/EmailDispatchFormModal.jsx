@@ -141,9 +141,14 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
           <FiX size={20} />
         </button>
 
-        <h2 className="text-xl font-bold mb-5">
+        <h2 className="text-xl font-bold mb-1">
           {isEditing ? "Editar Automação de E-mail" : "Nova Automação de E-mail"}
         </h2>
+        <p className="text-xs text-amber-600 dark:text-amber-400 mb-4">
+          {isEditing
+            ? "Salvar esta edição exigirá uma nova aprovação de um administrador antes que a automação volte a rodar."
+            : "Após criada, esta automação precisará ser aprovada por um administrador antes de rodar (manual ou automaticamente)."}
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Nome */}

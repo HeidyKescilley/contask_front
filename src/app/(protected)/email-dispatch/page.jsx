@@ -7,7 +7,8 @@ import EmailDispatchFormModal from "../../../components/EmailDispatchFormModal";
 import EmailDispatchHistoryModal from "../../../components/EmailDispatchHistoryModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
-import { FiPlus, FiEdit2, FiSend, FiClock, FiTrash2, FiMail } from "react-icons/fi";
+import { useAuth } from "../../../hooks/useAuth";
+import { FiPlus, FiEdit2, FiSend, FiClock, FiTrash2, FiMail, FiCheckCircle } from "react-icons/fi";
 
 const MODE_LABEL = { manual: "Manual", automatic: "Automático" };
 
@@ -23,6 +24,8 @@ const LAST_RUN_BADGE = {
 const fmt = (d) => (d ? new Date(d).toLocaleString("pt-BR") : "–");
 
 export default function EmailDispatchPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [dispatches, setDispatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -46,6 +49,10 @@ export default function EmailDispatchPage() {
   };
 
   const handleRunNow = async (dispatch) => {
+    if (!dispatch.isApproved) {
+      toast.error("Esta automação ainda não foi aprovada por um administrador.");
+      return;
+    }
     if (!window.confirm(`Enviar os e-mails da automação "${dispatch.name}" agora?`)) return;
     try {
       const res = await api.post(`/email-dispatch/${dispatch.id}/run`);
@@ -53,6 +60,17 @@ export default function EmailDispatchPage() {
       setTimeout(fetchDispatches, 2500);
     } catch (error) {
       toast.error(error.response?.data?.message || "Erro ao iniciar envio.");
+    }
+  };
+
+  const handleApprove = async (dispatch) => {
+    if (!window.confirm(`Aprovar a automação "${dispatch.name}"? Ela poderá rodar (manual ou automaticamente) a partir de agora.`)) return;
+    try {
+      await api.post(`/email-dispatch/${dispatch.id}/approve`);
+      toast.success("Automação aprovada.");
+      fetchDispatches();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erro ao aprovar automação.");
     }
   };
 
@@ -106,6 +124,7 @@ export default function EmailDispatchPage() {
                     <th className="table-header text-center">Empresas</th>
                     <th className="table-header">Última execução</th>
                     <th className="table-header">Status</th>
+                    <th className="table-header">Aprovação</th>
                     <th className="table-header text-right">Ações</th>
                   </tr>
                 </thead>
@@ -130,8 +149,27 @@ export default function EmailDispatchPage() {
                           {!d.isActive && <span className="badge-gray ml-1.5">Pausada</span>}
                         </td>
                         <td className="table-cell">
+                          {d.isApproved ? (
+                            <span className="badge-green" title={d.approvedBy ? `Aprovado por ${d.approvedBy.name} em ${fmt(d.approvedAt)}` : ""}>
+                              Aprovado
+                            </span>
+                          ) : (
+                            <span className="badge-amber">Pendente</span>
+                          )}
+                        </td>
+                        <td className="table-cell">
                           <div className="flex justify-end gap-1.5">
-                            <button title="Enviar agora" onClick={() => handleRunNow(d)} className="p-1.5 rounded-lg text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                            {isAdmin && !d.isApproved && (
+                              <button title="Aprovar automação" onClick={() => handleApprove(d)} className="p-1.5 rounded-lg text-accent-green hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                <FiCheckCircle size={14} />
+                              </button>
+                            )}
+                            <button
+                              title={d.isApproved ? "Enviar agora" : "Aguardando aprovação de um administrador"}
+                              onClick={() => handleRunNow(d)}
+                              disabled={!d.isApproved}
+                              className={`p-1.5 rounded-lg ${d.isApproved ? "text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20" : "text-gray-300 dark:text-gray-600 cursor-not-allowed"}`}
+                            >
                               <FiSend size={14} />
                             </button>
                             <button title="Histórico" onClick={() => setHistoryDispatch(d)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-card-hover">
