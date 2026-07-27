@@ -29,6 +29,7 @@ import {
   FiSun,
   FiMoon,
   FiKey,
+  FiMail,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -54,6 +55,7 @@ const Sidebar = () => {
         { name: "Minhas Empresas", path: "/my-companies", icon: <FiBriefcase size={18} /> },
         { name: "Empresas", path: "/companies", icon: <FiLayers size={18} /> },
         { name: "Contatos", path: "/contacts", icon: <FiUsers size={18} /> },
+        { name: "Disparo de E-mails", path: "/email-dispatch", icon: <FiMail size={18} /> },
       ],
     },
     {
