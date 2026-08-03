@@ -38,6 +38,10 @@ function substituteForPreview(text) {
   );
 }
 
+function looksLikeHtml(text) {
+  return /<\/?[a-z][\s\S]*?>/i.test(text || "");
+}
+
 function detectVariables(text) {
   const found = new Set();
   const re = /\{\{\{(\w+)\}\}\}/g;
@@ -528,6 +532,13 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
                     value={bodyContent}
                     onChange={(e) => setBodyContent(e.target.value)}
                   />
+                  {looksLikeHtml(bodyContent) && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">
+                      Este texto parece conter marcação HTML (tags como &lt;div&gt;, &lt;p&gt;…). Em &ldquo;Texto simples&rdquo; ele será
+                      enviado exatamente como está escrito, sem virar formatação — se a intenção é um e-mail formatado,
+                      troque o formato para &ldquo;HTML&rdquo; acima.
+                    </p>
+                  )}
                 </>
               )}
             </div>
