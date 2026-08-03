@@ -1,7 +1,7 @@
 // src/components/EmailDispatchFormModal.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import { FiX, FiSave, FiUpload } from "react-icons/fi";
@@ -10,6 +10,81 @@ import { toast } from "react-toastify";
 import CompanySelector from "./CompanySelector";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+
+const VARIABLES = [
+  { token: "RAZAO_SOCIAL", label: "Razão Social" },
+  { token: "MES_PASSADO", label: "Mês passado" },
+  { token: "MES_ATUAL", label: "Mês atual" },
+];
+
+function formatMonthYear(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${month}/${date.getFullYear()}`;
+}
+
+function getSampleVars() {
+  const now = new Date();
+  return {
+    RAZAO_SOCIAL: "Empresa Exemplo Ltda",
+    MES_ATUAL: formatMonthYear(new Date(now.getFullYear(), now.getMonth(), 1)),
+    MES_PASSADO: formatMonthYear(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+  };
+}
+
+function substituteForPreview(text) {
+  const vars = getSampleVars();
+  return (text || "").replace(/\{\{\{(\w+)\}\}\}/g, (match, key) =>
+    Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : match
+  );
+}
+
+function detectVariables(text) {
+  const found = new Set();
+  const re = /\{\{\{(\w+)\}\}\}/g;
+  let m;
+  while ((m = re.exec(text || ""))) {
+    if (VARIABLES.some((v) => v.token === m[1])) found.add(m[1]);
+  }
+  return [...found];
+}
+
+// Insere {{{TOKEN}}} na posição do cursor de um <input>/<textarea> nativo (via ref).
+function insertAtCursor(ref, currentValue, setValue, token) {
+  const insertText = `{{{${token}}}}`;
+  const el = ref.current;
+  if (!el) {
+    setValue((currentValue || "") + insertText);
+    return;
+  }
+  const start = el.selectionStart ?? currentValue.length;
+  const end = el.selectionEnd ?? currentValue.length;
+  const next = (currentValue || "").slice(0, start) + insertText + (currentValue || "").slice(end);
+  setValue(next);
+  requestAnimationFrame(() => {
+    el.focus();
+    const pos = start + insertText.length;
+    el.setSelectionRange(pos, pos);
+  });
+}
+
+function VariableButtons({ onInsert }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {VARIABLES.map((v) => (
+        <button
+          key={v.token}
+          type="button"
+          onClick={() => onInsert(v.token)}
+          title={`Inserir {{{${v.token}}}}`}
+          className="px-2 py-0.5 rounded-full text-[11px] font-medium border border-gray-200 dark:border-dark-border
+            text-gray-500 hover:border-primary-300 hover:text-primary-500 transition-colors"
+        >
+          + {v.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const DAYS_OF_WEEK = [
   { value: 0, label: "Domingo" },
@@ -55,15 +130,35 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
   const [subject, setSubject] = useState(dispatch?.subject || "");
   const [bodyFormat, setBodyFormat] = useState(dispatch?.bodyFormat || "html");
   const [bodyContent, setBodyContent] = useState(dispatch?.bodyContent || "");
+  const [htmlSourceMode, setHtmlSourceMode] = useState("editor");
 
   const [companyIds, setCompanyIds] = useState((dispatch?.companies || []).map((c) => c.id));
   const [loading, setLoading] = useState(false);
+
+  const subjectInputRef = useRef(null);
+  const textBodyRef = useRef(null);
+  const importTextareaRef = useRef(null);
 
   const handleSignatureChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSignatureFile(file);
     setSignaturePreview(URL.createObjectURL(file));
+  };
+
+  const handleImportHtml = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setBodyContent(String(reader.result || ""));
+    reader.readAsText(file, "utf-8");
+  };
+
+  // Editor rico (Quill) não expõe cursor de forma confiável através do next/dynamic,
+  // então a variável é adicionada ao final do conteúdo — o usuário pode reposicionar
+  // arrastando o texto normalmente no editor.
+  const handleInsertIntoQuill = (token) => {
+    setBodyContent((prev) => `${prev || ""} {{{${token}}}}`);
   };
 
   const handleSubmit = async (e) => {
@@ -317,8 +412,12 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
           <div className="border border-gray-100 dark:border-dark-border rounded-xl p-3 space-y-3">
             <p className="label-base !mb-0">Conteúdo do e-mail</p>
             <div>
-              <label className="label-base">Assunto</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label-base !mb-0">Assunto</label>
+                <VariableButtons onInsert={(token) => insertAtCursor(subjectInputRef, subject, setSubject, token)} />
+              </div>
               <input
+                ref={subjectInputRef}
                 type="text"
                 className="input-base"
                 value={subject}
@@ -346,20 +445,90 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
                 </p>
               )}
             </div>
+
+            {bodyFormat === "html" && (
+              <div>
+                <label className="label-base mb-2">Origem do HTML</label>
+                <div className="flex border border-gray-200 dark:border-dark-border rounded-xl overflow-hidden max-w-xs">
+                  {[["editor", "Editor"], ["import", "Importar arquivo"]].map(([val, lbl], i) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setHtmlSourceMode(val)}
+                      className={`flex-1 py-1.5 text-xs font-medium transition-colors ${htmlSourceMode === val ? "bg-primary-500 text-white" : "bg-white dark:bg-dark-surface text-gray-600 hover:bg-gray-50"} ${i > 0 ? "border-l border-gray-200 dark:border-dark-border" : ""}`}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="label-base">Corpo do e-mail</label>
-              {bodyFormat === "html" ? (
-                <ReactQuill
-                  value={bodyContent}
-                  onChange={setBodyContent}
-                  className="bg-white dark:bg-dark-surface rounded-xl overflow-hidden"
-                />
-              ) : (
-                <textarea
-                  className="input-base min-h-[150px]"
-                  value={bodyContent}
-                  onChange={(e) => setBodyContent(e.target.value)}
-                />
+
+              {bodyFormat === "html" && htmlSourceMode === "editor" && (
+                <>
+                  <div className="flex justify-end mb-1.5">
+                    <VariableButtons onInsert={handleInsertIntoQuill} />
+                  </div>
+                  <ReactQuill
+                    value={bodyContent}
+                    onChange={setBodyContent}
+                    className="bg-white dark:bg-dark-surface rounded-xl overflow-hidden"
+                  />
+                </>
+              )}
+
+              {bodyFormat === "html" && htmlSourceMode === "import" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="btn-ghost text-xs cursor-pointer inline-flex w-fit">
+                      <FiUpload size={13} />
+                      Escolher arquivo .html
+                      <input type="file" accept=".html,text/html" onChange={handleImportHtml} className="hidden" />
+                    </label>
+                    <VariableButtons onInsert={(token) => insertAtCursor(importTextareaRef, bodyContent, setBodyContent, token)} />
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-dark-text-secondary">
+                    {detectVariables(bodyContent).length > 0
+                      ? `Variáveis detectadas: ${detectVariables(bodyContent).map((t) => VARIABLES.find((v) => v.token === t)?.label).join(", ")}`
+                      : bodyContent
+                        ? "Nenhuma variável reconhecida encontrada no conteúdo."
+                        : "Escolha um arquivo .html para importar."}
+                  </p>
+                  <textarea
+                    ref={importTextareaRef}
+                    value={bodyContent}
+                    onChange={(e) => setBodyContent(e.target.value)}
+                    spellCheck={false}
+                    placeholder="Importe um arquivo .html ou cole o HTML aqui…"
+                    className="input-base font-mono text-[11px] min-h-[140px]"
+                  />
+                  <div>
+                    <p className="label-base mb-1">Pré-visualização (valores de exemplo)</p>
+                    <iframe
+                      srcDoc={substituteForPreview(bodyContent)}
+                      sandbox=""
+                      title="Pré-visualização do e-mail"
+                      className="w-full h-64 border border-gray-200 dark:border-dark-border rounded-xl bg-white"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {bodyFormat === "text" && (
+                <>
+                  <div className="flex justify-end mb-1.5">
+                    <VariableButtons onInsert={(token) => insertAtCursor(textBodyRef, bodyContent, setBodyContent, token)} />
+                  </div>
+                  <textarea
+                    ref={textBodyRef}
+                    className="input-base min-h-[150px]"
+                    value={bodyContent}
+                    onChange={(e) => setBodyContent(e.target.value)}
+                  />
+                </>
               )}
             </div>
           </div>
