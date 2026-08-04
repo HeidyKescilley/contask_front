@@ -133,6 +133,7 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
   const [fromEmail, setFromEmail] = useState(dispatch?.fromEmail || "");
   const [fromPassword, setFromPassword] = useState("");
   const [fromName, setFromName] = useState(dispatch?.fromName || "");
+  const [ccEmail, setCcEmail] = useState(dispatch?.ccEmail || "");
   const [signatureFile, setSignatureFile] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState(
     dispatch?.signatureImagePath ? `${API_URL}/signatures/${dispatch.signatureImagePath}` : null
@@ -214,6 +215,7 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
     formData.append("bodySourceMode", htmlSourceMode);
     formData.append("fromEmail", fromEmail);
     formData.append("fromName", fromName);
+    formData.append("ccEmail", ccEmail.trim());
     formData.append("isActive", String(isActive));
     if (fromPassword) formData.append("fromPassword", fromPassword);
     if (signatureFile) formData.append("signatureImage", signatureFile);
@@ -419,6 +421,20 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
                   placeholder="Ex: Contask Contabilidade"
                   required
                 />
+              </div>
+              <div>
+                <label className="label-base">E-mail(s) em cópia (Cc)</label>
+                <input
+                  type="text"
+                  className="input-base"
+                  value={ccEmail}
+                  onChange={(e) => setCcEmail(e.target.value)}
+                  placeholder="equipe@contelb.com.br, outra@contelb.com.br"
+                />
+                <p className="text-[11px] text-gray-500 dark:text-dark-text-secondary mt-1">
+                  Opcional. Recebe cópia de todo e-mail enviado — aparece visível no cabeçalho &ldquo;Cc&rdquo; para quem recebeu.
+                  Separe vários endereços por vírgula.
+                </p>
               </div>
               <div>
                 <label className="label-base">Imagem de assinatura</label>
