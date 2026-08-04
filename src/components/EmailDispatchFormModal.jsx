@@ -42,6 +42,13 @@ function looksLikeHtml(text) {
   return /<\/?[a-z][\s\S]*?>/i.test(text || "");
 }
 
+// O editor rico (Quill) reinterpreta o HTML como um documento próprio (não
+// preserva <html>/<head>/estilos/layout de um template importado) — nunca
+// produz essas tags sozinho, então a presença delas indica conteúdo importado.
+function looksLikeFullHtmlDocument(text) {
+  return /<!DOCTYPE\s+html|<html[\s>]/i.test(text || "");
+}
+
 function detectVariables(text) {
   const found = new Set();
   const re = /\{\{\{(\w+)\}\}\}/g;
@@ -134,7 +141,9 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
   const [subject, setSubject] = useState(dispatch?.subject || "");
   const [bodyFormat, setBodyFormat] = useState(dispatch?.bodyFormat || "html");
   const [bodyContent, setBodyContent] = useState(dispatch?.bodyContent || "");
-  const [htmlSourceMode, setHtmlSourceMode] = useState("editor");
+  const [htmlSourceMode, setHtmlSourceMode] = useState(
+    dispatch?.bodySourceMode || (looksLikeFullHtmlDocument(dispatch?.bodyContent) ? "import" : "editor")
+  );
 
   const [companyIds, setCompanyIds] = useState((dispatch?.companies || []).map((c) => c.id));
   const [loading, setLoading] = useState(false);
@@ -165,6 +174,19 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
     setBodyContent((prev) => `${prev || ""} {{{${token}}}}`);
   };
 
+  // Trocar de "Importar arquivo" pra "Editor" joga o HTML dentro do Quill, que
+  // reinterpreta tudo no formato dele e perde estilos/layout de um template
+  // importado — confirma antes pra evitar perda de formatação sem querer.
+  const handleSetHtmlSourceMode = (nextMode) => {
+    if (nextMode === "editor" && htmlSourceMode === "import" && looksLikeFullHtmlDocument(bodyContent)) {
+      const ok = window.confirm(
+        "Trocar para o Editor visual pode reformatar ou perder partes deste HTML importado (cores, caixas, layout). Deseja continuar mesmo assim?"
+      );
+      if (!ok) return;
+    }
+    setHtmlSourceMode(nextMode);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -189,6 +211,7 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
     formData.append("subject", subject);
     formData.append("bodyFormat", bodyFormat);
     formData.append("bodyContent", bodyContent);
+    formData.append("bodySourceMode", htmlSourceMode);
     formData.append("fromEmail", fromEmail);
     formData.append("fromName", fromName);
     formData.append("isActive", String(isActive));
@@ -458,7 +481,7 @@ export default function EmailDispatchFormModal({ dispatch, onClose, onSuccess })
                     <button
                       key={val}
                       type="button"
-                      onClick={() => setHtmlSourceMode(val)}
+                      onClick={() => handleSetHtmlSourceMode(val)}
                       className={`flex-1 py-1.5 text-xs font-medium transition-colors ${htmlSourceMode === val ? "bg-primary-500 text-white" : "bg-white dark:bg-dark-surface text-gray-600 hover:bg-gray-50"} ${i > 0 ? "border-l border-gray-200 dark:border-dark-border" : ""}`}
                     >
                       {lbl}
