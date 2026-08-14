@@ -212,6 +212,28 @@ const CompaniesPageContent = () => {
     }
   }, [fetchCompanies]);
 
+  const handleManualUnarchiveCompany = useCallback(async (companyToUnarchive) => {
+    if (
+      window.confirm(
+        `Tem certeza que deseja desarquivar a empresa "${companyToUnarchive.name}"? Ela voltará a aparecer nas listagens comuns.`
+      )
+    ) {
+      try {
+        await api.patch(`/admin/company/${companyToUnarchive.id}/unarchive`);
+        toast.success(
+          `Empresa "${companyToUnarchive.name}" desarquivada com sucesso.`
+        );
+        fetchCompanies();
+      } catch (error) {
+        toast.error(
+          `Erro ao desarquivar a empresa: ${
+            error.response?.data?.message || error.message
+          }`
+        );
+      }
+    }
+  }, [fetchCompanies]);
+
   return (
     <>
       <CompanyFilters
@@ -239,6 +261,7 @@ const CompaniesPageContent = () => {
         onViewHistory={handleViewHistory}
         onManageAutomations={handleManageAutomations}
         onManualArchiveCompany={handleManualArchiveCompany}
+        onManualUnarchiveCompany={handleManualUnarchiveCompany}
         onOpenOrientations={(company) => setOrientationModal(company)}
       />
       {showHistoryModal && (

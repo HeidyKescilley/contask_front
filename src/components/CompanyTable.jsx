@@ -9,6 +9,7 @@ import {
   FiCopy,
   FiZap,
   FiArchive,
+  FiRotateCcw,
   FiBookOpen,
 } from "react-icons/fi";
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
@@ -50,7 +51,7 @@ ActionButton.displayName = "ActionButton";
 
 const CompanyRow = memo(({
   company, isAdmin,
-  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany, onOpenOrientations
+  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany, onManualUnarchiveCompany, onOpenOrientations
 }) => {
   const rowClass = `table-row${ROW_HIGHLIGHT[company.status] || ""}`;
 
@@ -146,15 +147,25 @@ const CompanyRow = memo(({
           >
             <FiZap size={14} />
           </ActionButton>
-          {onManualArchiveCompany && (
-            <ActionButton
-              onClick={() => onManualArchiveCompany(company)}
-              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600"
-              label="Arquivar"
-            >
-              <FiArchive size={14} />
-            </ActionButton>
-          )}
+          {company.isArchived
+            ? onManualUnarchiveCompany && (
+                <ActionButton
+                  onClick={() => onManualUnarchiveCompany(company)}
+                  className="text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                  label="Desarquivar"
+                >
+                  <FiRotateCcw size={14} />
+                </ActionButton>
+              )
+            : onManualArchiveCompany && (
+                <ActionButton
+                  onClick={() => onManualArchiveCompany(company)}
+                  className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600"
+                  label="Arquivar"
+                >
+                  <FiArchive size={14} />
+                </ActionButton>
+              )}
         </div>
       </td>
     </tr>
@@ -169,6 +180,7 @@ const CompanyTable = ({
   onViewHistory,
   onManageAutomations,
   onManualArchiveCompany,
+  onManualUnarchiveCompany,
   onOpenOrientations,
   tableMaxHeight = "calc(100vh - 280px)",
 }) => {
@@ -206,6 +218,7 @@ const CompanyTable = ({
                 onViewHistory={onViewHistory}
                 onManageAutomations={onManageAutomations}
                 onManualArchiveCompany={onManualArchiveCompany}
+                onManualUnarchiveCompany={onManualUnarchiveCompany}
                 onOpenOrientations={onOpenOrientations}
               />
             ))}
