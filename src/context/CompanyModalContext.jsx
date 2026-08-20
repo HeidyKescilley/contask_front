@@ -15,9 +15,9 @@ export const CompanyModalProvider = ({ children }) => {
     setRefreshTrigger((n) => n + 1);
   }, []);
 
-  const openAddCompanyModal = () => {
+  const openAddCompanyModal = (prefill = null) => {
     setModalType("add");
-    setSelectedCompany(null);
+    setSelectedCompany(prefill);
     setShowModal(true);
   };
 

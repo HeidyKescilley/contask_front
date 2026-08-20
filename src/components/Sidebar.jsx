@@ -30,6 +30,7 @@ import {
   FiMoon,
   FiKey,
   FiMail,
+  FiShield,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -56,6 +57,7 @@ const Sidebar = () => {
         { name: "Empresas", path: "/companies", icon: <FiLayers size={18} /> },
         { name: "Contatos", path: "/contacts", icon: <FiUsers size={18} /> },
         { name: "Disparo de E-mails", path: "/email-dispatch", icon: <FiMail size={18} /> },
+        { name: "Monitor de Certificados", path: "/certificates", icon: <FiShield size={18} /> },
       ],
     },
     {

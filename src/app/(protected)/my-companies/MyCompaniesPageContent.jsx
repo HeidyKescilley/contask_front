@@ -9,6 +9,7 @@ import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
 import BatchTaxObligationModal from "../../../components/BatchTaxObligationModal";
 import OrientationsModal from "../../../components/OrientationsModal";
+import CertificateModal from "../../../components/CertificateModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -78,6 +79,7 @@ const MyCompaniesPageContent = () => {
   const [selectedAutomationCompany, setSelectedAutomationCompany] = useState(null);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [orientationModal, setOrientationModal] = useState(null);
+  const [certificateModalCompany, setCertificateModalCompany] = useState(null);
 
   const {
     setShowModal,
@@ -398,6 +400,7 @@ const MyCompaniesPageContent = () => {
             onViewHistory={handleViewHistory}
             onManageAutomations={handleManageAutomations}
             onOpenOrientations={(company) => setOrientationModal(company)}
+            onOpenCertificate={(company) => setCertificateModalCompany(company)}
             tableMaxHeight="calc(100vh - 420px)"
           />
         </>
@@ -440,6 +443,13 @@ const MyCompaniesPageContent = () => {
         <OrientationsModal
           company={orientationModal}
           onClose={() => setOrientationModal(null)}
+        />
+      )}
+      {certificateModalCompany && (
+        <CertificateModal
+          company={certificateModalCompany}
+          onClose={() => setCertificateModalCompany(null)}
+          onImported={fetchCompanies}
         />
       )}
     </>

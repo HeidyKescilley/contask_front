@@ -11,6 +11,7 @@ import {
   FiArchive,
   FiRotateCcw,
   FiBookOpen,
+  FiShield,
 } from "react-icons/fi";
 import { copyToClipboard, formatCNPJ } from "../utils/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -37,6 +38,32 @@ const StatusBadge = memo(({ status }) => (
 ));
 StatusBadge.displayName = "StatusBadge";
 
+const CERTIFICATE_STATUS_STYLES = {
+  verde: "text-emerald-500 hover:text-emerald-600",
+  amarelo: "text-amber-500 hover:text-amber-600",
+  vermelho: "text-red-500 hover:text-red-600",
+  cinza: "text-gray-300 dark:text-gray-600 hover:text-gray-400 dark:hover:text-gray-500",
+};
+
+const CERTIFICATE_STATUS_LABELS = {
+  verde: "Certificado em dia",
+  amarelo: "Certificado vencendo em breve",
+  vermelho: "Certificado vencido",
+  cinza: "Sem certificado cadastrado",
+};
+
+const CertificateStatusIcon = memo(({ status, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`p-1 rounded-lg transition-colors ${CERTIFICATE_STATUS_STYLES[status] || CERTIFICATE_STATUS_STYLES.cinza}`}
+    title={CERTIFICATE_STATUS_LABELS[status] || CERTIFICATE_STATUS_LABELS.cinza}
+    aria-label="Certificado digital"
+  >
+    <FiShield size={15} />
+  </button>
+));
+CertificateStatusIcon.displayName = "CertificateStatusIcon";
+
 const ActionButton = memo(({ onClick, className, label, children }) => (
   <button
     onClick={onClick}
@@ -51,7 +78,7 @@ ActionButton.displayName = "ActionButton";
 
 const CompanyRow = memo(({
   company, isAdmin,
-  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany, onManualUnarchiveCompany, onOpenOrientations
+  onEditCompany, onBlockCompany, onViewHistory, onManageAutomations, onManualArchiveCompany, onManualUnarchiveCompany, onOpenOrientations, onOpenCertificate
 }) => {
   const rowClass = `table-row${ROW_HIGHLIGHT[company.status] || ""}`;
 
@@ -107,6 +134,14 @@ const CompanyRow = memo(({
       <td className="table-cell">{company.respFiscal?.name?.split(" ")[0] || "–"}</td>
       <td className="table-cell">{company.respDp?.name?.split(" ")[0] || "–"}</td>
       <td className="table-cell text-center">{company.uf || "–"}</td>
+      <td className="table-cell text-center">
+        {onOpenCertificate && (
+          <CertificateStatusIcon
+            status={company.certificateStatus || "cinza"}
+            onClick={() => onOpenCertificate(company)}
+          />
+        )}
+      </td>
       <td className="table-cell text-center">
         {company.isHeadquarters ? (
           <span className="w-2 h-2 bg-primary-500 rounded-full inline-block" title="Matriz" />
@@ -182,6 +217,7 @@ const CompanyTable = ({
   onManualArchiveCompany,
   onManualUnarchiveCompany,
   onOpenOrientations,
+  onOpenCertificate,
   tableMaxHeight = "calc(100vh - 280px)",
 }) => {
   const { user } = useAuth();
@@ -202,6 +238,7 @@ const CompanyTable = ({
               <th className="table-header w-24">Resp. Fiscal</th>
               <th className="table-header w-24">Resp. DP</th>
               <th className="table-header w-10 text-center">UF</th>
+              <th className="table-header w-16 text-center">Certificado</th>
               <th className="table-header w-14 text-center">Matriz</th>
               <th className="table-header w-24">Status</th>
               <th className="table-header w-24">Acoes</th>
@@ -220,11 +257,12 @@ const CompanyTable = ({
                 onManualArchiveCompany={onManualArchiveCompany}
                 onManualUnarchiveCompany={onManualUnarchiveCompany}
                 onOpenOrientations={onOpenOrientations}
+                onOpenCertificate={onOpenCertificate}
               />
             ))}
             {companies.length === 0 && (
               <tr>
-                <td colSpan={12} className="table-cell text-center py-8 text-gray-400 dark:text-dark-text-secondary">
+                <td colSpan={13} className="table-cell text-center py-8 text-gray-400 dark:text-dark-text-secondary">
                   Nenhuma empresa encontrada
                 </td>
               </tr>

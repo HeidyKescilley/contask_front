@@ -8,6 +8,7 @@ import HistoryModal from "../../../components/HistoryModal";
 import StatusChangeModal from "../../../components/StatusChangeModal";
 import AutomationModal from "../../../components/AutomationModal";
 import OrientationsModal from "../../../components/OrientationsModal";
+import CertificateModal from "../../../components/CertificateModal";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { CompanyModalContext } from "../../../context/CompanyModalContext";
@@ -36,6 +37,7 @@ const CompaniesPageContent = () => {
   const [showAutomationModal, setShowAutomationModal] = useState(false);
   const [selectedAutomationCompany, setSelectedAutomationCompany] = useState(null);
   const [orientationModal, setOrientationModal] = useState(null);
+  const [certificateModalCompany, setCertificateModalCompany] = useState(null);
 
   const {
     openAddCompanyModal,
@@ -263,7 +265,15 @@ const CompaniesPageContent = () => {
         onManualArchiveCompany={handleManualArchiveCompany}
         onManualUnarchiveCompany={handleManualUnarchiveCompany}
         onOpenOrientations={(company) => setOrientationModal(company)}
+        onOpenCertificate={(company) => setCertificateModalCompany(company)}
       />
+      {certificateModalCompany && (
+        <CertificateModal
+          company={certificateModalCompany}
+          onClose={() => setCertificateModalCompany(null)}
+          onImported={fetchCompanies}
+        />
+      )}
       {showHistoryModal && (
         <HistoryModal
           company={selectedHistoryCompany}
