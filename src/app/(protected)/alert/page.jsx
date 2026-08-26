@@ -27,7 +27,7 @@ const AlertPage = () => {
     setAllDepartments([
       "Pessoal",
       "Fiscal",
-      "Contabil",
+      "Contábil",
       "Processual",
       "Financeiro",
       "Outros",

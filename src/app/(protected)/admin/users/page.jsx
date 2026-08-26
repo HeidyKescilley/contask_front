@@ -150,7 +150,7 @@ const AdminUsersPage = () => {
                   <td className="table-cell">{user.department}</td>
                   <td className="table-cell">{getRoleBadge(user.role)}</td>
                   <td className="table-cell text-center">
-                    {["Fiscal", "Pessoal", "Contabil"].includes(
+                    {["Fiscal", "Pessoal", "Contábil"].includes(
                       user.department
                     ) ? (
                       <input

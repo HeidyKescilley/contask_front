@@ -66,7 +66,7 @@ const TeamViewPage = () => {
     setSelectedUser("all");
   };
 
-  const departments = ["Fiscal", "Pessoal", "Contabil"];
+  const departments = ["Fiscal", "Pessoal", "Contábil"];
 
   return (
     <ProtectedRoute requiredPermissions={{ roles: ["admin"] }}>
