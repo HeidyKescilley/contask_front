@@ -59,6 +59,7 @@ const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap, vertical,
     return (
       <th
         colSpan={colSpan}
+        title={label}
         className={`table-header tax-col-header text-center border-l border-gray-200 dark:border-dark-border ${colors[color]}`}
       >
         <div className="header-label">{label}</div>

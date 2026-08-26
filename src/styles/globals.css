@@ -213,21 +213,17 @@
   .modal-box    { @apply p-4; }
 }
 
-/* ===== CABEÇALHOS DE IMPOSTOS/OBRIGAÇÕES RESPONSIVOS ===== */
-/* Horizontal em telas grandes, vertical em telas pequenas */
+/* ===== CABEÇALHOS DE IMPOSTOS/OBRIGAÇÕES ===== */
+/* Sempre verticais e estreitos: com muitas colunas dinâmicas (uma por
+   imposto/obrigação), texto horizontal estoura a largura mesmo em telas
+   grandes — o rótulo completo só é necessário no tooltip (title). */
+.tax-col-header {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+}
 .tax-col-header .header-label {
   white-space: nowrap;
-  writing-mode: horizontal-tb;
-}
-
-@media (max-width: 1366px) {
-  .tax-col-header {
-    width: 32px !important;
-    min-width: 32px !important;
-    max-width: 32px !important;
-  }
-  .tax-col-header .header-label {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-  }
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
