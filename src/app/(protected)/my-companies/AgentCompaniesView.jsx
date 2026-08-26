@@ -234,18 +234,44 @@ const AgentCompaniesView = ({
   const regimes        = ["Simples", "Presumido", "Real", "MEI", "Isenta", "Doméstica"];
   const classificacoes = ["ICMS", "ISS", "ICMS/ISS", "Outros"];
 
-  // Inicializa valores dos inputs (DP/Contábil/Fiscal)
+  // Inicializa valores dos inputs (DP/Contábil/Fiscal).
+  // Em modo leitura (Visão de Equipes), sempre reflete os dados recebidos —
+  // não há edição, então não há risco de perder algo em andamento.
+  // Em modo edição, só preenche empresas ainda não rastreadas e nunca
+  // sobrescreve uma já presente em tempValues. Isso evita que o refetch
+  // disparado pelo salvamento de UMA empresa (fetchCompanies, no fim de
+  // handleSaveOnBlur) apague, em cascata, a seleção de outra empresa que o
+  // usuário já tenha alterado localmente mas cujo blur/salvamento ainda
+  // esteja em andamento — comum ao navegar rápido entre vários selects de nota.
   useEffect(() => {
-    const initial = {};
-    companies.forEach((c) => {
-      initial[c.id] = {
-        employeesCount: c.employeesCount ?? "",
-        contabilNota:   c.contabilNota   ?? "",
-        bonusValue:     c.bonusValue     ?? "",
-      };
+    if (isReadOnly) {
+      const initial = {};
+      companies.forEach((c) => {
+        initial[c.id] = {
+          employeesCount: c.employeesCount ?? "",
+          contabilNota:   c.contabilNota   ?? "",
+          bonusValue:     c.bonusValue     ?? "",
+        };
+      });
+      setTempValues(initial);
+      return;
+    }
+    setTempValues((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      companies.forEach((c) => {
+        if (!(c.id in next)) {
+          next[c.id] = {
+            employeesCount: c.employeesCount ?? "",
+            contabilNota:   c.contabilNota   ?? "",
+            bonusValue:     c.bonusValue     ?? "",
+          };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
-    setTempValues(initial);
-  }, [companies]);
+  }, [companies, isReadOnly]);
 
   // Popula obrigações locais quando dados do cache chegam/atualizam
   useEffect(() => {
