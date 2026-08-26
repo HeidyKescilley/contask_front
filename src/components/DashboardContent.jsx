@@ -160,7 +160,7 @@ const DashboardContent = ({ data, viewMode }) => {
               <tr>
                 <th className="table-header">Usuário</th>
                 <th className="table-header">Total Designado</th>
-                <th className="table-header">Total de Meses Contabilizados</th>
+                <th className="table-header">Soma de Notas</th>
               </tr>
             </thead>
             <tbody>
@@ -173,7 +173,7 @@ const DashboardContent = ({ data, viewMode }) => {
                       {userData.totalCompaniesAssigned}
                     </td>
                     <td className="table-cell font-semibold">
-                      {userData.totalAccountingMonths}
+                      {userData.totalNota}
                     </td>
                   </tr>
                 ))}

@@ -20,7 +20,8 @@ const BonusPage = () => {
     dp_fator_1: "0.00",
     dp_fator_2: "0.00",
     fiscal_valor_base_c: "0.00",
-    contabil_valor_mes: "0.00",
+    contabil_fator_1: "0.00",
+    contabil_fator_2: "0.00",
   });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +113,7 @@ const [selectedDpUserId, setSelectedDpUserId] = useState("");
     [results]
   );
   const contabilUsers = useMemo(
-    () => results.filter((r) => r.department === "Contabil"),
+    () => results.filter((r) => r.department === "Contábil"),
     [results]
   );
 
@@ -174,6 +175,23 @@ const [selectedDpUserId, setSelectedDpUserId] = useState("");
               Detalhes: {selectedResult.userName}
             </h3>
           </div>
+          {selectedResult.calculationMemory && (
+            <div className="px-5 py-3 border-b border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
+              <p className="text-xs font-semibold text-light-text-secondary dark:text-dark-text-secondary mb-2">
+                Memoria de calculo (valores globais usados nesta competencia):
+              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {Object.entries(selectedResult.calculationMemory).map(([key, value]) => (
+                  <span key={key} className="text-xs">
+                    <span className="text-light-text-secondary dark:text-dark-text-secondary">{key}:</span>{" "}
+                    <span className="font-medium">
+                      {typeof value === "number" ? value.toLocaleString("pt-BR", { maximumFractionDigits: 4 }) : String(value)}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
@@ -252,7 +270,7 @@ const [selectedDpUserId, setSelectedDpUserId] = useState("");
           <FiDollarSign size={18} className="text-primary-500" />
           <h2 className="text-base font-semibold">Fatores de Calculo</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
           <div>
             <label htmlFor="dp_fator_1" className="label-base">
               DP Fator 1
@@ -296,15 +314,29 @@ const [selectedDpUserId, setSelectedDpUserId] = useState("");
             />
           </div>
           <div>
-            <label htmlFor="contabil_valor_mes" className="label-base">
-              Contabil Valor/Mes
+            <label htmlFor="contabil_fator_1" className="label-base">
+              Contabil Fator 1
             </label>
             <input
               type="number"
               step="0.01"
-              name="contabil_valor_mes"
-              id="contabil_valor_mes"
-              value={factors.contabil_valor_mes}
+              name="contabil_fator_1"
+              id="contabil_fator_1"
+              value={factors.contabil_fator_1}
+              onChange={handleFactorChange}
+              className="input-base"
+            />
+          </div>
+          <div>
+            <label htmlFor="contabil_fator_2" className="label-base">
+              Contabil Fator 2
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              name="contabil_fator_2"
+              id="contabil_fator_2"
+              value={factors.contabil_fator_2}
               onChange={handleFactorChange}
               className="input-base"
             />
@@ -362,8 +394,8 @@ const [selectedDpUserId, setSelectedDpUserId] = useState("");
             selectedContabilResult,
             [
               {
-                key: "accountingMonthsCount",
-                label: "Meses",
+                key: "contabilNota",
+                label: "Nota",
                 align: "text-center",
               },
             ]

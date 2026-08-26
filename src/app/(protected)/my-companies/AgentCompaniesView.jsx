@@ -238,9 +238,9 @@ const AgentCompaniesView = ({
     const initial = {};
     companies.forEach((c) => {
       initial[c.id] = {
-        employeesCount:       c.employeesCount       ?? "",
-        accountingMonthsCount: c.accountingMonthsCount ?? "",
-        bonusValue:            c.bonusValue           ?? "",
+        employeesCount: c.employeesCount ?? "",
+        contabilNota:   c.contabilNota   ?? "",
+        bonusValue:     c.bonusValue     ?? "",
       };
     });
     setTempValues(initial);
@@ -335,10 +335,10 @@ const AgentCompaniesView = ({
       }
       const v = parseInt(valueToSave, 10);
       if (isNaN(v) || v < 0) { toast.error("Valor inválido."); return; }
-    } else if (field === "accountingMonthsCount") {
+    } else if (field === "contabilNota") {
       const v = parseInt(valueToSave, 10);
-      if (isNaN(v) || v < 0) {
-        toast.error("Valor inválido.");
+      if (isNaN(v) || v < 1 || v > 5) {
+        toast.error("A nota deve ser de 1 a 5.");
         setTempValues((prev) => ({ ...prev, [companyId]: { ...prev[companyId], [field]: company[field] ?? "" } }));
         return;
       }
@@ -910,7 +910,7 @@ const AgentCompaniesView = ({
                     <DeptHeader label="Zerado"      colSpan={1} color="yellow" minWidth="60px" maxWidth="60px" />
                     <DeptHeader label="Impostos"    colSpan={1} color="yellow" minWidth="150px" />
                     <DeptHeader label="Obrigações"  colSpan={1} color="yellow" minWidth="150px" />
-                    <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
+                    <DeptHeader label="Nota Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
                   </>
                 )}
@@ -925,7 +925,7 @@ const AgentCompaniesView = ({
                     {visibleContabilObls.map((obl) => (
                       <DeptHeader key={`cont-obl-${obl.id}`} label={obl.name} colSpan={1} color="yellow" responsive />
                     ))}
-                    <DeptHeader label="Meses Cont." colSpan={1} color="yellow" minWidth="60px" />
+                    <DeptHeader label="Nota Cont." colSpan={1} color="yellow" minWidth="60px" />
                     <DeptHeader label="Conclusão"   colSpan={1} color="yellow" />
                   </>
                 )}
@@ -1261,11 +1261,16 @@ const AgentCompaniesView = ({
                             )}
                           </td>
                           <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1">
-                            <input type="text" inputMode="numeric" pattern="[0-9]*" value={tempValues[company.id]?.accountingMonthsCount ?? ""}
-                              onChange={(e) => handleValueChange(company.id, "accountingMonthsCount", e.target.value)}
-                              onBlur={() => handleSaveOnBlur(company.id, "accountingMonthsCount")}
+                            <select value={tempValues[company.id]?.contabilNota ?? ""}
+                              onChange={(e) => { handleValueChange(company.id, "contabilNota", e.target.value); }}
+                              onBlur={() => handleSaveOnBlur(company.id, "contabilNota")}
                               disabled={isReadOnly || !canEditContabil}
-                              className="input-base text-center !py-1 !text-xs disabled:opacity-40" />
+                              className="input-base text-center !py-1 !text-xs disabled:opacity-40">
+                              <option value="">–</option>
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <option key={n} value={n}>{n}</option>
+                              ))}
+                            </select>
                           </td>
                           <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
                             {company.contabilCompletedAt ? formatDate(company.contabilCompletedAt) : "–"}
@@ -1344,11 +1349,16 @@ const AgentCompaniesView = ({
                           );
                         })}
                         <td className="table-cell border-l border-gray-100 dark:border-dark-border !px-1">
-                          <input type="number" value={tempValues[company.id]?.accountingMonthsCount ?? ""}
-                            onChange={(e) => handleValueChange(company.id, "accountingMonthsCount", e.target.value)}
-                            onBlur={() => handleSaveOnBlur(company.id, "accountingMonthsCount")}
+                          <select value={tempValues[company.id]?.contabilNota ?? ""}
+                            onChange={(e) => { handleValueChange(company.id, "contabilNota", e.target.value); }}
+                            onBlur={() => handleSaveOnBlur(company.id, "contabilNota")}
                             disabled={isReadOnly || !canEditContabil}
-                            className="input-base text-center !py-1 !text-xs disabled:opacity-40" />
+                            className="input-base text-center !py-1 !text-xs disabled:opacity-40">
+                            <option value="">–</option>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <option key={n} value={n}>{n}</option>
+                            ))}
+                          </select>
                         </td>
                         <td className="table-cell text-xs whitespace-nowrap text-gray-500 dark:text-dark-text-secondary">
                           {company.contabilCompletedAt ? formatDate(company.contabilCompletedAt) : "–"}
