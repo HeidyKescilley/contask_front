@@ -214,21 +214,25 @@
 }
 
 /* ===== CABEÇALHOS DE IMPOSTOS/OBRIGAÇÕES ===== */
-/* Largura fixa e estreita, com o texto quebrando em varias linhas
-   (em pe, sem rotacionar) — com muitas colunas dinamicas (uma por
-   imposto/obrigacao), texto em uma linha so estoura a largura mesmo em
-   telas grandes, e texto vertical/rotacionado e dificil de ler. */
+/* Largura fixa e estreita, com o texto quebrando em varias linhas por
+   palavra inteira (nunca corta uma palavra no meio) — com muitas colunas
+   dinamicas (uma por imposto/obrigacao), texto em uma linha so estoura a
+   largura mesmo em telas grandes, e texto vertical/rotacionado e dificil
+   de ler. Centralizado na horizontal e na vertical. */
 .tax-col-header {
-  width: 76px !important;
-  min-width: 76px !important;
-  max-width: 76px !important;
-  vertical-align: bottom;
-  padding-bottom: 6px !important;
+  width: 92px !important;
+  min-width: 92px !important;
+  max-width: 92px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  vertical-align: middle;
 }
 .tax-col-header .header-label {
   writing-mode: horizontal-tb;
   white-space: normal;
-  word-break: break-word;
-  line-height: 1.2;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  line-height: 1.25;
   text-align: center;
 }

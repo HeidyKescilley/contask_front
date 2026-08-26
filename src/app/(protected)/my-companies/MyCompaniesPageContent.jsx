@@ -53,7 +53,11 @@ const isCompanyComplete = (company, department) => {
 const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
   const { selectedPeriod } = useCompetencia();
-  const { data: companiesData, loading: companiesLoading, refresh: fetchCompanies } = useCachedFetch("/company/my-companies");
+  // ttl: 0 — mostra o cache instantaneamente (sem tela de loading), mas sempre
+  // revalida em segundo plano. Sem isso, nenhuma acao no app (criar empresa,
+  // reatribuir, mudar status) invalida esse cache, entao o agente podia ficar
+  // ate 5 minutos vendo uma lista de empresas desatualizada/incompleta.
+  const { data: companiesData, loading: companiesLoading, refresh: fetchCompanies } = useCachedFetch("/company/my-companies", { ttl: 0 });
   const companies = useMemo(() => companiesData || [], [companiesData]);
   const VIEW_MODE_KEY = "contask_my_companies_view_mode";
   const [viewMode, setViewMode] = useState(() => {
