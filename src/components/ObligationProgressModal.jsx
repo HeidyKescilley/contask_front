@@ -20,7 +20,7 @@ const StatusBadge = ({ status }) => {
 // ── Barra de progresso ────────────────────────────────────────────────────────
 const ProgressBar = ({ completed, total }) => {
   const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
-  const color = pct === 100 ? "bg-emerald-500" : pct > 0 ? "bg-amber-400" : "bg-gray-200 dark:bg-dark-border";
+  const color = pct === 100 ? "bg-status-success-text dark:bg-status-success-text-dark" : pct > 0 ? "bg-status-warning-text dark:bg-status-warning-text-dark" : "bg-gray-200 dark:bg-dark-border";
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 bg-gray-100 dark:bg-dark-surface rounded-full overflow-hidden">
@@ -43,8 +43,8 @@ const TaxItem = ({ tax, onToggle, updating }) => {
       isDisabled
         ? "border-gray-100 dark:border-dark-border bg-gray-50/50 dark:bg-dark-surface/50 opacity-60"
         : isCompleted
-        ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/10"
-        : "border-gray-100 dark:border-dark-border bg-white dark:bg-dark-card hover:border-amber-200"
+        ? "border-status-success-bg dark:border-status-success-bg-dark/60 bg-status-success-bg/50 dark:bg-status-success-bg-dark/25"
+        : "border-gray-100 dark:border-dark-border bg-white dark:bg-dark-card hover:border-status-warning-bg"
     }`}>
       <button
         type="button"
@@ -54,8 +54,8 @@ const TaxItem = ({ tax, onToggle, updating }) => {
           isDisabled
             ? "border-gray-200 dark:border-dark-border bg-gray-100 dark:bg-dark-surface cursor-not-allowed"
             : isCompleted
-            ? "bg-emerald-500 border-emerald-500 text-white"
-            : "border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+            ? "bg-status-success-text border-status-success-text text-white dark:bg-status-success-text-dark dark:border-status-success-text-dark dark:text-dark-bg"
+            : "border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
         }`}
       >
         {isLoading
@@ -65,13 +65,13 @@ const TaxItem = ({ tax, onToggle, updating }) => {
       </button>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm font-medium ${isDisabled ? "text-gray-400" : isCompleted ? "text-emerald-700 dark:text-emerald-400" : "text-gray-800 dark:text-dark-text"}`}>
+          <span className={`text-sm font-medium ${isDisabled ? "text-gray-400" : isCompleted ? "text-status-success-text dark:text-status-success-text-dark" : "text-gray-800 dark:text-dark-text"}`}>
             {tax.name}
           </span>
           <StatusBadge status={tax.status} />
         </div>
         {isCompleted && tax.completedAt && (
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+          <span className="text-xs text-status-success-text dark:text-status-success-text-dark mt-0.5 block">
             Apurado em {new Date(tax.completedAt).toLocaleDateString("pt-BR")}
           </span>
         )}
@@ -256,10 +256,10 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                           isDisabled
                             ? "border-gray-100 dark:border-dark-border bg-gray-50/50 dark:bg-dark-surface/50 opacity-60"
                             : isNotApplicable
-                            ? "border-amber-100 dark:border-amber-800/30 bg-amber-50/50 dark:bg-amber-900/10 opacity-75"
+                            ? "border-status-warning-bg dark:border-status-warning-bg-dark/50 bg-status-warning-bg/40 dark:bg-status-warning-bg-dark/20 opacity-75"
                             : isCompleted
-                            ? "border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/10"
-                            : "border-gray-100 dark:border-dark-border bg-white dark:bg-dark-card hover:border-amber-200"
+                            ? "border-status-success-bg dark:border-status-success-bg-dark/60 bg-status-success-bg/50 dark:bg-status-success-bg-dark/25"
+                            : "border-gray-100 dark:border-dark-border bg-white dark:bg-dark-card hover:border-status-warning-bg"
                         }`}
                       >
                         <button
@@ -270,10 +270,10 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                             isDisabled
                               ? "border-gray-200 dark:border-dark-border bg-gray-100 dark:bg-dark-surface cursor-not-allowed"
                               : isNotApplicable
-                              ? "border-amber-200 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/30 cursor-not-allowed"
+                              ? "border-status-warning-bg dark:border-status-warning-bg-dark bg-status-warning-bg dark:bg-status-warning-bg-dark/60 cursor-not-allowed"
                               : isCompleted
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                              ? "bg-status-success-text border-status-success-text text-white dark:bg-status-success-text-dark dark:border-status-success-text-dark dark:text-dark-bg"
+                              : "border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                           }`}
                         >
                           {isLoading ? (
@@ -281,7 +281,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                           ) : isDisabled ? (
                             <FiSlash size={10} className="text-gray-400" />
                           ) : isNotApplicable ? (
-                            <FiMinus size={10} className="text-amber-500" />
+                            <FiMinus size={10} className="text-status-warning-text dark:text-status-warning-text-dark" />
                           ) : isCompleted ? (
                             <FiCheck size={11} strokeWidth={3} />
                           ) : null}
@@ -304,7 +304,7 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                               </span>
                             )}
                             {isCompleted && obl.completedAt && (
-                              <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                              <span className="text-xs text-status-success-text dark:text-status-success-text-dark">
                                 Concluída em {new Date(obl.completedAt).toLocaleDateString("pt-BR")}
                               </span>
                             )}
@@ -313,10 +313,10 @@ const ObligationProgressModal = ({ company, onClose, currentPeriod, department =
                                 type="button"
                                 onClick={() => handleNotApplicableToggle(obl)}
                                 disabled={isNaLoading}
-                                className="text-xs text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                                className="text-xs text-status-warning-text dark:text-status-warning-text-dark hover:underline flex items-center gap-1"
                               >
                                 {isNaLoading ? (
-                                  <div className="w-3 h-3 border border-amber-400 border-t-transparent rounded-full animate-spin" />
+                                  <div className="w-3 h-3 border border-status-warning-text border-t-transparent rounded-full animate-spin" />
                                 ) : isNotApplicable ? "Restaurar" : "Não se aplica"}
                               </button>
                             )}

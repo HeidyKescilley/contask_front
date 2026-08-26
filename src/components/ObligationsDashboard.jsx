@@ -26,8 +26,8 @@ const Bar = dynamic(() => import("react-chartjs-2").then((m) => m.Bar), {
 const DEPARTMENTS = ["Fiscal", "Pessoal", "Contábil"];
 
 const COLORS = {
-  completed: "#10b981",
-  pending:   "#f59e0b",
+  completed: "oklch(38% 0.09 150)",
+  pending:   "oklch(40% 0.11 75)",
   disabled:  "#9ca3af",
 };
 
@@ -39,7 +39,7 @@ const MiniBar = React.memo(({ completed, total, disabled = 0 }) => {
     <div className="flex items-center gap-1.5">
       <div className="w-16 h-1.5 bg-gray-100 dark:bg-dark-surface rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full ${pct === 100 ? "bg-emerald-500" : pct > 0 ? "bg-amber-400" : "bg-gray-200"}`}
+          className={`h-full rounded-full ${pct === 100 ? "bg-status-success-text dark:bg-status-success-text-dark" : pct > 0 ? "bg-status-warning-text dark:bg-status-warning-text-dark" : "bg-gray-200"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -75,10 +75,10 @@ const ItemTable = React.memo(({ items, onRowClick, hasTaxView }) => (
               <td className="table-cell font-medium text-sm">{item.name}</td>
               <td className="table-cell text-center text-sm">{item.total}</td>
               <td className="table-cell text-center">
-                <span className="text-emerald-600 font-semibold">{item.completed}</span>
+                <span className="text-status-success-text dark:text-status-success-text-dark font-semibold">{item.completed}</span>
               </td>
               <td className="table-cell text-center">
-                <span className="text-amber-500 font-semibold">{item.pending}</span>
+                <span className="text-status-warning-text dark:text-status-warning-text-dark font-semibold">{item.pending}</span>
               </td>
               {!hasTaxView && (
                 <td className="table-cell text-center text-gray-400">{item.disabled ?? 0}</td>
@@ -125,10 +125,10 @@ const UserTable = React.memo(({ users }) => {
                   <td className="table-cell font-medium text-sm">{u.name}</td>
                   <td className="table-cell text-center text-sm">{u.totalCompanies}</td>
                   <td className="table-cell text-center">
-                    <span className="text-emerald-600 font-semibold">{u.completedCompanies}</span>
+                    <span className="text-status-success-text dark:text-status-success-text-dark font-semibold">{u.completedCompanies}</span>
                   </td>
                   <td className="table-cell text-center">
-                    <span className="text-amber-500 font-semibold">{u.pendingCompanies}</span>
+                    <span className="text-status-warning-text dark:text-status-warning-text-dark font-semibold">{u.pendingCompanies}</span>
                   </td>
                   <td className="table-cell">
                     <MiniBar completed={u.completedCompanies} total={u.totalCompanies} />
@@ -294,11 +294,11 @@ const ObligationsDashboard = () => {
               </div>
               <div className="card text-center py-3">
                 <p className="text-xs text-gray-400 mb-1">Instâncias apuradas</p>
-                <p className="text-2xl font-bold text-emerald-600">{taxTotals.completed}</p>
+                <p className="text-2xl font-bold text-status-success-text dark:text-status-success-text-dark">{taxTotals.completed}</p>
               </div>
               <div className="card text-center py-3">
                 <p className="text-xs text-gray-400 mb-1">Instâncias pendentes</p>
-                <p className="text-2xl font-bold text-amber-500">{taxTotals.pending}</p>
+                <p className="text-2xl font-bold text-status-warning-text dark:text-status-warning-text-dark">{taxTotals.pending}</p>
               </div>
             </div>
 
@@ -353,11 +353,11 @@ const ObligationsDashboard = () => {
             </div>
             <div className="card text-center py-3">
               <p className="text-xs text-gray-400 mb-1">Instâncias concluídas</p>
-              <p className="text-2xl font-bold text-emerald-600">{oblTotals.completed}</p>
+              <p className="text-2xl font-bold text-status-success-text dark:text-status-success-text-dark">{oblTotals.completed}</p>
             </div>
             <div className="card text-center py-3">
               <p className="text-xs text-gray-400 mb-1">Instâncias pendentes</p>
-              <p className="text-2xl font-bold text-amber-500">{oblTotals.pending}</p>
+              <p className="text-2xl font-bold text-status-warning-text dark:text-status-warning-text-dark">{oblTotals.pending}</p>
             </div>
             <div className="card text-center py-3">
               <p className="text-xs text-gray-400 mb-1">Desabilitadas</p>

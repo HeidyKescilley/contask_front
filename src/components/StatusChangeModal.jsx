@@ -141,9 +141,9 @@ const StatusChangeModal = ({ company, onClose, onSave }) => {
         </form>
 
         {showConfirmation && (
-          <div className="mt-5 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
+          <div className="mt-5 p-4 rounded-xl bg-status-warning-bg dark:bg-status-warning-bg-dark border border-status-warning-text/30 dark:border-status-warning-text-dark/30">
             <div className="flex items-start gap-3">
-              <FiAlertTriangle className="text-amber-500 mt-0.5 flex-shrink-0" size={20} />
+              <FiAlertTriangle className="text-status-warning-text dark:text-status-warning-text-dark mt-0.5 flex-shrink-0" size={20} />
               <div className="text-sm">
                 <p className="text-gray-700 dark:text-dark-text">
                   Tem certeza que deseja alterar o status da empresa{" "}

@@ -72,8 +72,8 @@ const DashboardContent = ({ data, viewMode }) => {
       {
         label: "Empresas",
         data: [completedValue, nonCompletedValue],
-        backgroundColor: ["rgba(34, 197, 94, 0.8)", "rgba(245, 158, 11, 0.8)"],
-        borderColor: ["rgb(34, 197, 94)", "rgb(245, 158, 11)"],
+        backgroundColor: ["oklch(38% 0.09 150 / 0.8)", "oklch(40% 0.11 75 / 0.8)"],
+        borderColor: ["oklch(38% 0.09 150)", "oklch(40% 0.11 75)"],
         borderWidth: 2,
       },
     ],
@@ -85,8 +85,8 @@ const DashboardContent = ({ data, viewMode }) => {
       {
         label: "Empresas",
         data: [zeroedCompanies, nonZeroedCompaniesForChart],
-        backgroundColor: ["rgba(168, 85, 247, 0.8)", "rgba(59, 130, 246, 0.8)"],
-        borderColor: ["rgb(168, 85, 247)", "rgb(59, 130, 246)"],
+        backgroundColor: ["rgba(168, 85, 247, 0.8)", "oklch(45% 0.11 180 / 0.8)"],
+        borderColor: ["rgb(168, 85, 247)", "oklch(45% 0.11 180)"],
         borderWidth: 2,
       },
     ],
@@ -192,19 +192,19 @@ const DashboardContent = ({ data, viewMode }) => {
           title="Total de Empresas"
           value={totalForCards}
           icon={FiUsers}
-          colorClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+          colorClass="bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
         />
         <StatCard
           title={completedLabel}
           value={completedValue}
           icon={FiCheckCircle}
-          colorClass="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+          colorClass="bg-status-success-bg text-status-success-text dark:bg-status-success-bg-dark dark:text-status-success-text-dark"
         />
         <StatCard
           title={nonCompletedLabel}
           value={nonCompletedValue}
           icon={FiAlertCircle}
-          colorClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+          colorClass="bg-status-warning-bg text-status-warning-text dark:bg-status-warning-bg-dark dark:text-status-warning-text-dark"
         />
         <StatCard
           title="Zeradas"
@@ -291,7 +291,7 @@ const DashboardContent = ({ data, viewMode }) => {
                             {userData.absoluteTotalAssigned}
                           </td>
                           <td className="table-cell">
-                            <span className="text-green-600 dark:text-green-400 font-medium">
+                            <span className="text-status-success-text dark:text-status-success-text-dark font-medium">
                               {userData.completedCompanies}
                             </span>
                             <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">
@@ -299,7 +299,7 @@ const DashboardContent = ({ data, viewMode }) => {
                             </span>
                           </td>
                           <td className="table-cell">
-                            <span className="text-amber-600 dark:text-amber-400 font-medium">
+                            <span className="text-status-warning-text dark:text-status-warning-text-dark font-medium">
                               {userData.nonCompletedCompanies}
                             </span>
                             <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">

@@ -16,7 +16,7 @@ import { useCompetencia } from "../../../hooks/useCompetencia";
 // ── Helpers de design ─────────────────────────────────────────────────────────
 const StatusDot = ({ checked, variant = "green" }) => {
   const variants = {
-    green:  checked ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-300 dark:bg-dark-surface dark:text-gray-600",
+    green:  checked ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg" : "bg-gray-100 text-gray-300 dark:bg-dark-surface dark:text-gray-600",
     purple: checked ? "bg-purple-500 text-white"  : "bg-gray-100 text-gray-300 dark:bg-dark-surface dark:text-gray-600",
     red:    checked ? "bg-red-400 text-white"      : "bg-gray-100 text-gray-300 dark:bg-dark-surface dark:text-gray-600",
   };
@@ -28,7 +28,7 @@ const StatusDot = ({ checked, variant = "green" }) => {
 };
 
 const AgentCheckbox = ({ checked, onChange, disabled, variant = "green" }) => {
-  const accents = { green: "accent-emerald-500", purple: "accent-purple-500", red: "accent-red-400" };
+  const accents = { green: "accent-status-success-text dark:accent-status-success-text-dark", purple: "accent-purple-500", red: "accent-red-400" };
   return (
     <input type="checkbox" checked={checked} onChange={onChange} disabled={disabled}
       className={`h-4 w-4 rounded cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${accents[variant]}`} />
@@ -50,10 +50,12 @@ const CheckItem = ({ checked, onChange, label }) => (
 );
 
 const DeptHeader = ({ label, colSpan, color, minWidth, maxWidth, wrap, vertical, responsive }) => {
+  // Fundos sempre solidos (sem opacidade) — o cabecalho fica "sticky" ao rolar,
+  // e um fundo translucido deixa as linhas por baixo aparecerem por baixo dele.
   const colors = {
-    blue:   "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
-    green:  "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
-    yellow: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
+    blue:   "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
+    green:  "bg-status-success-bg dark:bg-status-success-bg-dark text-status-success-text dark:text-status-success-text-dark",
+    yellow: "bg-status-warning-bg dark:bg-status-warning-bg-dark text-status-warning-text dark:text-status-warning-text-dark",
   };
   if (responsive) {
     return (
@@ -97,9 +99,9 @@ const ObligationBar = ({ completed, total, onOpen }) => {
   const barColor = total === 0
     ? "bg-gray-200 dark:bg-dark-border"
     : pct === 100
-    ? "bg-emerald-500"
+    ? "bg-status-success-text dark:bg-status-success-text-dark"
     : pct > 0
-    ? "bg-amber-400"
+    ? "bg-status-warning-text dark:bg-status-warning-text-dark"
     : "bg-gray-200 dark:bg-dark-border";
 
   return (
@@ -1075,8 +1077,8 @@ const AgentCompaniesView = ({
                                     isDisabled
                                       ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
                                       : isCompleted
-                                      ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                      : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                      ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg hover:opacity-90"
+                                      : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                                   }`}
                                 >
                                   {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
@@ -1115,13 +1117,13 @@ const AgentCompaniesView = ({
                                     isDisabled
                                       ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
                                       : isNotApplicable
-                                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-400 hover:bg-amber-200 cursor-pointer"
+                                      ? "bg-status-warning-bg dark:bg-status-warning-bg-dark text-status-warning-text dark:text-status-warning-text-dark hover:opacity-90 cursor-pointer"
                                       : isCompleted
-                                      ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                      : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                      ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg hover:opacity-90"
+                                      : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                                   }`}
                                 >
-                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-amber-400" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-status-warning-text dark:text-status-warning-text-dark" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
                                 </button>
                               )}
                             </td>
@@ -1206,8 +1208,8 @@ const AgentCompaniesView = ({
                                   title={tax.name}
                                   className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
                                     isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
-                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                    : isCompleted ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg hover:opacity-90"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                                   }`}
                                 >
                                   {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
@@ -1236,12 +1238,12 @@ const AgentCompaniesView = ({
                                   title={isNotApplicable ? `${obl.name} (Não se aplica)` : obl.name}
                                   className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
                                     isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
-                                    : isNotApplicable ? "bg-amber-100 dark:bg-amber-900/30 text-amber-400 hover:bg-amber-200 cursor-pointer"
-                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                    : isNotApplicable ? "bg-status-warning-bg dark:bg-status-warning-bg-dark text-status-warning-text dark:text-status-warning-text-dark hover:opacity-90 cursor-pointer"
+                                    : isCompleted ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg hover:opacity-90"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                                   }`}
                                 >
-                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-amber-400" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-status-warning-text dark:text-status-warning-text-dark" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
                                 </button>
                               )}
                             </td>
@@ -1334,8 +1336,8 @@ const AgentCompaniesView = ({
                                   title={tax.name}
                                   className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
                                     isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
-                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                    : isCompleted ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg hover:opacity-90"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                                   }`}
                                 >
                                   {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
@@ -1364,12 +1366,12 @@ const AgentCompaniesView = ({
                                   title={isNotApplicable ? `${obl.name} (Não se aplica)` : obl.name}
                                   className={`w-5 h-5 rounded-full flex items-center justify-center mx-auto transition-colors ${
                                     isDisabled ? "bg-gray-100 dark:bg-dark-surface text-gray-300 cursor-not-allowed"
-                                    : isNotApplicable ? "bg-amber-100 dark:bg-amber-900/30 text-amber-400 hover:bg-amber-200 cursor-pointer"
-                                    : isCompleted ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-emerald-400"
+                                    : isNotApplicable ? "bg-status-warning-bg dark:bg-status-warning-bg-dark text-status-warning-text dark:text-status-warning-text-dark hover:opacity-90 cursor-pointer"
+                                    : isCompleted ? "bg-status-success-text dark:bg-status-success-text-dark text-white dark:text-dark-bg hover:opacity-90"
+                                    : "border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-status-success-text"
                                   }`}
                                 >
-                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-amber-400" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
+                                  {isDisabled ? <FiMinus size={9} className="text-gray-300" /> : isNotApplicable ? <FiMinus size={9} className="text-status-warning-text dark:text-status-warning-text-dark" /> : isCompleted ? <FiCheck size={10} strokeWidth={3} /> : null}
                                 </button>
                               )}
                             </td>

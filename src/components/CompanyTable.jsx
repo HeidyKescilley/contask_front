@@ -17,31 +17,29 @@ import { copyToClipboard, formatCNPJ } from "../utils/utils";
 import { useAuth } from "../hooks/useAuth";
 
 const STATUS_STYLES = {
-  ATIVA:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  SUSPENSA: "bg-amber-100  text-amber-700  dark:bg-amber-900/40  dark:text-amber-400",
-  BAIXADA:  "bg-red-100    text-red-700    dark:bg-red-900/40    dark:text-red-400",
-  DISTRATO: "bg-red-100    text-red-700    dark:bg-red-900/40    dark:text-red-400",
+  ATIVA:    "badge-green",
+  SUSPENSA: "badge-amber",
+  BAIXADA:  "badge-red",
+  DISTRATO: "badge-red",
 };
 
 const ROW_HIGHLIGHT = {
-  SUSPENSA: " bg-amber-50/40 dark:bg-amber-950/15",
-  BAIXADA:  " bg-red-50/40   dark:bg-red-950/15",
-  DISTRATO: " bg-red-50/40   dark:bg-red-950/15",
+  SUSPENSA: " bg-status-warning-bg/40 dark:bg-status-warning-bg-dark/25",
+  BAIXADA:  " bg-status-error-bg/40   dark:bg-status-error-bg-dark/25",
+  DISTRATO: " bg-status-error-bg/40   dark:bg-status-error-bg-dark/25",
 };
 
 const StatusBadge = memo(({ status }) => (
-  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-    STATUS_STYLES[status] || "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-  }`}>
+  <span className={STATUS_STYLES[status] || "badge badge-gray"}>
     {status}
   </span>
 ));
 StatusBadge.displayName = "StatusBadge";
 
 const CERTIFICATE_STATUS_STYLES = {
-  verde: "text-emerald-500 hover:text-emerald-600",
-  amarelo: "text-amber-500 hover:text-amber-600",
-  vermelho: "text-red-500 hover:text-red-600",
+  verde: "text-status-success-text dark:text-status-success-text-dark hover:opacity-80",
+  amarelo: "text-status-warning-text dark:text-status-warning-text-dark hover:opacity-80",
+  vermelho: "text-status-error-text dark:text-status-error-text-dark hover:opacity-80",
   cinza: "text-gray-300 dark:text-gray-600 hover:text-gray-400 dark:hover:text-gray-500",
 };
 

@@ -39,7 +39,7 @@
   /* --- Inputs & Selects --- */
   .input-base {
     @apply w-full border px-3 py-2 rounded-xl text-sm
-      bg-gray-50 border-gray-200 text-gray-800
+      bg-light-surface-alt border-light-border text-light-text
       placeholder-gray-400
       focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500
       transition-all duration-150;
@@ -58,10 +58,10 @@
 
   /* --- Cards --- */
   .card {
-    @apply bg-white rounded-2xl shadow-card p-4 border border-gray-100/80;
+    @apply bg-light-card rounded-2xl shadow-card p-4 border border-light-border;
   }
   .dark .card {
-    @apply bg-dark-card shadow-card-dark border-dark-border/60;
+    @apply bg-dark-card shadow-card-dark border-dark-border;
   }
 
   /* --- Botoes --- */
@@ -101,7 +101,7 @@
     @apply bg-dark-card-hover text-dark-text hover:bg-dark-border focus:ring-offset-dark-bg;
   }
   .btn-outline {
-    @apply btn bg-transparent border border-gray-200 text-gray-700 hover:bg-gray-50
+    @apply btn bg-transparent border border-light-border text-gray-700 hover:bg-light-surface-alt
       focus:ring-gray-300;
   }
   .dark .btn-outline {
@@ -111,7 +111,7 @@
   /* --- Tabelas --- */
   .table-header {
     @apply px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider
-      text-gray-500 bg-gray-50 whitespace-nowrap;
+      text-light-text-secondary bg-light-surface-alt whitespace-nowrap;
   }
   .dark .table-header {
     @apply text-dark-text-secondary bg-dark-surface;
@@ -120,10 +120,10 @@
     @apply px-3 py-2.5 text-sm;
   }
   .table-row {
-    @apply border-b border-gray-100/80 hover:bg-gray-50 transition-colors duration-100;
+    @apply border-b border-light-border hover:bg-light-surface-alt transition-colors duration-100;
   }
   .dark .table-row {
-    @apply border-dark-border/50 hover:bg-dark-card-hover/60;
+    @apply border-dark-border hover:bg-dark-card-hover;
   }
 
   /* --- Modais --- */
@@ -131,7 +131,7 @@
     @apply fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50;
   }
   .modal-box {
-    @apply bg-white rounded-2xl shadow-modal p-5 w-full max-h-[90vh] overflow-y-auto overflow-x-hidden;
+    @apply bg-light-card rounded-2xl shadow-modal p-5 w-full max-h-[90vh] overflow-y-auto overflow-x-hidden;
   }
   .dark .modal-box {
     @apply bg-dark-card border border-dark-border;
@@ -141,12 +141,12 @@
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold;
   }
-  .badge-green  { @apply badge bg-emerald-100 text-emerald-700; }
-  .dark .badge-green { @apply bg-emerald-900/40 text-emerald-400; }
-  .badge-amber  { @apply badge bg-amber-100 text-amber-700; }
-  .dark .badge-amber { @apply bg-amber-900/40 text-amber-400; }
-  .badge-red    { @apply badge bg-red-100 text-red-700; }
-  .dark .badge-red { @apply bg-red-900/40 text-red-400; }
+  .badge-green  { @apply badge bg-status-success-bg text-status-success-text; }
+  .dark .badge-green { @apply bg-status-success-bg-dark text-status-success-text-dark; }
+  .badge-amber  { @apply badge bg-status-warning-bg text-status-warning-text; }
+  .dark .badge-amber { @apply bg-status-warning-bg-dark text-status-warning-text-dark; }
+  .badge-red    { @apply badge bg-status-error-bg text-status-error-text; }
+  .dark .badge-red { @apply bg-status-error-bg-dark text-status-error-text-dark; }
   .badge-purple { @apply badge bg-purple-100 text-purple-700; }
   .dark .badge-purple { @apply bg-purple-900/40 text-purple-400; }
   .badge-blue   { @apply badge bg-blue-100 text-blue-700; }
@@ -156,7 +156,7 @@
 
   /* --- Tabs --- */
   .tab-bar {
-    @apply flex gap-0.5 border-b border-gray-200;
+    @apply flex gap-0.5 border-b border-light-border;
   }
   .dark .tab-bar {
     @apply border-dark-border;
@@ -181,7 +181,7 @@
     @apply flex items-center gap-3 py-2;
   }
   .section-divider-line {
-    @apply flex-1 h-px bg-gray-100;
+    @apply flex-1 h-px bg-light-border;
   }
   .dark .section-divider-line {
     @apply bg-dark-border;
@@ -214,16 +214,21 @@
 }
 
 /* ===== CABEÇALHOS DE IMPOSTOS/OBRIGAÇÕES ===== */
-/* Sempre verticais e estreitos: com muitas colunas dinâmicas (uma por
-   imposto/obrigação), texto horizontal estoura a largura mesmo em telas
-   grandes — o rótulo completo só é necessário no tooltip (title). */
+/* Largura fixa e estreita, com o texto quebrando em varias linhas
+   (em pe, sem rotacionar) — com muitas colunas dinamicas (uma por
+   imposto/obrigacao), texto em uma linha so estoura a largura mesmo em
+   telas grandes, e texto vertical/rotacionado e dificil de ler. */
 .tax-col-header {
-  width: 32px !important;
-  min-width: 32px !important;
-  max-width: 32px !important;
+  width: 76px !important;
+  min-width: 76px !important;
+  max-width: 76px !important;
+  vertical-align: bottom;
+  padding-bottom: 6px !important;
 }
 .tax-col-header .header-label {
-  white-space: nowrap;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  writing-mode: horizontal-tb;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
+  text-align: center;
 }
