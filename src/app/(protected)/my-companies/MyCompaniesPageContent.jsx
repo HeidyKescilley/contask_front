@@ -33,23 +33,6 @@ const StatValue = ({ loading, value }) =>
     <p className="text-lg font-bold">{value}</p>
   );
 
-// Verifica se uma empresa está 100% concluída para o departamento do agente
-const isCompanyComplete = (company, department) => {
-  if (department === "Fiscal") {
-    if (company.isZeroedFiscal) return true;
-    return company.fiscalCompletedAt != null;
-  }
-  if (department === "Pessoal") {
-    if (company.isZeroedDp) return true;
-    return !!company.dpCompletedAt;
-  }
-  if (department === "Contábil") {
-    if (company.isZeroedContabil) return true;
-    return !!company.contabilCompletedAt;
-  }
-  return false;
-};
-
 const MyCompaniesPageContent = () => {
   const { user } = useAuth(); // Obter o usuário autenticado
   const { selectedPeriod } = useCompetencia();
@@ -252,16 +235,19 @@ const MyCompaniesPageContent = () => {
     }
   }, []);
 
-  // Contadores para o modo Agente (usam filteredCompanies já filtrado por dept/status)
+  // Concluídas/Pendentes vêm da AgentCompaniesView, que aplica a regra dos dashboards
+  // sobre os status do período selecionado.
+  const [completionStats, setCompletionStats] = useState(null);
+
   const agentStats = useMemo(() => {
     if (viewMode !== "agent" || !user?.department) return null;
-    const dept = user.department;
-    const total = filteredCompanies.length;
-    const concluidas = filteredCompanies.filter((c) =>
-      isCompanyComplete(c, dept)
-    ).length;
-    return { total, concluidas, pendentes: total - concluidas };
-  }, [filteredCompanies, viewMode, user]);
+    return {
+      total: filteredCompanies.length,
+      concluidas: completionStats?.concluidas ?? 0,
+      pendentes: completionStats?.pendentes ?? 0,
+      loading: !completionStats || completionStats.loading,
+    };
+  }, [filteredCompanies, viewMode, user, completionStats]);
 
   const totalCompanies = companies.length;
   const activeCompanies = companies.filter(
@@ -362,7 +348,7 @@ const MyCompaniesPageContent = () => {
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
                 100% Concluídas
               </p>
-              <StatValue loading={companiesLoading} value={agentStats.concluidas} />
+              <StatValue loading={companiesLoading || agentStats.loading} value={agentStats.concluidas} />
             </div>
           </div>
           <div className="card flex items-center gap-3">
@@ -373,7 +359,7 @@ const MyCompaniesPageContent = () => {
               <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
                 Pendentes
               </p>
-              <StatValue loading={companiesLoading} value={agentStats.pendentes} />
+              <StatValue loading={companiesLoading || agentStats.loading} value={agentStats.pendentes} />
             </div>
           </div>
         </div>
@@ -413,6 +399,7 @@ const MyCompaniesPageContent = () => {
           companies={filteredCompanies}
           user={user}
           fetchCompanies={fetchCompanies}
+          onStatsChange={setCompletionStats}
         />
       )}
 

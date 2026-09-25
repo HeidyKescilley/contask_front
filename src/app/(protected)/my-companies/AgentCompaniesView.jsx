@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import useCachedFetch from "../../../hooks/useCachedFetch";
 import {
   FiSearch, FiX, FiCheck, FiMinus, FiList, FiGrid,
-  FiExternalLink, FiLoader, FiArrowUp, FiArrowDown, FiBookOpen,
+  FiExternalLink, FiLoader, FiArrowUp, FiArrowDown, FiBookOpen, FiRotateCcw,
 } from "react-icons/fi";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
@@ -126,6 +126,7 @@ const AgentCompaniesView = ({
   fetchCompanies,
   isReadOnly = false,
   viewDepartment = null,
+  onStatsChange = null,
 }) => {
   const [tempValues, setTempValues] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -389,6 +390,28 @@ const AgentCompaniesView = ({
     }
   }, [companies, tempValues, fetchCompanies, isReadOnly]);
 
+  // ── Zerar coluna "Nota Cont." (todas as empresas do usuário Contábil) ──────
+  const [clearingNotas, setClearingNotas] = useState(false);
+  const handleClearContabilNotas = useCallback(async () => {
+    if (isReadOnly || !canEditContabil || clearingNotas) return;
+    if (!window.confirm("Zerar a Nota Cont. de todas as suas empresas? Esta ação não pode ser desfeita.")) return;
+    setClearingNotas(true);
+    try {
+      await api.patch("/company/clear-contabil-notas");
+      setTempValues((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((id) => { next[id] = { ...next[id], contabilNota: "" }; });
+        return next;
+      });
+      toast.success("Notas zeradas!");
+      fetchCompanies();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erro ao zerar as notas.");
+    } finally {
+      setClearingNotas(false);
+    }
+  }, [isReadOnly, canEditContabil, clearingNotas, fetchCompanies]);
+
   // ── Atualizar status de imposto (modo tabela Fiscal) ─────────────────────
   const handleTaxToggle = useCallback(async (statusId, currentStatus) => {
     if (isReadOnly || !canEditFiscal) return;
@@ -646,6 +669,40 @@ const AgentCompaniesView = ({
     return { total: txs.length, completed: txs.filter((t) => t.status === "completed").length };
   };
 
+  // ── Concluídas/Pendentes — mesma regra dos dashboards (Obligation/TaxController.getDashboard):
+  // itens "disabled" saem da conta; "não se aplica" conta como resolvido;
+  // pendente = ao menos um item pending; concluída = nenhum pending, e a empresa
+  // tem itens ativos ou está zerada. Sem itens e não zerada: não entra.
+  useEffect(() => {
+    if (!onStatsChange) return;
+    const source = showFiscalColumns
+      ? { obl: obligationStatuses, tax: taxStatuses, loaded: !!oblData && !!taxData }
+      : showDpColumns
+      ? { obl: dpObligationStatuses, tax: dpTaxStatuses, loaded: !!dpOblData && !!dpTaxData }
+      : showContabilColumns
+      ? { obl: contabilObligationStatuses, tax: contabilTaxStatuses, loaded: !!contabilOblData && !!contabilTaxData }
+      : null;
+    if (!source) { onStatsChange(null); return; }
+
+    const zeroedField = showFiscalColumns ? "isZeroedFiscal" : showDpColumns ? "isZeroedDp" : "isZeroedContabil";
+    let concluidas = 0;
+    let pendentes = 0;
+    for (const c of companies) {
+      if (c.status !== "ATIVA") continue; // dashboards só consideram empresas ativas
+      const items = [...(source.obl[c.id] || []), ...(source.tax[c.id] || [])]
+        .filter((i) => i.status !== "disabled");
+      if (items.length === 0 && !c[zeroedField]) continue;
+      if (items.some((i) => i.status === "pending")) pendentes++;
+      else concluidas++;
+    }
+    onStatsChange({ concluidas, pendentes, loading: !source.loaded });
+  }, [
+    onStatsChange, companies, showFiscalColumns, showDpColumns, showContabilColumns,
+    obligationStatuses, taxStatuses, dpObligationStatuses, dpTaxStatuses,
+    contabilObligationStatuses, contabilTaxStatuses,
+    oblData, taxData, dpOblData, dpTaxData, contabilOblData, contabilTaxData,
+  ]);
+
   // ── Colunas visíveis no modo tabela (só impostos/obrigações que o usuário possui) ──
   const visibleTaxes = useMemo(() => {
     if (!showFiscalColumns || fiscalViewMode !== "table") return taxes;
@@ -804,6 +861,17 @@ const AgentCompaniesView = ({
               <span className="text-[11px] text-gray-400 whitespace-nowrap">
                 {activeFilterCount} filtro{activeFilterCount > 1 ? "s" : ""} ativo{activeFilterCount > 1 ? "s" : ""}
               </span>
+            )}
+            {showContabilColumns && canEditContabil && (
+              <button
+                type="button"
+                onClick={handleClearContabilNotas}
+                disabled={clearingNotas}
+                className="btn-danger text-xs disabled:opacity-50"
+                title="Zera a coluna Nota Cont. de todas as suas empresas"
+              >
+                <FiRotateCcw size={13} /> Zerar Nota Cont.
+              </button>
             )}
             <button onClick={clearFilters} className="btn-danger text-xs">
               <FiX size={13} /> Limpar
