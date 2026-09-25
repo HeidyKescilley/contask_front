@@ -11,6 +11,7 @@ const STATUS_BADGE = {
   completed: { label: "Concluída", cls: "badge-green" },
   completed_with_errors: { label: "Concluída com erros", cls: "badge-amber" },
   failed: { label: "Falhou", cls: "badge-red" },
+  cancelled: { label: "Cancelada", cls: "badge-gray" },
 };
 
 const fmt = (d) => (d ? new Date(d).toLocaleString("pt-BR") : "–");
@@ -28,7 +29,9 @@ const renderIndividualOpenStatus = (r) => {
   return <span className="badge-amber">Não aberto (ainda)</span>;
 };
 
-const renderAggregateStatus = (sentCount, failedCount) => {
+const renderAggregateStatus = (sentCount, failedCount, pendingCount = 0, cancelledCount = 0) => {
+  if (pendingCount > 0) return <span className="badge-blue">Na fila ({pendingCount})</span>;
+  if (cancelledCount > 0 && sentCount === 0 && failedCount === 0) return <span className="badge-gray">Cancelado</span>;
   if (failedCount === 0) return <span className="badge-green">Enviado ({sentCount})</span>;
   if (sentCount === 0) return <span className="badge-red">Falhou ({failedCount})</span>;
   return <span className="badge-amber">Parcial ({sentCount}/{sentCount + failedCount})</span>;
@@ -212,6 +215,8 @@ export default function EmailDispatchHistoryModal({ dispatch, onClose }) {
                       {groupedByCompany.map((group) => {
                         const sentCount = group.items.filter((i) => i.status === "sent").length;
                         const failedCount = group.items.filter((i) => i.status === "failed").length;
+                        const pendingCount = group.items.filter((i) => i.status === "pending" || i.status === "sending").length;
+                        const cancelledCount = group.items.filter((i) => i.status === "cancelled").length;
                         const isExpanded = expandedCompanies.has(group.companyId);
                         return (
                           <Fragment key={group.companyId}>
@@ -226,7 +231,7 @@ export default function EmailDispatchHistoryModal({ dispatch, onClose }) {
                                 {group.company?.name || `Empresa #${group.companyId}`}
                                 <span className="text-gray-400 font-normal ml-1">({group.items.length} e-mail{group.items.length !== 1 ? "s" : ""})</span>
                               </td>
-                              <td className="table-cell whitespace-nowrap">{renderAggregateStatus(sentCount, failedCount)}</td>
+                              <td className="table-cell whitespace-nowrap">{renderAggregateStatus(sentCount, failedCount, pendingCount, cancelledCount)}</td>
                               <td className="table-cell whitespace-nowrap">{renderAggregateOpen(group.items)}</td>
                             </tr>
                             {isExpanded && (
@@ -248,6 +253,12 @@ export default function EmailDispatchHistoryModal({ dispatch, onClose }) {
                                           <td className="table-cell whitespace-nowrap">
                                             {r.status === "sent" ? (
                                               <span className="badge-green"><FiCheckCircle size={11} className="inline mr-1" />Enviado</span>
+                                            ) : r.status === "pending" ? (
+                                              <span className="badge-blue">Na fila</span>
+                                            ) : r.status === "sending" ? (
+                                              <span className="badge-blue">Enviando</span>
+                                            ) : r.status === "cancelled" ? (
+                                              <span className="badge-gray">Cancelado</span>
                                             ) : (
                                               <span className="badge-red"><FiXCircle size={11} className="inline mr-1" />Falhou</span>
                                             )}

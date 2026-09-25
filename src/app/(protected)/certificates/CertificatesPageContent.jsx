@@ -30,6 +30,12 @@ const STATUS_BADGE = {
   sem_certificado: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
 };
 
+const normalizeText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+
 const formatDate = (value) => {
   if (!value) return "–";
   return new Date(value).toLocaleDateString("pt-BR");
@@ -53,6 +59,7 @@ const CertificatesPageContent = () => {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [modalCompany, setModalCompany] = useState(undefined); // undefined = fechado; null = genérico; obj = específico
   const [exporting, setExporting] = useState(false);
+  const [includeFiles, setIncludeFiles] = useState(false);
 
   const vencendo = useMemo(
     () =>
@@ -76,11 +83,13 @@ const CertificatesPageContent = () => {
       list = list.filter((c) => c.status === statusFilter);
     }
     if (search.trim()) {
-      const term = search.trim().toLowerCase();
+      const term = normalizeText(search.trim());
+      // Só compara CNPJ quando a busca tem dígitos — "".includes("") é sempre true e fazia toda empresa passar
+      const digits = search.replace(/\D/g, "");
       list = list.filter(
         (c) =>
-          c.name?.toLowerCase().includes(term) ||
-          String(c.cnpj || "").includes(term.replace(/\D/g, ""))
+          normalizeText(c.name).includes(term) ||
+          (digits && String(c.cnpj || "").replace(/\D/g, "").includes(digits))
       );
     }
     return list.sort((a, b) => a.name.localeCompare(b.name));
@@ -89,12 +98,16 @@ const CertificatesPageContent = () => {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const res = await api.get("/certificate/export", { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/json" }));
+      const res = await api.get("/certificate/export", {
+        responseType: "blob",
+        params: includeFiles ? { includeFiles: "true" } : undefined,
+      });
+      const mime = includeFiles ? "application/zip" : "application/json";
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: mime }));
       const link = document.createElement("a");
       link.href = url;
       const dateStr = new Date().toISOString().slice(0, 10);
-      link.download = `certificados_validos_${dateStr}.json`;
+      link.download = `certificados_validos_${dateStr}.${includeFiles ? "zip" : "json"}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -139,6 +152,18 @@ const CertificatesPageContent = () => {
           >
             <FiUpload size={14} /> Importar certificado
           </button>
+          <label
+            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-dark-text-secondary whitespace-nowrap cursor-pointer select-none"
+            title="Gera um .zip com a lista (JSON) e os arquivos dos certificados"
+          >
+            <input
+              type="checkbox"
+              checked={includeFiles}
+              onChange={(e) => setIncludeFiles(e.target.checked)}
+              disabled={exporting}
+            />
+            Incluir arquivos
+          </label>
           <button
             onClick={handleExport}
             disabled={exporting}
