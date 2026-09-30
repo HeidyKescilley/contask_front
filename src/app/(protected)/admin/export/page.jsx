@@ -10,6 +10,14 @@ import { formatDate } from "../../../../utils/utils";
 import { FiDownload } from "react-icons/fi";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 
+// Status calculado pela API: verde/amarelo = dentro da validade, vermelho = vencido, cinza = sem certificado
+const CERTIFICATE_STATUS_LABEL = {
+  verde: "Ativo",
+  amarelo: "Ativo",
+  vermelho: "Vencido",
+  cinza: "Nao informado",
+};
+
 const COLUMN_MAP = [
   { key: "num", label: "Numero" },
   { key: "name", label: "Razao Social" },
@@ -69,16 +77,6 @@ const COLUMN_MAP = [
     formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
-    key: "declarationsCompletedFiscal",
-    label: "Fiscal Obrigacoes OK?",
-    formatter: (val) => (val ? "Sim" : "Nao"),
-  },
-  {
-    key: "hasNoFiscalObligations",
-    label: "Fiscal Sem Obrigacoes?",
-    formatter: (val) => (val ? "Sim" : "Nao"),
-  },
-  {
     key: "fiscalCompletedAt",
     label: "Fiscal Data Conclusao",
     formatter: (val) => (val ? formatDate(val) : ""),
@@ -111,6 +109,22 @@ const COLUMN_MAP = [
   },
   { key: "employeesCount", label: "Qtd. Funcionarios (DP)" },
   {
+    key: "isZeroedContabil",
+    label: "Contabil Zerado?",
+    formatter: (val) => (val ? "Sim" : "Nao"),
+  },
+  {
+    key: "contabilCompletedAt",
+    label: "Contabil Data Conclusao",
+    formatter: (val) => (val ? formatDate(val) : ""),
+  },
+  { key: "contabilNota", label: "Nota Contabil" },
+  {
+    key: "grupoId",
+    label: "Grupo",
+    formatter: (val, company) => company.grupo?.name || "",
+  },
+  {
     key: "openedByUs",
     label: "Aberta por Nos?",
     formatter: (val) => (val ? "Sim" : "Nao"),
@@ -121,6 +135,11 @@ const COLUMN_MAP = [
     key: "isArchived",
     label: "Arquivado?",
     formatter: (val) => (val ? "Sim" : "Nao"),
+  },
+  {
+    key: "certificateStatus",
+    label: "Status do Certificado",
+    formatter: (val) => CERTIFICATE_STATUS_LABEL[val] || "Nao informado",
   },
 ];
 
@@ -169,7 +188,14 @@ const ExportPage = () => {
   );
 
   const handleFilterChange = (filterName, value) => {
-    setFilters((prev) => ({ ...prev, [filterName]: value }));
+    setFilters((prev) => {
+      const next = { ...prev, [filterName]: value };
+      // Arquivadas são BAIXADA/DISTRATO: garante esses status ao pedir arquivadas
+      if (filterName === "archived" && value !== "non-archived") {
+        next.status = [...new Set([...prev.status, "BAIXADA", "DISTRATO"])];
+      }
+      return next;
+    });
   };
 
   const handleStatusFilterChange = (status) => {
@@ -196,25 +222,38 @@ const ExportPage = () => {
     setColumns(columns.map((c) => ({ ...c, checked: isChecked })));
   };
 
+  const filteredList = useMemo(
+    () =>
+      allCompanies.filter((company) => {
+        const statusMatch =
+          filters.status.length === 0 || filters.status.includes(company.status);
+        const respFiscalMatch =
+          !filters.respFiscal ||
+          company.respFiscalId === parseInt(filters.respFiscal);
+        const respDpMatch =
+          !filters.respDp || company.respDpId === parseInt(filters.respDp);
+
+        let archivedMatch = true;
+        if (filters.archived === "non-archived")
+          archivedMatch = !company.isArchived;
+        if (filters.archived === "archived") archivedMatch = !!company.isArchived;
+
+        return statusMatch && respFiscalMatch && respDpMatch && archivedMatch;
+      }),
+    [allCompanies, filters]
+  );
+
+  // Empresas arquivadas automaticamente são sempre BAIXADA/DISTRATO
+  const archivedHiddenByStatus =
+    filters.archived !== "non-archived" &&
+    !filters.status.includes("BAIXADA") &&
+    !filters.status.includes("DISTRATO") &&
+    filters.status.length > 0;
+
   const handleExport = () => {
     setExporting(true);
 
-    const filteredCompanies = allCompanies.filter((company) => {
-      const statusMatch =
-        filters.status.length === 0 || filters.status.includes(company.status);
-      const respFiscalMatch =
-        !filters.respFiscal ||
-        company.respFiscalId === parseInt(filters.respFiscal);
-      const respDpMatch =
-        !filters.respDp || company.respDpId === parseInt(filters.respDp);
-
-      let archivedMatch = true;
-      if (filters.archived === "non-archived")
-        archivedMatch = !company.isArchived;
-      if (filters.archived === "archived") archivedMatch = company.isArchived;
-
-      return statusMatch && respFiscalMatch && respDpMatch && archivedMatch;
-    });
+    const filteredCompanies = filteredList;
 
     if (filteredCompanies.length === 0) {
       toast.info("Nenhuma empresa encontrada com os filtros selecionados.");
@@ -236,7 +275,7 @@ const ExportPage = () => {
         selectedColumns.forEach((col) => {
           const value = col.formatter
             ? col.formatter(company[col.key], company)
-            : company[col.key] || "";
+            : company[col.key] ?? "";
           row[col.label] = value;
         });
         return row;
@@ -339,8 +378,19 @@ const ExportPage = () => {
                 </label>
               ))}
             </div>
+            {archivedHiddenByStatus && (
+              <p className="text-xs text-amber-600 mt-2">
+                Empresas arquivadas são BAIXADA ou DISTRATO. Marque um desses status para
+                que elas apareçam.
+              </p>
+            )}
           </div>
         </div>
+        {!loading && (
+          <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-4">
+            {filteredList.length} empresa(s) serão exportadas com os filtros atuais.
+          </p>
+        )}
       </div>
 
       {/* Columns */}
