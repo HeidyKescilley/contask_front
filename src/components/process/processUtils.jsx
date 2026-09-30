@@ -34,7 +34,6 @@ export const RESPONSIBLE_META = {
 export const ORIGIN_LABEL = { office: "Motivo interno (escritório)", client: "Motivo do cliente" };
 
 export const DEPT_BADGE = {
-  Administrativo: "bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400",
   Fiscal: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
   Pessoal: "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400",
   "Contábil": "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",

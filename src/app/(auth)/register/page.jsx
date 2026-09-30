@@ -25,7 +25,6 @@ const RegisterPage = () => {
   }, [user, router]);
 
   const departments = [
-    "Administrativo",
     "Pessoal",
     "Fiscal",
     "Contábil",
