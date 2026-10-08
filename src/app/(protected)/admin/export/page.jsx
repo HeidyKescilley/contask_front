@@ -137,6 +137,11 @@ const COLUMN_MAP = [
     formatter: (val) => (val ? "Sim" : "Nao"),
   },
   {
+    // Preenchido a partir de /company/status-history-all/list (carregado só quando a coluna está marcada)
+    key: "statusHistory",
+    label: "Historico de Status",
+  },
+  {
     key: "certificateStatus",
     label: "Status do Certificado",
     formatter: (val) => CERTIFICATE_STATUS_LABEL[val] || "Nao informado",
@@ -154,6 +159,7 @@ const ExportPage = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [selectAll, setSelectAll] = useState(true);
+  const [historyByCompany, setHistoryByCompany] = useState(null);
 
   const [filters, setFilters] = useState({
     status: ["ATIVA"],
@@ -250,7 +256,7 @@ const ExportPage = () => {
     !filters.status.includes("DISTRATO") &&
     filters.status.length > 0;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setExporting(true);
 
     const filteredCompanies = filteredList;
@@ -269,10 +275,26 @@ const ExportPage = () => {
     }
 
     try {
+      let history = historyByCompany;
+      if (selectedColumns.some((c) => c.key === "statusHistory") && !history) {
+        const res = await api.get("/company/status-history-all/list");
+        history = {};
+        res.data.forEach((h) => {
+          (history[h.companyId] ||= []).push(h);
+        });
+        setHistoryByCompany(history);
+      }
+
       const headers = selectedColumns.map((col) => col.label);
       const dataToExport = filteredCompanies.map((company) => {
         const row = {};
         selectedColumns.forEach((col) => {
+          if (col.key === "statusHistory") {
+            row[col.label] = (history?.[company.id] || [])
+              .map((h) => `${formatDate(h.date)} - ${h.status}`)
+              .join("\n");
+            return;
+          }
           const value = col.formatter
             ? col.formatter(company[col.key], company)
             : company[col.key] ?? "";

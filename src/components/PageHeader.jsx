@@ -34,6 +34,14 @@ const PAGE_TITLES = {
     title: "Calculo de Bonus",
     subtitle: "Bonificacao mensal da equipe",
   },
+  "/automations": {
+    title: "Automatizações",
+    subtitle: "Rotinas automáticas executadas no servidor",
+  },
+  "/automations/dar": {
+    title: "Geração de DAR (1317)",
+    subtitle: "DAR avulso ICMS Normal - SEFAZ-DF",
+  },
   "/admin/export": {
     title: "Exportar Dados",
     subtitle: "Gerar relatorios e planilhas",

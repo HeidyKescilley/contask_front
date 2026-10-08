@@ -32,6 +32,7 @@ import {
   FiMail,
   FiShield,
   FiCheckSquare,
+  FiZap,
 } from "react-icons/fi";
 import Image from "next/image";
 import { CompanyModalContext } from "../context/CompanyModalContext";
@@ -59,6 +60,7 @@ const Sidebar = () => {
         { name: "Contatos", path: "/contacts", icon: <FiUsers size={18} /> },
         { name: "Disparo de E-mails", path: "/email-dispatch", icon: <FiMail size={18} /> },
         { name: "Monitor de Certificados", path: "/certificates", icon: <FiShield size={18} /> },
+        { name: "Automatizações", path: "/automations", icon: <FiZap size={18} /> },
         {
           name: "Processos",
           path: "/processes",
@@ -122,7 +124,9 @@ const Sidebar = () => {
   };
 
   const isActive = (path) =>
-    path === "/processes" ? pathname.startsWith("/processes") : pathname === path;
+    path === "/processes" || path === "/automations"
+      ? pathname.startsWith(path)
+      : pathname === path;
 
   const renderMenuItem = (item) => {
     if (!checkDisplayPermission(item)) return null;
