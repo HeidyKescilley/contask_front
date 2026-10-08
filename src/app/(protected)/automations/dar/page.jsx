@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { FiArrowLeft, FiPlay, FiDownload, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiPlay, FiDownload, FiSearch, FiPlus, FiTrash2 } from "react-icons/fi";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import api from "../../../../utils/api";
@@ -87,7 +87,7 @@ export default function DarPage() {
     setSelected((prev) => {
       const next = { ...prev };
       if (id in next) delete next[id];
-      else next[id] = valorGeral;
+      else next[id] = [valorGeral];
       return next;
     });
 
@@ -96,14 +96,27 @@ export default function DarPage() {
     setSelected((prev) => {
       const next = { ...prev };
       if (allFilteredSelected) filtered.forEach((c) => delete next[c.id]);
-      else filtered.forEach((c) => !(c.id in next) && (next[c.id] = valorGeral));
+      else filtered.forEach((c) => !(c.id in next) && (next[c.id] = [valorGeral]));
+      return next;
+    });
+
+  // Uma empresa pode ter várias guias: cada valor da lista gera um DAR.
+  const setValor = (id, i, v) =>
+    setSelected((prev) => ({ ...prev, [id]: prev[id].map((x, j) => (j === i ? v : x)) }));
+  const addGuia = (id) => setSelected((prev) => ({ ...prev, [id]: [...prev[id], valorGeral] }));
+  const removeGuia = (id, i) =>
+    setSelected((prev) => {
+      const next = { ...prev, [id]: prev[id].filter((_, j) => j !== i) };
+      if (next[id].length === 0) delete next[id];
       return next;
     });
 
   const aplicarValorGeral = () =>
-    setSelected((prev) => Object.fromEntries(Object.keys(prev).map((id) => [id, valorGeral])));
+    setSelected((prev) => Object.fromEntries(Object.entries(prev).map(([id, vs]) => [id, vs.map(() => valorGeral)])),
+    );
 
   const selectedCompanies = companies.filter((c) => c.id in selected);
+  const totalGuias = selectedCompanies.reduce((n, c) => n + selected[c.id].length, 0);
   const running = job && job.state !== "done";
 
   const poll = (jobId) => {
@@ -121,14 +134,16 @@ export default function DarPage() {
   };
 
   const handleStart = async () => {
-    const semValor = selectedCompanies.filter((c) => !String(selected[c.id] || "").trim());
+    const semValor = selectedCompanies.filter((c) => selected[c.id].some((v) => !String(v).trim()));
     if (semValor.length) {
       return toast.error(`Informe o valor para: ${semValor.map((c) => c.name).join(", ")}`);
     }
     setStarting(true);
     try {
       const res = await api.post("/automation/dar/jobs", {
-        items: selectedCompanies.map((c) => ({ companyId: c.id, valor: selected[c.id] })),
+        items: selectedCompanies.flatMap((c) =>
+          selected[c.id].map((valor) => ({ companyId: c.id, valor })),
+        ),
       });
       setJob(res.data);
       poll(res.data.id);
@@ -273,24 +288,45 @@ export default function DarPage() {
           </div>
           <div className="space-y-2">
             {selectedCompanies.map((c) => (
-              <div key={c.id} className="flex items-center gap-3 text-sm">
-                <span className="flex-1 truncate">
+              <div key={c.id} className="flex flex-wrap items-start gap-3 text-sm">
+                <span className="flex-1 min-w-[200px] truncate pt-2">
                   {c.name} <span className="text-gray-500">- {fmtCnpj(c.cnpj)}</span>
                 </span>
-                <input
-                  value={selected[c.id]}
-                  onChange={(e) => setSelected((p) => ({ ...p, [c.id]: e.target.value }))}
-                  className="input-base !w-32"
-                  placeholder="0,00"
-                  disabled={running}
-                />
+                <div className="space-y-1.5">
+                  {selected[c.id].map((valor, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        value={valor}
+                        onChange={(e) => setValor(c.id, i, e.target.value)}
+                        className="input-base !w-32"
+                        placeholder="0,00"
+                        disabled={running}
+                      />
+                      <button
+                        onClick={() => removeGuia(c.id, i)}
+                        disabled={running}
+                        title="Remover esta guia"
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => addGuia(c.id)}
+                    disabled={running}
+                    className="flex items-center gap-1 text-xs text-primary-400 hover:underline"
+                  >
+                    <FiPlus size={12} /> Adicionar outra guia
+                  </button>
+                </div>
               </div>
             ))}
           </div>
           <div className="flex justify-end mt-4">
             <button onClick={handleStart} disabled={starting || running} className="btn-success">
               <FiPlay size={16} />
-              {running ? "Gerando..." : `Gerar ${selectedCompanies.length} DAR(s)`}
+              {running ? "Gerando..." : `Gerar ${totalGuias} DAR(s)`}
             </button>
           </div>
         </div>
