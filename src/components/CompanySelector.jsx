@@ -1,8 +1,9 @@
 // src/components/CompanySelector.jsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { FiSearch, FiX } from "react-icons/fi";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { FiSearch, FiX, FiUpload } from "react-icons/fi";
+import * as XLSX from "xlsx";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
@@ -81,6 +82,19 @@ function distinctGroups(companies) {
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 }
 
+// Normaliza CNPJ para comparação: remove máscara (.,/,-, espaços) e padroniza em
+// maiúsculas (aceita CNPJ alfanumérico). Planilhas numéricas perdem zeros à esquerda,
+// então CNPJs só com dígitos são completados até 14 posições.
+function normalizeCnpj(value) {
+  if (value == null) return "";
+  let raw = typeof value === "number" ? String(Math.round(value)) : String(value);
+  raw = raw.replace(/[^0-9a-zA-Z]/g, "").toUpperCase();
+  if (/^\d+$/.test(raw) && raw.length < 14) raw = raw.padStart(14, "0");
+  return raw;
+}
+
+const normalizeHeader = (h) => String(h ?? "").replace(/[^a-zA-Z]/g, "").toUpperCase();
+
 const EMPTY_FILTERS = {
   search: "",
   ufs: [],
@@ -105,6 +119,66 @@ export default function CompanySelector({ selectedIds = [], onChange }) {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const fileInputRef = useRef(null);
+
+  const handleImportSheet = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: true });
+      if (rows.length === 0) {
+        toast.error("A planilha está vazia.");
+        return;
+      }
+      const cnpjKey = Object.keys(rows[0]).find((k) => normalizeHeader(k) === "CNPJ");
+      if (!cnpjKey) {
+        toast.error('Coluna "CNPJ" não encontrada na planilha.');
+        return;
+      }
+
+      const byCnpj = new Map();
+      companies.forEach((c) => {
+        const key = normalizeCnpj(c.cnpj);
+        if (key) byCnpj.set(key, [...(byCnpj.get(key) || []), c]);
+      });
+
+      const matchedIds = new Set();
+      const notFound = [];
+      let hasArchived = false;
+      const seen = new Set();
+      rows.forEach((row) => {
+        const key = normalizeCnpj(row[cnpjKey]);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const found = byCnpj.get(key);
+        if (!found) {
+          notFound.push(String(row[cnpjKey]));
+          return;
+        }
+        found.forEach((c) => {
+          matchedIds.add(c.id);
+          if (c.isArchived) hasArchived = true;
+        });
+      });
+
+      if (matchedIds.size === 0) {
+        toast.error("Nenhuma empresa da planilha foi encontrada pelo CNPJ.");
+        return;
+      }
+      onChange([...new Set([...selectedIds, ...matchedIds])]);
+      if (hasArchived) setFilter("showArchived", true);
+      toast.success(`${matchedIds.size} empresa(s) selecionada(s) pela planilha.`);
+      if (notFound.length > 0) {
+        const preview = notFound.slice(0, 5).join(", ");
+        toast.warn(`${notFound.length} CNPJ(s) não encontrado(s): ${preview}${notFound.length > 5 ? "…" : ""}`);
+      }
+    } catch {
+      toast.error("Não foi possível ler a planilha.");
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -238,6 +312,17 @@ export default function CompanySelector({ selectedIds = [], onChange }) {
             {selectedIds.length} selecionada{selectedIds.length !== 1 ? "s" : ""} de {companies.length} ({filteredCompanies.length} visível{filteredCompanies.length !== 1 ? "eis" : ""})
           </span>
           <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => fileInputRef.current?.click()}
+              title="Planilha com coluna CNPJ"
+              className="flex items-center gap-1 text-xs text-primary-500 hover:underline disabled:opacity-50"
+            >
+              <FiUpload size={12} /> Importar planilha (CNPJ)
+            </button>
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportSheet} className="hidden" />
+            <span className="text-gray-300">|</span>
             <button type="button" onClick={selectAllVisible} className="text-xs text-primary-500 hover:underline">Marcar todas visíveis</button>
             <span className="text-gray-300">|</span>
             <button type="button" onClick={clearAllVisible} className="text-xs text-gray-400 hover:underline">Desmarcar visíveis</button>
