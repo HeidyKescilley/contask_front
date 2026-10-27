@@ -110,6 +110,11 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   const emailInputRef               = useRef(null);
   const EMAIL_REGEX                 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  // ── Telefones (cada um com o nome do contato) ─────────────────────────────
+  const [phones, setPhones]           = useState([]);
+  const [phonesLoaded, setPhonesLoaded] = useState(type !== "edit");
+  const [phoneError, setPhoneError]   = useState("");
+
   // ── CPF/CNPJ ─────────────────────────────────────────────────────────────
   const initDocDisplay = (raw) => {
     if (!raw) return "";
@@ -196,6 +201,19 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
   };
 
   useEffect(() => {
+    if (type === "edit" && data.id) {
+      api.get(`/company/${data.id}/phones`)
+        .then((res) => {
+          const list = res.data.map((p) => ({ id: p.id, number: p.number, contactName: p.contactName || "" }));
+          // Empresa antiga sem lista nova: sugere o telefone/contato do cadastro antigo.
+          if (!list.length && data.phone) {
+            list.push({ number: data.phone, contactName: data.contact || "" });
+          }
+          setPhones(list);
+          setPhonesLoaded(true);
+        })
+        .catch(() => setPhoneError("Não foi possível carregar os telefones."));
+    }
     fetchContactModes();
     fetchGrupos();
     if (type === "edit") {
@@ -333,6 +351,14 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     if (e.key === "Backspace" && emailInput === "" && emails.length > 0) removeEmail(emails.length - 1);
   };
 
+  // Telefones
+  const addPhone    = () => setPhones((prev) => [...prev, { number: "", contactName: "" }]);
+  const removePhone = (index) => setPhones((prev) => prev.filter((_, i) => i !== index));
+  const changePhone = (index, field, value) => {
+    setPhones((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+    if (phoneError) setPhoneError("");
+  };
+
   // Submit
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -347,8 +373,24 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
     }
     if (finalEmails.length === 0) { setEmailError("Adicione ao menos um e-mail"); return; }
 
+    // Linhas sem número são ignoradas; as demais precisam de 8 a 15 dígitos
+    const filledPhones = phones
+      .map((p) => ({ ...p, number: p.number.trim(), contactName: p.contactName.trim() }))
+      .filter((p) => p.number || p.contactName);
+    const phoneDigits = filledPhones.map((p) => p.number.replace(/\D/g, ""));
+    if (phoneDigits.some((d) => d.length < 8 || d.length > 15)) {
+      setPhoneError("Telefone inválido — informe o número com DDD (8 a 15 dígitos).");
+      return;
+    }
+    if (new Set(phoneDigits).size !== phoneDigits.length) {
+      setPhoneError("Há telefones repetidos.");
+      return;
+    }
+
     onSubmit({
       ...formData,
+      // Só envia a lista se ela foi carregada (evita apagar telefones por falha de carregamento)
+      ...(phonesLoaded ? { phones: filledPhones } : {}),
       email:          finalEmails.join(","),
       respFiscalId:   formData.respFiscalId   || null,
       respContabilId: formData.respContabilId || null,
@@ -541,7 +583,7 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
         <div className="grid grid-cols-4 gap-3 mb-2">
 
           {/* E-mail (tag input) */}
-          <div className="col-span-3">
+          <div className="col-span-4">
             <label className="label-base">
               E-mail <span className="text-red-500">*</span>
             </label>
@@ -609,19 +651,52 @@ const CompanyForm = ({ initialData = {}, onCancel, onSubmit, type }) => {
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Telefone */}
-          <div className="col-span-1">
-            <label className="label-base">Telefone</label>
-            <input
-              type="tel"
-              name="phone"
-              className="input-base"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Opcional"
-            />
+        {/* Telefones + nome do contato (vários, como os e-mails) */}
+        <div className="mb-4">
+          <label className="label-base">Telefones e contatos</label>
+          <div className="space-y-2">
+            {phones.map((p, idx) => (
+              <div key={p.id ?? `new-${idx}`} className="grid grid-cols-12 gap-2 items-center">
+                <input
+                  type="tel"
+                  className="input-base col-span-5"
+                  value={p.number}
+                  onChange={(e) => changePhone(idx, "number", e.target.value)}
+                  placeholder="(61) 99999-9999"
+                />
+                <input
+                  type="text"
+                  className="input-base col-span-6"
+                  value={p.contactName}
+                  onChange={(e) => changePhone(idx, "contactName", e.target.value)}
+                  placeholder="Nome do contato (opcional)"
+                />
+                <button
+                  type="button"
+                  onClick={() => removePhone(idx)}
+                  className="col-span-1 p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors justify-self-center"
+                  aria-label="Remover telefone"
+                >
+                  <FiTrash2 size={15} />
+                </button>
+              </div>
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={addPhone}
+            disabled={!phonesLoaded}
+            className="mt-2 flex items-center gap-1 text-xs text-primary-500 hover:underline disabled:opacity-50"
+          >
+            <FiPlus size={12} /> Adicionar telefone
+          </button>
+          {phoneError && (
+            <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+              <FiAlertCircle size={11} /> {phoneError}
+            </p>
+          )}
         </div>
 
         {/* ─────────────────────────────────────────────────────────────────
